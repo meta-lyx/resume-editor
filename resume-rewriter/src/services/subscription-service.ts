@@ -1,51 +1,43 @@
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/api-client';
 
 export async function getSubscriptionPlans() {
-  const { data, error } = await supabase
-    .from('resume_plans')
-    .select('*')
-    .order('price', { ascending: true });
+  const { data, error } = await apiClient.getSubscriptionPlans();
   
   if (error) {
-    throw error;
+    throw new Error(error.message);
   }
   
-  return data;
+  return data?.plans || [];
 }
 
-export async function getUserSubscription(userId: string) {
-  const { data, error } = await supabase
-    .from('resume_subscriptions')
-    .select(`
-      *,
-      resume_plans!price_id(
-        plan_type,
-        price,
-        monthly_limit
-      )
-    `)
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .maybeSingle();
+export async function getCurrentSubscription() {
+  const { data, error } = await apiClient.getCurrentSubscription();
   
   if (error) {
-    throw error;
+    // User might not have a subscription yet, that's okay
+    if (error.code === 'NOT_FOUND') {
+      return null;
+    }
+    throw new Error(error.message);
   }
   
-  return data;
+  return data?.subscription;
 }
 
-export async function createSubscription(planType: string, customerEmail: string) {
-  const { data, error } = await supabase.functions.invoke('create-subscription', {
-    body: {
-      planType,
-      customerEmail,
-    },
-  });
+export async function createCheckoutSession(planId: string) {
+  const { data, error } = await apiClient.createCheckoutSession(planId);
   
   if (error) {
-    throw error;
+    throw new Error(error.message);
   }
   
-  return data;
+  return data?.checkoutUrl;
+}
+
+export async function cancelSubscription() {
+  const { error } = await apiClient.cancelSubscription();
+  
+  if (error) {
+    throw new Error(error.message);
+  }
 }

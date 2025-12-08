@@ -31,6 +31,27 @@ export function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setLoading(true);
     try {
+      // Call API directly to get token
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email, password: data.password }),
+      });
+      
+      const result = await response.json();
+      console.log('Direct login API result:', result);
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Login failed');
+      }
+      
+      // Manually save token IMMEDIATELY
+      if (result.session?.token) {
+        localStorage.setItem('auth_token', result.session.token);
+        console.log('Token manually saved:', result.session.token);
+      }
+      
+      // Now call signIn to update React state
       await signIn(data.email, data.password);
       toast.success('Login successful');
       navigate('/dashboard');

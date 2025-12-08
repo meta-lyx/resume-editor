@@ -17,7 +17,7 @@ export function MyResumesPage() {
       if (!user) return;
 
       try {
-        const resumesData = await getUserResumes(user.id);
+        const resumesData = await getUserResumes();
         setResumes(resumesData);
       } catch (error: any) {
         toast.error(error.message || 'Failed to load resume list');

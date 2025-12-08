@@ -1,13 +1,20 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/api-client';
+
+type User = {
+  id: string;
+  email: string;
+  name?: string;
+  emailVerified: boolean;
+  createdAt: string;
+};
 
 type AuthContextType = {
   user: User | null;
-  session: Session | null;
+  session: { token: string } | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name?: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -15,52 +22,69 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<{ token: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 初始加载用户状态
+    // Load user state on mount
     async function loadUser() {
       try {
-        const { data } = await supabase.auth.getSession();
-        setSession(data.session);
-        setUser(data.session?.user || null);
+        const token = apiClient.getToken();
+        if (token) {
+          const { data, error } = await apiClient.getCurrentUser();
+          if (data && !error) {
+            setUser(data.user);
+            setSession({ token });
+          } else {
+            // Invalid token, clear it
+            apiClient.setToken(null);
+          }
+        }
       } finally {
         setLoading(false);
       }
     }
     loadUser();
-
-    // 监听身份验证状态变化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user || null);
-      }
-    );
-
-    return () => subscription.unsubscribe();
   }, []);
 
   async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    const { data, error } = await apiClient.login(email, password);
+    console.log('Login response:', { data, error });
+    if (error) throw new Error(error.message);
+    if (data) {
+      const token = data.session?.token;
+      console.log('Extracted token:', token);
+      console.log('Full data object:', data);
+      if (token) {
+        apiClient.setToken(token);
+        setUser(data.user);
+        setSession({ token });
+      }
+    }
   }
 
-  async function signUp(email: string, password: string) {
-    const { error } = await supabase.auth.signUp({ 
-      email, 
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`
+  async function signUp(email: string, password: string, name?: string) {
+    const { data, error } = await apiClient.register(email, password, name || '');
+    console.log('Register response:', { data, error });
+    if (error) throw new Error(error.message);
+    if (data) {
+      const token = data.session?.token;
+      console.log('Extracted token from registration:', token);
+      console.log('Full registration data:', data);
+      if (token) {
+        apiClient.setToken(token);
+        setUser(data.user);
+        setSession({ token });
+        console.log('Token saved to localStorage:', localStorage.getItem('auth_token'));
       }
-    });
-    if (error) throw error;
+    }
   }
 
   async function signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    const { error } = await apiClient.logout();
+    if (error) throw new Error(error.message);
+    setUser(null);
+    setSession(null);
   }
 
   const value = {

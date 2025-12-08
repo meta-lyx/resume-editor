@@ -18,16 +18,16 @@ export function NavBar() {
         {/* Desktop navigation */}
         <nav className="hidden md:flex items-center space-x-6">
           <Link to="/" className="text-gray-700 hover:text-primary font-medium">
-            Home
+            Get Started
+          </Link>
+          <Link to="/home" className="text-gray-700 hover:text-primary font-medium">
+            About
           </Link>
           <Link to="/features" className="text-gray-700 hover:text-primary font-medium">
             Features
           </Link>
           <Link to="/pricing" className="text-gray-700 hover:text-primary font-medium">
             Pricing
-          </Link>
-          <Link to="/templates" className="text-gray-700 hover:text-primary font-medium">
-            Templates
           </Link>
           {user ? (
             <>
@@ -102,7 +102,14 @@ export function NavBar() {
                 className="text-gray-700 hover:text-primary font-medium py-2"
                 onClick={() => setMenuOpen(false)}
               >
-                Home
+                Get Started
+              </Link>
+              <Link
+                to="/home"
+                className="text-gray-700 hover:text-primary font-medium py-2"
+                onClick={() => setMenuOpen(false)}
+              >
+                About
               </Link>
               <Link
                 to="/features"
@@ -117,13 +124,6 @@ export function NavBar() {
                 onClick={() => setMenuOpen(false)}
               >
                 Pricing
-              </Link>
-              <Link
-                to="/templates"
-                className="text-gray-700 hover:text-primary font-medium py-2"
-                onClick={() => setMenuOpen(false)}
-              >
-                Templates
               </Link>
               {user ? (
                 <>

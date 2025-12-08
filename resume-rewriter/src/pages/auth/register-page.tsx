@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import { Mail, Lock, User } from 'lucide-react';
 
 const registerSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string().min(6, 'Password must be at least 6 characters'),
@@ -35,9 +36,9 @@ export function RegisterPage() {
   const onSubmit = async (data: RegisterFormValues) => {
     setLoading(true);
     try {
-      await signUp(data.email, data.password);
+      await signUp(data.email, data.password, data.name);
       toast.success('Registration successful. Please check your email to verify your account');
-      navigate('/verify-email');
+      navigate('/dashboard');
     } catch (error: any) {
       toast.error(error.message || 'Registration failed');
     } finally {
@@ -60,6 +61,28 @@ export function RegisterPage() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Full Name
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="name"
+                  type="text"
+                  autoComplete="name"
+                  className={`block w-full pl-10 pr-3 py-2 border ${errors.name ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm`}
+                  placeholder="John Doe"
+                  {...register('name')}
+                />
+              </div>
+              {errors.name && (
+                <p className="mt-2 text-sm text-red-600">{errors.name.message}</p>
+              )}
+            </div>
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address

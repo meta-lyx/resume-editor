@@ -10,6 +10,7 @@ import { Footer } from '@/components/layout/footer';
 
 // 页面
 import { HomePage } from '@/pages/home-page';
+import { OnboardingPage } from '@/pages/onboarding-page';
 import { FeaturesPage } from '@/pages/features-page';
 import { LoginPage } from '@/pages/auth/login-page';
 import { RegisterPage } from '@/pages/auth/register-page';
@@ -31,7 +32,8 @@ export default function App() {
             <NavBar />
             <main className="flex-grow">
               <Routes>
-                <Route path="/" element={<HomePage />} />
+                <Route path="/" element={<OnboardingPage />} />
+                <Route path="/home" element={<HomePage />} />
                 <Route path="/features" element={<FeaturesPage />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/templates" element={<TemplatesPage />} />

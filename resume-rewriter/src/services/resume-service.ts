@@ -1,179 +1,82 @@
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/api-client';
 
-export async function uploadResumeFile(file: File, userId: string) {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${userId}-${Date.now()}.${fileExt}`;
-  const filePath = `${userId}/${fileName}`;
+export async function uploadResumeFile(file: File) {
+  const { data, error } = await apiClient.uploadResume(file);
   
-  // 上传文件到 Storage
-  const { data: storageData, error: storageError } = await supabase.storage
-    .from('resume-files')
-    .upload(filePath, file, { upsert: true });
-  
-  if (storageError) {
-    throw storageError;
+  if (error) {
+    throw new Error(error.message);
   }
   
-  // 从文件中提取文本
-  const { data: extractData, error: extractError } = await supabase.functions.invoke(
-    'extract-resume-text',
-    {
-      body: {
-        filePath,
-        fileType: file.type,
-      },
-    }
-  );
-  
-  if (extractError) {
-    throw extractError;
-  }
-  
-  // 在数据库中创建文件记录
-  const { data: fileData, error: fileError } = await supabase
-    .from('files')
-    .insert({
-      user_id: userId,
-      file_name: file.name,
-      file_path: filePath,
-      file_type: file.type,
-      file_size: file.size,
-    })
-    .select()
-    .single();
-  
-  if (fileError) {
-    throw fileError;
-  }
-  
-  return {
-    fileData,
-    extractedText: extractData.data.extractedText,
-  };
+  return data;
 }
 
 export async function createResume(data: {
-  userId: string;
   title: string;
-  originalContent: string;
+  originalContent: any;
   jobDescription?: string;
 }) {
-  const { data: resumeData, error: resumeError } = await supabase
-    .from('resumes')
-    .insert({
-      user_id: data.userId,
+  const { data: resumeData, error } = await apiClient.createResume({
       title: data.title,
-      original_content: data.originalContent,
-      job_description: data.jobDescription || null,
-      status: 'draft',
-    })
-    .select()
-    .single();
+    content: data.originalContent,
+    job_description: data.jobDescription,
+  });
   
-  if (resumeError) {
-    throw resumeError;
+  if (error) {
+    throw new Error(error.message);
   }
   
-  return resumeData;
+  return resumeData?.resume;
 }
 
 export async function optimizeResume(data: {
   resumeId: string;
-  resumeContent: string;
-  jobDescription?: string;
-  optimizationType: string;
+  jobDescription: string;
 }) {
-  const { data: optimizeData, error: optimizeError } = await supabase.functions.invoke(
-    'optimize-resume',
-    {
-      body: {
-        resumeContent: data.resumeContent,
-        jobDescription: data.jobDescription,
-        optimizationType: data.optimizationType,
-      },
-    }
+  const { data: optimizeData, error } = await apiClient.optimizeResume(
+    data.resumeId,
+    data.jobDescription
   );
   
-  if (optimizeError) {
-    throw optimizeError;
+  if (error) {
+    throw new Error(error.message);
   }
   
-  // 更新简历上的优化内容
-  const { data: updateData, error: updateError } = await supabase
-    .from('resumes')
-    .update({
-      optimized_content: optimizeData.data.optimizedContent,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', data.resumeId)
-    .select()
-    .single();
-  
-  if (updateError) {
-    throw updateError;
-  }
-  
-  // 创建版本记录
-  const { data: versionData, error: versionError } = await supabase
-    .from('resume_versions')
-    .select('version_number')
-    .eq('resume_id', data.resumeId)
-    .order('version_number', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  
-  const nextVersionNumber = versionData ? versionData.version_number + 1 : 1;
-  
-  await supabase.from('resume_versions').insert({
-    resume_id: data.resumeId,
-    content: optimizeData.data.optimizedContent,
-    version_number: nextVersionNumber,
-  });
-  
-  return {
-    originalContent: optimizeData.data.originalContent,
-    optimizedContent: optimizeData.data.optimizedContent,
-    resumeData: updateData,
-  };
+  return optimizeData;
 }
 
-export async function getUserResumes(userId: string) {
-  const { data, error } = await supabase
-    .from('resumes')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+export async function getUserResumes() {
+  const { data, error } = await apiClient.getResumes();
   
   if (error) {
-    throw error;
+    throw new Error(error.message);
   }
   
-  return data;
+  return data?.resumes || [];
 }
 
 export async function getResumeById(resumeId: string) {
-  const { data, error } = await supabase
-    .from('resumes')
-    .select('*')
-    .eq('id', resumeId)
-    .single();
+  const { data, error } = await apiClient.getResume(resumeId);
   
   if (error) {
-    throw error;
+    throw new Error(error.message);
   }
   
-  return data;
+  return data?.resume;
 }
 
-export async function getResumeVersions(resumeId: string) {
-  const { data, error } = await supabase
-    .from('resume_versions')
-    .select('*')
-    .eq('resume_id', resumeId)
-    .order('version_number', { ascending: false });
+export async function deleteResume(resumeId: string) {
+  const { error } = await apiClient.deleteResume(resumeId);
   
   if (error) {
-    throw error;
+    throw new Error(error.message);
+  }
+}
+
+export async function extractResumeText(file: File) {
+  const { data, error } = await apiClient.extractResumeText(file);
+  
+  if (error) {
+    throw new Error(error.message);
   }
   
   return data;

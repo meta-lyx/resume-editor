@@ -1,23 +1,78 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
-import { Plus, Upload, FileText, AlertCircle } from 'lucide-react';
+import { Plus, Upload, FileText, AlertCircle, Check, Sparkles, ArrowRight, CreditCard, Loader2 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
-import { uploadResumeFile, createResume } from '@/services/resume-service';
+import { uploadResumeFile } from '@/services/resume-service';
+import { apiClient } from '@/lib/api-client';
 
 export function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [extractedText, setExtractedText] = useState<string>('');
   const [resumeTitle, setResumeTitle] = useState<string>('');
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [jobDescription, setJobDescription] = useState<string>('');
+  const [resumeProcessed, setResumeProcessed] = useState(false);
+  const [customizedResume, setCustomizedResume] = useState<string>('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [purchasedPlan, setPurchasedPlan] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  // Handle plan selection - directly go to Stripe
+  const handleSelectPlan = async (planId: string) => {
+    setCheckoutLoading(planId);
+    try {
+      const { data, error } = await apiClient.createCheckoutSession(planId);
+      if (error) {
+        toast.error(error.message || 'Failed to create checkout session');
+        return;
+      }
+      if (data?.checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = data.checkoutUrl;
+      } else {
+        toast.error('No checkout URL returned');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to start checkout');
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
+  // Handle payment success redirect from Stripe
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    const plan = searchParams.get('plan');
+    
+    if (payment === 'success' && plan) {
+      setPaymentSuccess(true);
+      setPurchasedPlan(plan);
+      toast.success('Payment successful! Your credits have been added.');
+      
+      // Clear the URL params after showing success
+      setTimeout(() => {
+        setSearchParams({});
+      }, 1000);
+    } else if (payment === 'cancelled') {
+      toast.error('Payment was cancelled.');
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'application/pdf': ['.pdf'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'image/png': ['.png'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/webp': ['.webp'],
     },
     maxFiles: 1,
     disabled: loading,
@@ -25,6 +80,7 @@ export function DashboardPage() {
       if (acceptedFiles.length === 0) return;
 
       const file = acceptedFiles[0];
+      setResumeFile(file);
       setResumeTitle(file.name.replace(/\.[^/.]+$/, ''));
       setLoading(true);
 
@@ -33,9 +89,9 @@ export function DashboardPage() {
           throw new Error('Please login first');
         }
 
-        const result = await uploadResumeFile(file, user.id);
-        setExtractedText(result.extractedText);
-        toast.success('File uploaded and parsed successfully');
+        const result = await uploadResumeFile(file);
+        setExtractedText(result.extractedText || result.text || '');
+        toast.success('Resume uploaded and text extracted successfully');
       } catch (error: any) {
         toast.error(error.message || 'File upload failed');
         console.error('File upload error:', error);
@@ -45,158 +101,539 @@ export function DashboardPage() {
     },
   });
 
-  const handleContinue = async () => {
+  // Check if user can proceed to customization
+  const canProcess = extractedText && jobDescription.trim().length >= 50;
+
+  const handleProcessResume = async () => {
     if (!extractedText || !resumeTitle) {
       toast.error('Please upload resume file first');
+      return;
+    }
+
+    if (jobDescription.trim().length < 50) {
+      toast.error('Please provide a more detailed job description (at least 50 characters)');
       return;
     }
 
     setLoading(true);
     try {
       if (!user) {
-        throw new Error('请先登录');
+        throw new Error('Please login first');
       }
 
-      const resume = await createResume({
-        userId: user.id,
-        title: resumeTitle,
-        originalContent: extractedText,
-      });
+      // Call the AI processing API
+      const { data, error } = await apiClient.processResume(extractedText, jobDescription);
+      
+      if (error) {
+        throw new Error(error.message || 'AI processing failed');
+      }
 
-      toast.success('Resume created successfully');
-      navigate(`/optimize/${resume.id}`);
+      if (!data?.result?.customizedResume) {
+        throw new Error('No result returned from AI service');
+      }
+
+      // Format the result with metadata
+      const formattedResume = `${data.result.customizedResume}
+
+---
+📊 Processing Details:
+• Provider: ${data.provider}
+• ATS Score: ${data.result.atsScore || 'N/A'}/100
+• Processing Time: ${(data.result.processingTime / 1000).toFixed(1)}s
+• Keywords Matched: ${data.result.keywordsMatched.length > 0 ? data.result.keywordsMatched.join(', ') : 'See above'}
+
+💡 Suggestions:
+${data.result.suggestions.map(s => `• ${s}`).join('\n')}
+`;
+      
+      setCustomizedResume(formattedResume);
+      setResumeProcessed(true);
+      toast.success(`Resume optimized by ${data.provider}!`);
     } catch (error: any) {
-      toast.error(error.message || 'Resume creation failed');
-      console.error('Resume creation error:', error);
+      toast.error(error.message || 'Processing failed');
+      console.error('Processing error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleManualCreate = () => {
-    navigate('/create-resume');
+  const handleDownloadResume = () => {
+    // Show payment modal before download
+    setShowPaymentModal(true);
+  };
+
+  const handleStartOver = () => {
+    setExtractedText('');
+    setResumeTitle('');
+    setResumeFile(null);
+    setJobDescription('');
+    setResumeProcessed(false);
+    setCustomizedResume('');
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-white">
+      <div className="container mx-auto px-4 py-8">
+        {/* Payment Success Banner */}
+        {paymentSuccess && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <CreditCard className="h-6 w-6 text-green-600 mr-3" />
+              <div>
+                <h3 className="font-bold text-green-900">Payment Successful!</h3>
+                <p className="text-green-700 text-sm">
+                  Your {purchasedPlan?.replace('-plan', '').replace('-', ' ')} plan has been activated. 
+                  You can now download your customized resumes.
+                </p>
+              </div>
+              <button 
+                onClick={() => setPaymentSuccess(false)}
+                className="ml-auto text-green-600 hover:text-green-800"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold mb-4">Upload Your Resume</h2>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+          <p className="text-gray-600">
+            Welcome back{user?.name ? `, ${user.name}` : ''}! Upload your resume and customize it for your target job.
+          </p>
+        </div>
 
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-primary hover:bg-primary/5'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <input {...getInputProps()} />
-              <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              {isDragActive ? (
-                <p className="text-primary">Drop files here...</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content Area */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              
+              {/* Show processed result */}
+              {resumeProcessed ? (
+                <div>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                    <div className="flex items-start">
+                      <Check className="h-6 w-6 text-green-600 mr-3 mt-1 flex-shrink-0" />
+                      <div>
+                        <h3 className="font-bold text-green-900 mb-2">✓ Your Customized Resume is Ready!</h3>
+                        <p className="text-green-800 text-sm">
+                          Your resume has been optimized for ATS compatibility. Compare the original and customized versions below.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Side-by-side comparison */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold">Resume Comparison</h3>
+                      <div className="flex gap-2">
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">Original</span>
+                        <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full">Optimized</span>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Original Resume */}
+                      <div className="border border-gray-300 rounded-lg overflow-hidden">
+                        <div className="bg-gray-100 px-4 py-2 border-b border-gray-300">
+                          <h4 className="font-semibold text-gray-700 text-sm">📄 Original Resume</h4>
+                        </div>
+                        <div className="bg-white p-4 h-80 overflow-y-auto">
+                          <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono">{extractedText}</pre>
+                        </div>
+                      </div>
+                      
+                      {/* Customized Resume */}
+                      <div className="border border-green-300 rounded-lg overflow-hidden">
+                        <div className="bg-green-50 px-4 py-2 border-b border-green-300">
+                          <h4 className="font-semibold text-green-700 text-sm">✨ AI-Optimized Resume</h4>
+                        </div>
+                        <div className="bg-green-50/30 p-4 h-80 overflow-y-auto">
+                          <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">{customizedResume}</pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 border-t border-gray-200">
+                    <Button
+                      onClick={handleDownloadResume}
+                      size="lg"
+                      className="px-8"
+                    >
+                      Download My Custom Resume
+                    </Button>
+                    <Button
+                      onClick={handleStartOver}
+                      variant="outline"
+                      size="lg"
+                    >
+                      Start New Customization
+                    </Button>
+                  </div>
+                </div>
               ) : (
                 <>
-                  <p className="text-gray-600 mb-2">Drag and drop files here, or click to select files</p>
-                  <p className="text-gray-500 text-sm">Supports PDF and Word documents</p>
+                  {/* Step 1: Upload Resume */}
+                  <div className="mb-8">
+                    <div className="flex items-center mb-4">
+                      <div className={`rounded-full w-8 h-8 flex items-center justify-center font-bold mr-3 ${
+                        extractedText ? 'bg-green-500 text-white' : 'bg-primary text-white'
+                      }`}>
+                        {extractedText ? <Check className="h-5 w-5" /> : '1'}
+                      </div>
+                      <h2 className="text-xl font-bold">Upload Your Resume</h2>
+                    </div>
+
+                    <div
+                      {...getRootProps()}
+                      className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                        isDragActive
+                          ? 'border-primary bg-primary/5'
+                          : resumeFile
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-gray-300 hover:border-primary hover:bg-primary/5'
+                      } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <input {...getInputProps()} />
+                      <Upload className={`h-12 w-12 mx-auto mb-4 ${resumeFile ? 'text-green-500' : 'text-gray-400'}`} />
+                      {resumeFile ? (
+                        <div>
+                          <p className="text-green-700 font-medium mb-2">✓ Resume uploaded successfully</p>
+                          <p className="text-gray-600 text-sm">{resumeFile.name}</p>
+                          <p className="text-gray-500 text-xs mt-2">Click or drag to replace</p>
+                        </div>
+                      ) : isDragActive ? (
+                        <p className="text-primary">Drop your resume here...</p>
+                      ) : (
+                        <>
+                          <p className="text-gray-600 mb-2">Drag and drop your resume, or click to browse</p>
+                          <p className="text-gray-500 text-sm">Supports PDF, Word, PNG, JPG, WEBP</p>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Show extracted text preview */}
+                    {extractedText && (
+                      <div className="mt-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Extracted Resume Content
+                          </label>
+                          <span className="text-xs text-gray-500">
+                            {extractedText.length} characters extracted
+                          </span>
+                        </div>
+                        <div className="bg-gray-50 rounded-md p-4 border border-gray-200 h-40 overflow-y-auto">
+                          <pre className="whitespace-pre-wrap text-sm text-gray-700">{extractedText}</pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step 2: Job Description */}
+                  <div className="mb-8">
+                    <div className="flex items-center mb-4">
+                      <div className={`rounded-full w-8 h-8 flex items-center justify-center font-bold mr-3 ${
+                        jobDescription.length >= 50 ? 'bg-green-500 text-white' : 'bg-primary text-white'
+                      }`}>
+                        {jobDescription.length >= 50 ? <Check className="h-5 w-5" /> : '2'}
+                      </div>
+                      <h2 className="text-xl font-bold">Paste Job Description</h2>
+                    </div>
+
+                    <textarea
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      placeholder="Paste the full job description here. Include requirements, responsibilities, and qualifications. The more detail you provide, the better we can tailor your resume."
+                      className="w-full p-4 border border-gray-300 rounded-lg h-48 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                    />
+                    <div className="flex justify-between items-center mt-2">
+                      <p className="text-sm text-gray-500">
+                        {jobDescription.length} characters (minimum 50 required)
+                      </p>
+                      {jobDescription.length >= 50 && (
+                        <p className="text-sm text-green-600 font-medium">✓ Looks good!</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* How It Works Info Box */}
+                  <div className="bg-blue-50 rounded-lg p-6 mb-8 border border-blue-100">
+                    <div className="flex items-start">
+                      <Sparkles className="h-6 w-6 text-blue-600 mr-3 mt-1 flex-shrink-0" />
+                      <div>
+                        <h3 className="font-bold text-blue-900 mb-2">How Our AI Customization Works</h3>
+                        <ul className="text-blue-800 text-sm space-y-2">
+                          <li>✓ Extracts key requirements and keywords from the job description</li>
+                          <li>✓ Highlights your most relevant experience and skills</li>
+                          <li>✓ Optimizes for Applicant Tracking Systems (ATS)</li>
+                          <li>✓ Rewrites accomplishments with powerful, quantifiable language</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleProcessResume}
+                      disabled={!canProcess || loading}
+                      size="lg"
+                      className="px-12 py-6 text-lg"
+                    >
+                      {loading ? (
+                        'Processing Your Resume...'
+                      ) : (
+                        <>
+                          Customize My Resume
+                          <ArrowRight className="ml-2 h-5 w-5" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {!canProcess && (
+                    <p className="text-center text-gray-500 text-sm mt-4">
+                      {!extractedText 
+                        ? 'Upload your resume to continue' 
+                        : jobDescription.length < 50 
+                        ? `Add ${50 - jobDescription.length} more characters to the job description`
+                        : 'Complete both steps above to continue'
+                      }
+                    </p>
+                  )}
                 </>
               )}
             </div>
-
-            {extractedText && (
-              <div className="mt-6">
-                <div className="flex justify-between items-center mb-3">
-                  <label htmlFor="resume-title" className="block text-sm font-medium text-gray-700">
-                    Resume Title
-                  </label>
-                </div>
-                <input
-                  type="text"
-                  id="resume-title"
-                  value={resumeTitle}
-                  onChange={(e) => setResumeTitle(e.target.value)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                  placeholder="Enter resume title"
-                />
-
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Extracted Resume Content
-                  </label>
-                  <div className="bg-gray-50 rounded-md p-4 border border-gray-200 h-64 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm">{extractedText}</pre>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex justify-end">
-                  <Button
-                    onClick={handleContinue}
-                    disabled={loading || !extractedText}
-                    className="w-full md:w-auto"
-                  >
-                    {loading ? 'Processing...' : 'Continue Optimizing Resume'}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {!extractedText && (
-              <div className="mt-6 flex justify-center">
-                <Button
-                  variant="outline"
-                  onClick={handleManualCreate}
-                  className="w-full md:w-auto"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Resume Manually
-                </Button>
-              </div>
-            )}
           </div>
-        </div>
 
-        <div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold mb-4">Quick Start</h2>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Quick Start Guide */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-bold mb-4">Quick Start Guide</h2>
 
-            <ul className="space-y-4">
-              <li className="flex">
-                <div className="bg-primary/10 p-2 rounded-full mr-3">
-                  <Upload className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Upload Your Resume</h3>
-                  <p className="text-gray-600 text-sm">Supports PDF and Word formats</p>
-                </div>
-              </li>
-              <li className="flex">
-                <div className="bg-primary/10 p-2 rounded-full mr-3">
-                  <FileText className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Choose Optimization Mode</h3>
-                  <p className="text-gray-600 text-sm">ATS optimization, job matching, and other modes</p>
-                </div>
-              </li>
-              <li className="flex">
-                <div className="bg-primary/10 p-2 rounded-full mr-3">
-                  <AlertCircle className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Get Optimization Results</h3>
-                  <p className="text-gray-600 text-sm">Analysis suggestions and optimized resume content</p>
-                </div>
-              </li>
-            </ul>
+              <ul className="space-y-4">
+                <li className="flex">
+                  <div className={`p-2 rounded-full mr-3 ${extractedText ? 'bg-green-100' : 'bg-primary/10'}`}>
+                    <Upload className={`h-5 w-5 ${extractedText ? 'text-green-600' : 'text-primary'}`} />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">1. Upload Your Resume</h3>
+                    <p className="text-gray-600 text-sm">PDF, Word, or image formats</p>
+                  </div>
+                </li>
+                <li className="flex">
+                  <div className={`p-2 rounded-full mr-3 ${jobDescription.length >= 50 ? 'bg-green-100' : 'bg-primary/10'}`}>
+                    <FileText className={`h-5 w-5 ${jobDescription.length >= 50 ? 'text-green-600' : 'text-primary'}`} />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">2. Paste Job Description</h3>
+                    <p className="text-gray-600 text-sm">The job you're applying for</p>
+                  </div>
+                </li>
+                <li className="flex">
+                  <div className={`p-2 rounded-full mr-3 ${resumeProcessed ? 'bg-green-100' : 'bg-primary/10'}`}>
+                    <Sparkles className={`h-5 w-5 ${resumeProcessed ? 'text-green-600' : 'text-primary'}`} />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">3. Get AI-Optimized Resume</h3>
+                    <p className="text-gray-600 text-sm">Tailored for the job</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
 
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-              <h3 className="font-medium text-blue-800 mb-2">Quick Tip</h3>
-              <p className="text-blue-700 text-sm">
-                After updating your resume, remember to also update your LinkedIn profile to maintain a consistent professional image.
-              </p>
+            {/* Tips Box */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
+                <h3 className="font-medium text-amber-800 mb-2">💡 Pro Tip</h3>
+                <p className="text-amber-700 text-sm">
+                  For best results, paste the complete job description including requirements, responsibilities, and qualifications. Our AI uses this to match your experience with what employers are looking for.
+                </p>
+              </div>
+            </div>
+
+            {/* Stats/Credits (placeholder for future) */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="font-bold mb-3">Your Account</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Resumes Created</span>
+                  <span className="font-medium">0</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Credits Remaining</span>
+                  <span className="font-medium text-primary">Free Trial</span>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full mt-4"
+                onClick={() => navigate('/pricing')}
+              >
+                Upgrade Plan
+              </Button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-8 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-bold"
+            >
+              ✕
+            </button>
+            
+            <h2 className="text-3xl font-bold mb-2 text-center">Choose Your Plan</h2>
+            <p className="text-gray-600 mb-8 text-center">
+              Select a plan to download your customized resume
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Starter Plan */}
+              <div className="border-2 border-gray-200 rounded-lg p-6 hover:border-primary transition-colors">
+                <h3 className="text-xl font-bold mb-2">Starter</h3>
+                <div className="mb-4">
+                  <span className="text-4xl font-bold">$9</span>
+                  <span className="text-gray-500"> one-time</span>
+                </div>
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>3 Custom Resumes</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>ATS Optimization</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Job Matching</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Email Support</span>
+                  </li>
+                </ul>
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => handleSelectPlan('starter-plan')}
+                  disabled={checkoutLoading !== null}
+                >
+                  {checkoutLoading === 'starter-plan' ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
+                  ) : (
+                    'Select Plan'
+                  )}
+                </Button>
+              </div>
+
+              {/* Professional Plan - Most Popular */}
+              <div className="border-2 border-primary rounded-lg p-6 relative shadow-lg">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-1 rounded-full text-sm font-medium">
+                  Most Popular
+                </div>
+                <h3 className="text-xl font-bold mb-2">Professional</h3>
+                <div className="mb-4">
+                  <span className="text-4xl font-bold">$19</span>
+                  <span className="text-gray-500"> one-time</span>
+                </div>
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>10 Custom Resumes</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Advanced ATS Optimization</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>AI-Powered Job Matching</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Priority Support</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>LinkedIn Optimization Tips</span>
+                  </li>
+                </ul>
+                <Button
+                  className="w-full"
+                  onClick={() => handleSelectPlan('professional-plan')}
+                  disabled={checkoutLoading !== null}
+                >
+                  {checkoutLoading === 'professional-plan' ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
+                  ) : (
+                    'Select Plan'
+                  )}
+                </Button>
+              </div>
+
+              {/* Lifetime Plan */}
+              <div className="border-2 border-gray-200 rounded-lg p-6 hover:border-primary transition-colors">
+                <h3 className="text-xl font-bold mb-2">Lifetime</h3>
+                <div className="mb-4">
+                  <span className="text-4xl font-bold">$49</span>
+                  <span className="text-gray-500"> one-time</span>
+                </div>
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="font-bold">Unlimited Custom Resumes</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>All Professional Features</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Lifetime Updates</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>VIP Support</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Early Access to New Features</span>
+                  </li>
+                </ul>
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => handleSelectPlan('lifetime-plan')}
+                  disabled={checkoutLoading !== null}
+                >
+                  {checkoutLoading === 'lifetime-plan' ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
+                  ) : (
+                    'Select Plan'
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <p className="text-center text-gray-500 text-sm mt-6">
+              Secure payment powered by Stripe. Cancel anytime.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

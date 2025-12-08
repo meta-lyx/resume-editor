@@ -1,0 +1,14 @@
+# Wrangler dev secrets (for local development)
+# Copy this to .dev.vars and fill in your actual values
+# DO NOT commit .dev.vars to git!
+
+RESEND_API_KEY=
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=
+BETTER_AUTH_SECRET=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+

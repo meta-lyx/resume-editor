@@ -23,13 +23,13 @@ export function HomePage() {
                 {user ? (
                   <Link to="/dashboard">
                     <Button size="lg">
-                      Start Optimizing <ArrowRight className="ml-2 h-4 w-4" />
+                      Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
                 ) : (
-                  <Link to="/login">
+                  <Link to="/">
                     <Button size="lg">
-                      Try for Free <ArrowRight className="ml-2 h-4 w-4" />
+                      Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
                 )}
@@ -233,13 +233,13 @@ export function HomePage() {
           {user ? (
             <Link to="/dashboard">
               <Button size="lg" className="px-8">
-                Start Optimizing <ArrowRight className="ml-2 h-4 w-4" />
+                Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           ) : (
-            <Link to="/login">
+            <Link to="/">
               <Button size="lg" className="px-8">
-                Try for Free <ArrowRight className="ml-2 h-4 w-4" />
+                Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           )}

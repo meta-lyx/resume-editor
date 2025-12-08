@@ -1,48 +1,18 @@
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/api-client';
 
-export async function getUserProfile(userId: string) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('user_id', userId)
-    .maybeSingle();
+export async function getUserProfile() {
+  const { data, error } = await apiClient.getCurrentUser();
   
   if (error) {
-    throw error;
+    throw new Error(error.message);
   }
   
-  return data;
+  return data?.user;
 }
 
-export async function createUserProfile(userId: string, email: string, fullName?: string) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .insert({
-      user_id: userId,
-      email,
-      full_name: fullName || null,
-    })
-    .select()
-    .single();
-  
-  if (error) {
-    throw error;
-  }
-  
-  return data;
-}
-
-export async function updateUserProfile(userId: string, updates: { full_name?: string; email?: string }) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(updates)
-    .eq('user_id', userId)
-    .select()
-    .single();
-  
-  if (error) {
-    throw error;
-  }
-  
-  return data;
+export async function updateUserProfile(updates: { name?: string; email?: string }) {
+  // Profile updates would go through the user update endpoint
+  // This is a placeholder - you may need to implement a dedicated profile update endpoint
+  console.warn('Profile update not fully implemented yet', updates);
+  throw new Error('Profile update endpoint not implemented');
 }

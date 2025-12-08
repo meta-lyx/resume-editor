@@ -83,12 +83,10 @@ export function OptimizeResumePage() {
     try {
       const result = await optimizeResume({
         resumeId: id,
-        resumeContent: originalContent,
-        jobDescription: selectedType === 'job-match' ? jobDescription : undefined,
-        optimizationType: selectedType,
+        jobDescription: selectedType === 'job-match' ? jobDescription : '',
       });
 
-      setOptimizedContent(result.optimizedContent);
+      setOptimizedContent(result.optimized_content || '');
       toast.success('Resume optimization successful');
     } catch (error: any) {
       toast.error(error.message || 'Resume optimization failed');

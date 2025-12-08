@@ -1,0 +1,44 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "ai-resume-editor"
+main = "dist/worker.js"
+compatibility_date = "2024-12-18"
+compatibility_flags = ["nodejs_compat"]
+
+# Account ID
+account_id = "eabf66526f1c959eb2b946649d990719"
+
+# Workers configuration
+workers_dev = true
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-resume-editor-db"
+database_id = "afb1de3b-3cb7-48b6-a54b-662ac35f0a80"
+
+# R2 Storage binding
+[[r2_buckets]]
+binding = "RESUME_BUCKET"
+bucket_name = "ai-resume-bucket"
+
+# Environment variables (non-sensitive)
+[vars]
+NODE_ENV = "production"
+APP_URL = "https://ai-resume-editor.eabf66526f1c959eb2b946649d990719.workers.dev"
+
+# Development configuration
+[dev]
+port = 8787
+local_protocol = "http"
+
+# Secrets (set via: wrangler secret put <NAME>)
+# RESEND_API_KEY
+# OPENAI_API_KEY
+# ANTHROPIC_API_KEY
+# STRIPE_SECRET_KEY
+# STRIPE_PUBLISHABLE_KEY
+# STRIPE_WEBHOOK_SECRET
+# BETTER_AUTH_SECRET
+# R2_ACCESS_KEY_ID
+# R2_SECRET_ACCESS_KEY
+
