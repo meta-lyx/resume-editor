@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
+import { ResumePreview } from '@/components/ui/resume-preview';
 import { Plus, Upload, FileText, AlertCircle, Check, Sparkles, ArrowRight, CreditCard, Loader2 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
@@ -224,7 +225,7 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                     </div>
                   </div>
 
-                  {/* Side-by-side comparison */}
+                  {/* Side-by-side comparison with PDF-like previews */}
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-bold">Resume Comparison</h3>
@@ -234,26 +235,23 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Original Resume */}
-                      <div className="border border-gray-300 rounded-lg overflow-hidden">
-                        <div className="bg-gray-100 px-4 py-2 border-b border-gray-300">
-                          <h4 className="font-semibold text-gray-700 text-sm">📄 Original Resume</h4>
-                        </div>
-                        <div className="bg-white p-4 h-80 overflow-y-auto">
-                          <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono">{extractedText}</pre>
-                        </div>
-                      </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Original Resume Preview */}
+                      <ResumePreview
+                        content={extractedText}
+                        title="📄 Original Resume"
+                        type="original"
+                        isUnlocked={true}
+                      />
                       
-                      {/* Customized Resume */}
-                      <div className="border border-green-300 rounded-lg overflow-hidden">
-                        <div className="bg-green-50 px-4 py-2 border-b border-green-300">
-                          <h4 className="font-semibold text-green-700 text-sm">✨ AI-Optimized Resume</h4>
-                        </div>
-                        <div className="bg-green-50/30 p-4 h-80 overflow-y-auto">
-                          <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">{customizedResume}</pre>
-                        </div>
-                      </div>
+                      {/* Optimized Resume Preview - Locked until payment */}
+                      <ResumePreview
+                        content={customizedResume}
+                        title="✨ AI-Optimized Resume"
+                        type="optimized"
+                        isUnlocked={paymentSuccess}
+                        onUnlock={handleDownloadResume}
+                      />
                     </div>
                   </div>
 
