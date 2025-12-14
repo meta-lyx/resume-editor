@@ -4,9 +4,6 @@ compatibility_date = "2024-12-18"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "resume-rewriter/dist"
 
-# Account ID
-account_id = "eabf66526f1c959eb2b946649d990719"
-
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
