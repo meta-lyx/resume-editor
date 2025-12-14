@@ -123,7 +123,13 @@ export function ResumePreview({
                       Purchase a plan to download your AI-optimized resume
                     </p>
                     <Button 
-                      onClick={onUnlock}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (onUnlock) {
+                          onUnlock();
+                        }
+                      }}
                       size="sm"
                       className="pointer-events-auto"
                     >

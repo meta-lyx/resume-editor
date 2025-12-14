@@ -52,24 +52,50 @@ export function DashboardPage() {
     }
   };
 
+  // Function to load persisted data
+  const loadPersistedData = () => {
+    try {
+      const savedData = loadResumeData();
+      if (savedData.extractedText || savedData.customizedResume) {
+        console.log('Loading persisted resume data:', {
+          hasExtractedText: !!savedData.extractedText,
+          hasCustomizedResume: !!savedData.customizedResume,
+          isProcessed: savedData.resumeProcessed,
+        });
+        setExtractedText(savedData.extractedText);
+        setResumeTitle(savedData.resumeTitle);
+        setJobDescription(savedData.jobDescription);
+        setCustomizedResume(savedData.customizedResume);
+        setResumeProcessed(savedData.resumeProcessed);
+        return true; // Return true if data was loaded
+      }
+      return false;
+    } catch (error) {
+      console.error('Error loading persisted data:', error);
+      return false;
+    }
+  };
+
   // Load persisted data on mount
   useEffect(() => {
-    const savedData = loadResumeData();
-    if (savedData.extractedText) {
-      setExtractedText(savedData.extractedText);
-      setResumeTitle(savedData.resumeTitle);
-      setJobDescription(savedData.jobDescription);
-      setCustomizedResume(savedData.customizedResume);
-      setResumeProcessed(savedData.resumeProcessed);
-    }
+    loadPersistedData();
   }, []);
 
-  // Check subscription status
+  // Check subscription status and reload data when user logs in
   useEffect(() => {
     async function checkSubscription() {
       if (!user) {
         setHasSubscription(false);
+        // When user logs out, data should still be in localStorage
+        // So we don't need to clear it
         return;
+      }
+
+      // When user logs in, try to reload persisted data
+      // This ensures data is available even if page was reloaded
+      const dataLoaded = loadPersistedData();
+      if (dataLoaded) {
+        console.log('Reloaded persisted resume data after login');
       }
 
       try {
@@ -95,6 +121,13 @@ export function DashboardPage() {
       setPurchasedPlan(plan);
       setHasSubscription(true);
       toast.success('Payment successful! Your credits have been added.');
+      
+      // IMPORTANT: Reload persisted data after payment redirect
+      // This ensures the resume data is restored even if the page was reloaded
+      const dataLoaded = loadPersistedData();
+      if (!dataLoaded) {
+        console.warn('No persisted resume data found after payment redirect');
+      }
       
       // Reload subscription status
       if (user) {
@@ -218,28 +251,33 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
   };
 
   const handleDownloadResume = async () => {
-    // If user is not logged in, show login modal
+    // IMPORTANT: Always check authentication first
+    // If user is not logged in, show login modal immediately
     if (!user) {
+      console.log('User not logged in, showing login modal');
       setShowLoginModal(true);
       return;
     }
 
-    // Check if user has subscription/credits
+    // User is logged in, check if they have subscription/credits
     try {
       const { data, error } = await apiClient.getSubscriptionUsage();
       if (error || !data || (!data.hasSubscription || data.remaining <= 0)) {
         // Show payment modal if no subscription or no credits
+        console.log('No subscription or credits, showing payment modal');
         setShowPaymentModal(true);
         return;
       }
+      
+      // User has subscription and credits, proceed with download
+      console.log('User has subscription, downloading resume');
+      downloadResumeFile();
     } catch (error) {
       // On error, show payment modal
+      console.error('Error checking subscription:', error);
       setShowPaymentModal(true);
       return;
     }
-
-    // User has subscription and credits, proceed with download
-    downloadResumeFile();
   };
 
   const downloadResumeFile = () => {
