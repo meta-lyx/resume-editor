@@ -159,20 +159,41 @@ class ApiClient {
     tone?: 'professional' | 'creative' | 'technical';
     focus?: 'skills' | 'experience' | 'achievements' | 'balanced';
   }) {
-    return this.request<{
-      success: boolean;
-      provider: string;
-      result: {
-        customizedResume: string;
-        suggestions: string[];
-        keywordsMatched: string[];
-        atsScore?: number;
-        processingTime: number;
+    // Allow unauthenticated requests for processing
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/ai/process-resume`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ resumeText, jobDescription, options }),
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          error: {
+            message: data.message || 'An error occurred',
+            code: data.code,
+          },
+        };
+      }
+
+      return { data };
+    } catch (error) {
+      return {
+        error: {
+          message: error instanceof Error ? error.message : 'Network error',
+        },
       };
-    }>('/ai/process-resume', {
-      method: 'POST',
-      body: JSON.stringify({ resumeText, jobDescription, options }),
-    });
+    }
   }
 
   // Legacy method for backwards compatibility
@@ -190,11 +211,14 @@ class ApiClient {
     const formData = new FormData();
     formData.append('file', file);
 
+    const headers: HeadersInit = {};
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
     return fetch(`${this.baseUrl}/ai/extract-text`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-      },
+      headers,
       body: formData,
     }).then(async (response) => {
       const data = await response.json();
@@ -253,6 +277,16 @@ class ApiClient {
     return this.request('/subscriptions/cancel', {
       method: 'POST',
     });
+  }
+
+  async getSubscriptionUsage() {
+    return this.request<{
+      hasSubscription: boolean;
+      usageCount: number;
+      monthlyLimit: number;
+      remaining: number;
+      resetDate?: string;
+    }>('/subscriptions/usage');
   }
 }
 

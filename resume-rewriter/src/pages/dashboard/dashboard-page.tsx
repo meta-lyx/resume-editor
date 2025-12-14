@@ -3,11 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { ResumePreview } from '@/components/ui/resume-preview';
-import { Plus, Upload, FileText, AlertCircle, Check, Sparkles, ArrowRight, CreditCard, Loader2 } from 'lucide-react';
+import { LoginModal } from '@/components/auth/login-modal';
+import { AccountInfo } from '@/components/ui/account-info';
+import { Plus, Upload, FileText, AlertCircle, Check, Sparkles, ArrowRight, CreditCard, Loader2, Download } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
-import { uploadResumeFile } from '@/services/resume-service';
+import { extractResumeText } from '@/services/resume-service';
 import { apiClient } from '@/lib/api-client';
+import { saveResumeData, loadResumeData, clearResumeData } from '@/lib/resume-storage';
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -21,9 +24,11 @@ export function DashboardPage() {
   const [resumeProcessed, setResumeProcessed] = useState(false);
   const [customizedResume, setCustomizedResume] = useState<string>('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [purchasedPlan, setPurchasedPlan] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [hasSubscription, setHasSubscription] = useState(false);
 
   // Handle plan selection - directly go to Stripe
   const handleSelectPlan = async (planId: string) => {
@@ -47,6 +52,39 @@ export function DashboardPage() {
     }
   };
 
+  // Load persisted data on mount
+  useEffect(() => {
+    const savedData = loadResumeData();
+    if (savedData.extractedText) {
+      setExtractedText(savedData.extractedText);
+      setResumeTitle(savedData.resumeTitle);
+      setJobDescription(savedData.jobDescription);
+      setCustomizedResume(savedData.customizedResume);
+      setResumeProcessed(savedData.resumeProcessed);
+    }
+  }, []);
+
+  // Check subscription status
+  useEffect(() => {
+    async function checkSubscription() {
+      if (!user) {
+        setHasSubscription(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await apiClient.getSubscriptionUsage();
+        if (!error && data) {
+          setHasSubscription(data.hasSubscription && data.remaining > 0);
+        }
+      } catch (error) {
+        console.error('Failed to check subscription:', error);
+      }
+    }
+
+    checkSubscription();
+  }, [user]);
+
   // Handle payment success redirect from Stripe
   useEffect(() => {
     const payment = searchParams.get('payment');
@@ -55,7 +93,17 @@ export function DashboardPage() {
     if (payment === 'success' && plan) {
       setPaymentSuccess(true);
       setPurchasedPlan(plan);
+      setHasSubscription(true);
       toast.success('Payment successful! Your credits have been added.');
+      
+      // Reload subscription status
+      if (user) {
+        apiClient.getSubscriptionUsage().then(({ data }) => {
+          if (data) {
+            setHasSubscription(data.hasSubscription && data.remaining > 0);
+          }
+        });
+      }
       
       // Clear the URL params after showing success
       setTimeout(() => {
@@ -65,7 +113,7 @@ export function DashboardPage() {
       toast.error('Payment was cancelled.');
       setSearchParams({});
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, user]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -82,16 +130,23 @@ export function DashboardPage() {
 
       const file = acceptedFiles[0];
       setResumeFile(file);
-      setResumeTitle(file.name.replace(/\.[^/.]+$/, ''));
+      const title = file.name.replace(/\.[^/.]+$/, '');
+      setResumeTitle(title);
       setLoading(true);
 
       try {
-        if (!user) {
-          throw new Error('Please login first');
-        }
-
-        const result = await uploadResumeFile(file);
-        setExtractedText(result.extractedText || result.text || '');
+        // Allow unauthenticated users to extract text
+        const result = await extractResumeText(file);
+        const text = result.extractedText || result.text || '';
+        setExtractedText(text);
+        
+        // Persist to localStorage
+        saveResumeData({
+          extractedText: text,
+          resumeTitle: title,
+          resumeFileName: file.name,
+        });
+        
         toast.success('Resume uploaded and text extracted successfully');
       } catch (error: any) {
         toast.error(error.message || 'File upload failed');
@@ -118,10 +173,7 @@ export function DashboardPage() {
 
     setLoading(true);
     try {
-      if (!user) {
-        throw new Error('Please login first');
-      }
-
+      // Allow unauthenticated users to process (they'll need to login to download)
       // Call the AI processing API
       const { data, error } = await apiClient.processResume(extractedText, jobDescription);
       
@@ -149,6 +201,13 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
       
       setCustomizedResume(formattedResume);
       setResumeProcessed(true);
+      
+      // Persist to localStorage
+      saveResumeData({
+        customizedResume: formattedResume,
+        resumeProcessed: true,
+      });
+      
       toast.success(`Resume optimized by ${data.provider}!`);
     } catch (error: any) {
       toast.error(error.message || 'Processing failed');
@@ -158,9 +217,67 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
     }
   };
 
-  const handleDownloadResume = () => {
-    // Show payment modal before download
-    setShowPaymentModal(true);
+  const handleDownloadResume = async () => {
+    // If user is not logged in, show login modal
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    // Check if user has subscription/credits
+    try {
+      const { data, error } = await apiClient.getSubscriptionUsage();
+      if (error || !data || (!data.hasSubscription || data.remaining <= 0)) {
+        // Show payment modal if no subscription or no credits
+        setShowPaymentModal(true);
+        return;
+      }
+    } catch (error) {
+      // On error, show payment modal
+      setShowPaymentModal(true);
+      return;
+    }
+
+    // User has subscription and credits, proceed with download
+    downloadResumeFile();
+  };
+
+  const downloadResumeFile = () => {
+    if (!customizedResume) {
+      toast.error('No resume to download');
+      return;
+    }
+
+    // Create a blob and download
+    const blob = new Blob([customizedResume], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${resumeTitle || 'resume'}_optimized.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success('Resume downloaded successfully!');
+  };
+
+  const handleLoginSuccess = async () => {
+    // After login, check if user has subscription
+    try {
+      const { data, error } = await apiClient.getSubscriptionUsage();
+      if (error || !data || (!data.hasSubscription || data.remaining <= 0)) {
+        // Show payment modal if no subscription
+        setShowPaymentModal(true);
+      } else {
+        // User has subscription, allow download
+        setHasSubscription(true);
+        downloadResumeFile();
+      }
+    } catch (error) {
+      // On error, show payment modal
+      setShowPaymentModal(true);
+    }
   };
 
   const handleStartOver = () => {
@@ -170,6 +287,7 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
     setJobDescription('');
     setResumeProcessed(false);
     setCustomizedResume('');
+    clearResumeData();
   };
 
   return (
@@ -244,12 +362,12 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                         isUnlocked={true}
                       />
                       
-                      {/* Optimized Resume Preview - Locked until payment */}
+                      {/* Optimized Resume Preview - Locked until payment/login */}
                       <ResumePreview
                         content={customizedResume}
                         title="✨ AI-Optimized Resume"
                         type="optimized"
-                        isUnlocked={paymentSuccess}
+                        isUnlocked={hasSubscription || paymentSuccess}
                         onUnlock={handleDownloadResume}
                       />
                     </div>
@@ -345,7 +463,10 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
 
                     <textarea
                       value={jobDescription}
-                      onChange={(e) => setJobDescription(e.target.value)}
+                      onChange={(e) => {
+                        setJobDescription(e.target.value);
+                        saveResumeData({ jobDescription: e.target.value });
+                      }}
                       placeholder="Paste the full job description here. Include requirements, responsibilities, and qualifications. The more detail you provide, the better we can tailor your resume."
                       className="w-full p-4 border border-gray-300 rounded-lg h-48 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                     />
@@ -456,27 +577,12 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
               </div>
             </div>
 
-            {/* Stats/Credits (placeholder for future) */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="font-bold mb-3">Your Account</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Resumes Created</span>
-                  <span className="font-medium">0</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Credits Remaining</span>
-                  <span className="font-medium text-primary">Free Trial</span>
-                </div>
+            {/* Account Info Component - Fixed position in bottom right (only when logged in) */}
+            {user && (
+              <div className="lg:fixed lg:bottom-6 lg:right-6 lg:w-80 z-10">
+                <AccountInfo />
               </div>
-              <Button
-                variant="outline"
-                className="w-full mt-4"
-                onClick={() => navigate('/pricing')}
-              >
-                Upgrade Plan
-              </Button>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -632,6 +738,13 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
           </div>
         </div>
       )}
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }
