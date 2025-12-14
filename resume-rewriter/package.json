@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm install && vite",
     "build:preview": "pnpm install && tsc -b && vite build",
-    "build": "npm install && tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "lint": "pnpm install && eslint .",
     "preview": "pnpm install && vite preview"
   },
