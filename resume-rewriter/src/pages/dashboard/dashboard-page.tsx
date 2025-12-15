@@ -273,6 +273,20 @@ export function DashboardPage() {
   const canProcess = extractedText && jobDescription.trim().length >= 50;
 
   const handleProcessResume = async () => {
+    // IMPORTANT: Check authentication first before processing
+    // Wait for auth to finish loading
+    if (authLoading) {
+      console.log('Auth still loading, waiting...');
+      return;
+    }
+    
+    // If user is not logged in, show login modal immediately
+    if (!user) {
+      console.log('User not logged in, showing login modal before processing');
+      setShowLoginModal(true);
+      return;
+    }
+
     if (!extractedText || !resumeTitle) {
       toast.error('Please upload resume file first');
       return;
@@ -285,7 +299,7 @@ export function DashboardPage() {
 
     setLoading(true);
     try {
-      // Allow unauthenticated users to process (they'll need to login to download)
+      // User is logged in, proceed with processing
       // Call the AI processing API
       const { data, error } = await apiClient.processResume(extractedText, jobDescription);
       
@@ -410,22 +424,33 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
   };
 
   const handleLoginSuccess = async () => {
+    // Close login modal
+    setShowLoginModal(false);
+    
+    // If user had selected a plan before logging in, proceed to checkout
+    if (purchasedPlan) {
+      // Small delay to ensure modal closes
+      setTimeout(() => {
+        handleSelectPlan(purchasedPlan);
+      }, 100);
+      return;
+    }
+    
+    // If user was trying to process resume, proceed with processing
+    if (extractedText && jobDescription && !customizedResume) {
+      // User just logged in and wants to process resume
+      setTimeout(() => {
+        handleProcessResume();
+      }, 100);
+      return;
+    }
+    
     // After login, check if user has subscription
     try {
       const { data, error } = await apiClient.getSubscriptionUsage();
       if (error || !data || (!data.hasSubscription || data.remaining <= 0)) {
-        // If user had selected a plan before logging in, proceed to checkout
-        if (purchasedPlan) {
-          // Close login modal and proceed with the selected plan
-          setShowLoginModal(false);
-          // Small delay to ensure modal closes
-          setTimeout(() => {
-            handleSelectPlan(purchasedPlan);
-          }, 100);
-        } else {
-          // Show payment modal if no subscription
-          showPaymentModalSafely();
-        }
+        // Show payment modal if no subscription
+        showPaymentModalSafely();
       } else {
         // User has subscription, allow download
         setHasSubscription(true);
