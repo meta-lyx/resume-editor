@@ -279,6 +279,17 @@ class ApiClient {
     });
   }
 
+  async confirmPayment(planId: string, sessionId?: string) {
+    return this.request<{ 
+      success: boolean; 
+      plan: { id: string; name: string; monthlyLimit: number };
+      message: string;
+    }>('/subscriptions/confirm-payment', {
+      method: 'POST',
+      body: JSON.stringify({ planId, sessionId }),
+    });
+  }
+
   async getSubscriptionUsage() {
     return this.request<{
       hasSubscription: boolean;

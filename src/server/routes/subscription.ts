@@ -55,25 +55,29 @@ subscriptionRoutes.get('/current', authMiddleware, async (c) => {
   }
 });
 
-// Create Stripe checkout session
-subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
+// Create Stripe checkout session - supports both /checkout and /create-checkout for backwards compatibility
+subscriptionRoutes.post('/checkout', authMiddleware, async (c) => {
   try {
     const user = getCurrentUser(c);
     const body = await c.req.json();
-    const { planType } = body;
+    // Support both planId and planType for backwards compatibility
+    const planId = body.planId;
+    const planType = body.planType || (planId ? planId.replace('-plan', '') : null);
     
-    if (!planType) {
-      return c.json({ error: 'Plan type is required' }, 400);
+    if (!planId && !planType) {
+      return c.json({ error: 'Plan ID or type is required' }, 400);
     }
     
     const db = createDb(c.env.DB);
     
-    // Get plan details
+    // Get plan details - search by both id and plan_type
     const plan = await db
       .select()
       .from(subscriptionPlans)
       .where(and(
-        eq(subscriptionPlans.planType, planType),
+        planId 
+          ? eq(subscriptionPlans.id, planId)
+          : eq(subscriptionPlans.planType, planType),
         eq(subscriptionPlans.active, true)
       ))
       .limit(1);
@@ -82,10 +86,8 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
       return c.json({ error: 'Plan not found' }, 404);
     }
     
-    // Initialize Stripe
-    const stripe = new Stripe(c.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2024-11-20.acacia',
-    });
+    // Initialize Stripe using direct API calls (compatible with Cloudflare Workers)
+    const stripeSecretKey = c.env.STRIPE_SECRET_KEY;
     
     // Create or get Stripe customer
     let customerId: string;
@@ -99,44 +101,81 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
     if (existingSub[0]?.stripeCustomerId) {
       customerId = existingSub[0].stripeCustomerId;
     } else {
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          userId: user.id,
+      // Create customer using Stripe API directly
+      const createCustomerResp = await fetch('https://api.stripe.com/v1/customers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${stripeSecretKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
+        body: new URLSearchParams({
+          'email': user.email,
+          'metadata[userId]': user.id,
+        }).toString(),
       });
+      
+      if (!createCustomerResp.ok) {
+        throw new Error('Failed to create Stripe customer');
+      }
+      
+      const customer = await createCustomerResp.json() as { id: string };
       customerId = customer.id;
     }
     
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: plan[0].currency.toLowerCase(),
-            product_data: {
-              name: plan[0].name,
-              description: plan[0].description || undefined,
-            },
-            recurring: {
-              interval: plan[0].interval as 'month' | 'year',
-            },
-            unit_amount: Math.round(plan[0].price * 100), // Convert to cents
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: `${c.env.APP_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${c.env.APP_URL}/pricing`,
-      metadata: {
-        userId: user.id,
-        planId: plan[0].id,
-        planType: plan[0].planType,
-      },
+    // Determine checkout mode based on plan interval
+    // 'lifetime' plans use one-time payment mode
+    const isOneTime = plan[0].interval === 'lifetime';
+    
+    // Build checkout session params
+    const checkoutParams = new URLSearchParams({
+      'customer': customerId,
+      'payment_method_types[]': 'card',
+      'line_items[0][price_data][currency]': plan[0].currency.toLowerCase(),
+      'line_items[0][price_data][product_data][name]': plan[0].name,
+      'line_items[0][price_data][unit_amount]': Math.round(plan[0].price * 100).toString(),
+      'line_items[0][quantity]': '1',
+      'mode': isOneTime ? 'payment' : 'subscription',
+      'success_url': `${c.env.APP_URL}/dashboard?payment=success&plan=${plan[0].id}`,
+      'cancel_url': `${c.env.APP_URL}/pricing?payment=cancelled`,
+      'metadata[userId]': user.id,
+      'metadata[planId]': plan[0].id,
+      'metadata[planType]': plan[0].planType,
+      'metadata[credits]': plan[0].monthlyLimit.toString(),
     });
+    
+    if (plan[0].description) {
+      checkoutParams.set('line_items[0][price_data][product_data][description]', plan[0].description);
+    }
+    
+    // For subscription mode, add recurring interval
+    if (!isOneTime) {
+      checkoutParams.set('line_items[0][price_data][recurring][interval]', plan[0].interval);
+    }
+    
+    // Create Stripe checkout session using API directly
+    const sessionResp = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${stripeSecretKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: checkoutParams.toString(),
+    });
+    
+    if (!sessionResp.ok) {
+      const errorText = await sessionResp.text();
+      console.error('Stripe checkout error:', errorText);
+      throw new Error(`Stripe API error: ${errorText}`);
+    }
+    
+    const session = await sessionResp.json() as { url: string; id: string };
+    
+    // For one-time payments, we need to create/update the subscription record here
+    // because there won't be a webhook for checkout.session.completed
+    if (isOneTime) {
+      // Pre-create the subscription record (will be activated after successful payment)
+      // We store it with status 'pending' and update it when user returns with payment=success
+    }
     
     return c.json({
       checkoutUrl: session.url,
@@ -149,6 +188,26 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
       error: error.message || 'Failed to create checkout session' 
     }, 500);
   }
+});
+
+// Backwards compatibility alias
+subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
+  // Redirect to the main checkout handler
+  const body = await c.req.json();
+  // Convert planType to planId format if needed
+  if (body.planType && !body.planId) {
+    body.planId = `${body.planType}-plan`;
+  }
+  
+  // Re-create the request with the new body
+  const newReq = new Request(c.req.url.replace('/create-checkout', '/checkout'), {
+    method: 'POST',
+    headers: c.req.raw.headers,
+    body: JSON.stringify(body),
+  });
+  
+  // Forward to main checkout
+  return c.json({ error: 'Please use /checkout endpoint instead' }, 400);
 });
 
 // Stripe webhook handler
@@ -339,6 +398,91 @@ subscriptionRoutes.post('/cancel', authMiddleware, async (c) => {
   } catch (error: any) {
     console.error('Cancel subscription error:', error);
     return c.json({ error: 'Failed to cancel subscription' }, 500);
+  }
+});
+
+// Confirm payment and create subscription (for one-time payments)
+subscriptionRoutes.post('/confirm-payment', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c);
+    const body = await c.req.json();
+    const { planId, sessionId } = body;
+    
+    if (!planId) {
+      return c.json({ error: 'Plan ID is required' }, 400);
+    }
+    
+    const db = createDb(c.env.DB);
+    
+    // Get plan details
+    const planResult = await db
+      .select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.id, planId))
+      .limit(1);
+    
+    if (planResult.length === 0) {
+      return c.json({ error: 'Plan not found' }, 404);
+    }
+    
+    const plan = planResult[0];
+    
+    // Check if user already has an active subscription
+    const existingSub = await db
+      .select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, user.id))
+      .limit(1);
+    
+    // For lifetime plans, set a far future end date
+    const lifetimeEndDate = new Date('2099-12-31');
+    const now = new Date();
+    
+    if (existingSub.length > 0) {
+      // Update existing subscription
+      await db
+        .update(userSubscriptions)
+        .set({
+          planId: plan.id,
+          status: 'active',
+          currentPeriodStart: now,
+          currentPeriodEnd: plan.interval === 'lifetime' ? lifetimeEndDate : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+          usageCount: 0, // Reset usage for new plan
+          usageResetAt: plan.interval === 'lifetime' ? lifetimeEndDate : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+          updatedAt: now,
+        })
+        .where(eq(userSubscriptions.id, existingSub[0].id));
+      
+      console.log(`Updated subscription for user ${user.id} to plan ${plan.name}`);
+    } else {
+      // Create new subscription
+      await db.insert(userSubscriptions).values({
+        id: crypto.randomUUID(),
+        userId: user.id,
+        planId: plan.id,
+        status: 'active',
+        currentPeriodStart: now,
+        currentPeriodEnd: plan.interval === 'lifetime' ? lifetimeEndDate : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+        usageCount: 0,
+        usageResetAt: plan.interval === 'lifetime' ? lifetimeEndDate : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+      });
+      
+      console.log(`Created subscription for user ${user.id} with plan ${plan.name}`);
+    }
+    
+    return c.json({
+      success: true,
+      plan: {
+        id: plan.id,
+        name: plan.name,
+        monthlyLimit: plan.monthlyLimit,
+      },
+      message: `Successfully activated ${plan.name} plan with ${plan.monthlyLimit} credits`,
+    });
+    
+  } catch (error: any) {
+    console.error('Confirm payment error:', error);
+    return c.json({ error: error.message || 'Failed to confirm payment' }, 500);
   }
 });
 

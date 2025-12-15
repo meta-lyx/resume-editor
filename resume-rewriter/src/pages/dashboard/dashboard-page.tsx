@@ -172,8 +172,6 @@ export function DashboardPage() {
     if (payment === 'success' && plan) {
       setPaymentSuccess(true);
       setPurchasedPlan(plan);
-      setHasSubscription(true);
-      toast.success('Payment successful! Your credits have been added.');
       
       // IMPORTANT: Reload persisted data after payment redirect
       // This ensures the resume data is restored even if the page was reloaded
@@ -191,12 +189,36 @@ export function DashboardPage() {
         console.warn('No persisted resume data found after payment redirect');
       }
       
-      // Reload subscription status and auto-download
-      if (user) {
-        apiClient.getSubscriptionUsage().then(({ data }) => {
+      // Confirm payment and create subscription record, then reload status
+      const confirmAndDownload = async () => {
+        if (!user) {
+          toast.error('Please log in to complete your purchase');
+          return;
+        }
+        
+        try {
+          // First, confirm the payment and create/update subscription in database
+          const { data: confirmData, error: confirmError } = await apiClient.confirmPayment(plan);
+          
+          if (confirmError) {
+            console.error('Failed to confirm payment:', confirmError);
+            // Continue anyway - the webhook may have already processed it
+          } else if (confirmData) {
+            console.log('Payment confirmed:', confirmData.message);
+            toast.success(`${confirmData.plan.name} plan activated! You have ${confirmData.plan.monthlyLimit} resume credits.`);
+          }
+          
+          // Now reload subscription status
+          const { data } = await apiClient.getSubscriptionUsage();
           if (data) {
             const hasCredits = data.hasSubscription && data.remaining > 0;
             setHasSubscription(hasCredits);
+            
+            console.log('Subscription status after payment:', {
+              hasSubscription: data.hasSubscription,
+              remaining: data.remaining,
+              monthlyLimit: data.monthlyLimit,
+            });
             
             // Auto-download resume if user has credits and resume is ready
             if (hasCredits && savedData.customizedResume) {
@@ -214,8 +236,12 @@ export function DashboardPage() {
               toast.success('Resume downloaded successfully!');
             }
           }
-        });
-      }
+        } catch (error) {
+          console.error('Error confirming payment:', error);
+        }
+      };
+      
+      confirmAndDownload();
       
       // Clear the URL params after showing success
       setTimeout(() => {
