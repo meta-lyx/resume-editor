@@ -536,7 +536,13 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                   {/* Action buttons */}
                   <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 border-t border-gray-200">
                     <Button
-                      onClick={handleDownloadResume}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Button clicked!');
+                        handleDownloadResume();
+                      }}
+                      type="button"
                       size="lg"
                       className="px-8"
                     >
