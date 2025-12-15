@@ -32,6 +32,10 @@ export function DashboardPage() {
 
   // Wrapper to ensure payment modal only shows for logged-in users
   const showPaymentModalSafely = () => {
+    console.log('=== showPaymentModalSafely called ===');
+    console.log('User state:', user);
+    console.log('Auth loading:', authLoading);
+    
     // Wait for auth to finish loading
     if (authLoading) {
       console.log('Auth still loading, cannot show payment modal yet');
@@ -44,6 +48,7 @@ export function DashboardPage() {
       setShowLoginModal(true);
       return;
     }
+    console.log('User is logged in, showing payment modal');
     setShowPaymentModal(true);
   };
 
@@ -325,6 +330,10 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
   };
 
   const handleDownloadResume = async () => {
+    console.log('=== handleDownloadResume called ===');
+    console.log('User state:', user);
+    console.log('Auth loading:', authLoading);
+    
     // IMPORTANT: Always check authentication first
     // Wait for auth to finish loading before checking
     if (authLoading) {
@@ -338,6 +347,8 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
       setShowLoginModal(true);
       return;
     }
+    
+    console.log('User is logged in, proceeding with download check');
 
     // If user just completed payment (paymentSuccess is true), skip subscription check and download directly
     if (paymentSuccess && hasSubscription) {
