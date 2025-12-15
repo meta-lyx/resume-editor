@@ -286,8 +286,6 @@ export function DashboardPage() {
     
     // If user is not logged in, show login modal immediately
     if (!user) {
-      console.log('User not logged in, showing login modal before processing');
-      alert('User not logged in - showing login modal');
       setShowLoginModal(true);
       return;
     }
@@ -568,24 +566,7 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                   {/* Action buttons */}
                   <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 border-t border-gray-200">
                     <Button
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        alert('Button mouse down - this should fire!');
-                        console.log('Button mouse down!');
-                      }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        alert('Button clicked - handler fired!');
-                        console.log('Button clicked!');
-                        handleDownloadResume();
-                      }}
-                      onMouseUp={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Button mouse up!');
-                      }}
+                      onClick={handleDownloadResume}
                       type="button"
                       size="lg"
                       className="px-8"
@@ -709,14 +690,7 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                   {/* Action Button */}
                   <div className="flex justify-center">
                     <Button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Customize My Resume button clicked!');
-                        alert('Button clicked - calling handleProcessResume');
-                        handleProcessResume();
-                      }}
-                      type="button"
+                      onClick={handleProcessResume}
                       disabled={!canProcess || loading}
                       size="lg"
                       className="px-12 py-6 text-lg"
