@@ -30,12 +30,38 @@ export function DashboardPage() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [hasSubscription, setHasSubscription] = useState(false);
 
+  // Wrapper to ensure payment modal only shows for logged-in users
+  const showPaymentModalSafely = () => {
+    if (!user) {
+      // If user is not logged in, show login modal instead
+      console.log('User not logged in, showing login modal instead of payment modal');
+      setShowLoginModal(true);
+      return;
+    }
+    setShowPaymentModal(true);
+  };
+
   // Handle plan selection - directly go to Stripe
   const handleSelectPlan = async (planId: string) => {
+    // IMPORTANT: Check authentication first before proceeding to checkout
+    if (!user) {
+      console.log('User not logged in, showing login modal before checkout');
+      setShowLoginModal(true);
+      // Store the selected plan so we can proceed after login
+      setPurchasedPlan(planId);
+      return;
+    }
+
     setCheckoutLoading(planId);
     try {
       const { data, error } = await apiClient.createCheckoutSession(planId);
       if (error) {
+        // If error is due to authentication, show login modal
+        if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
+          setShowLoginModal(true);
+          setPurchasedPlan(planId);
+          return;
+        }
         toast.error(error.message || 'Failed to create checkout session');
         return;
       }
@@ -46,6 +72,12 @@ export function DashboardPage() {
         toast.error('No checkout URL returned');
       }
     } catch (err: any) {
+      // If error is due to authentication, show login modal
+      if (err.message?.includes('Unauthorized') || err.message?.includes('401')) {
+        setShowLoginModal(true);
+        setPurchasedPlan(planId);
+        return;
+      }
       toast.error(err.message || 'Failed to start checkout');
     } finally {
       setCheckoutLoading(null);
@@ -298,7 +330,7 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
       if (error || !data || (!data.hasSubscription || data.remaining <= 0)) {
         // Show payment modal if no subscription or no credits
         console.log('No subscription or credits, showing payment modal');
-        setShowPaymentModal(true);
+        showPaymentModalSafely();
         return;
       }
       
@@ -308,7 +340,7 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
     } catch (error) {
       // On error, show payment modal
       console.error('Error checking subscription:', error);
-      setShowPaymentModal(true);
+      showPaymentModalSafely();
       return;
     }
   };
@@ -349,8 +381,18 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
     try {
       const { data, error } = await apiClient.getSubscriptionUsage();
       if (error || !data || (!data.hasSubscription || data.remaining <= 0)) {
-        // Show payment modal if no subscription
-        setShowPaymentModal(true);
+        // If user had selected a plan before logging in, proceed to checkout
+        if (purchasedPlan) {
+          // Close login modal and proceed with the selected plan
+          setShowLoginModal(false);
+          // Small delay to ensure modal closes
+          setTimeout(() => {
+            handleSelectPlan(purchasedPlan);
+          }, 100);
+        } else {
+          // Show payment modal if no subscription
+          showPaymentModalSafely();
+        }
       } else {
         // User has subscription, allow download
         setHasSubscription(true);
@@ -361,7 +403,7 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
       }
     } catch (error) {
       // On error, show payment modal
-      setShowPaymentModal(true);
+      showPaymentModalSafely();
     }
   };
 
@@ -672,8 +714,8 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
         </div>
       </div>
 
-      {/* Payment Modal */}
-      {showPaymentModal && (
+      {/* Payment Modal - Only show if user is logged in */}
+      {showPaymentModal && user && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-8 relative max-h-[90vh] overflow-y-auto">
             <button
