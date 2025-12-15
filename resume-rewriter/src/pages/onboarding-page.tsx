@@ -1,16 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { LoginModal } from '@/components/auth/login-modal';
 import { Upload, FileText, Sparkles, ArrowRight } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '@/contexts/auth-context';
 
 export function OnboardingPage() {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState<string>('');
   const [extractedText, setExtractedText] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -61,7 +65,19 @@ export function OnboardingPage() {
     sessionStorage.setItem('onboarding_job_description', jobDescription);
     sessionStorage.setItem('onboarding_resume_text', extractedText);
 
-    // Navigate to payment page
+    // If user is not logged in, show login modal first
+    if (!user && !authLoading) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    // Navigate to payment page (user is logged in)
+    navigate('/pricing?onboarding=true');
+  };
+
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false);
+    // After login, navigate to pricing page
     navigate('/pricing?onboarding=true');
   };
 
@@ -182,6 +198,13 @@ export function OnboardingPage() {
               </p>
             )}
           </div>
+
+          {/* Login Modal */}
+          <LoginModal
+            isOpen={showLoginModal}
+            onClose={() => setShowLoginModal(false)}
+            onSuccess={handleLoginSuccess}
+          />
 
           {/* Trust Indicators */}
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
