@@ -13,7 +13,7 @@ import { apiClient } from '@/lib/api-client';
 import { saveResumeData, loadResumeData, clearResumeData } from '@/lib/resume-storage';
 
 export function DashboardPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -32,6 +32,12 @@ export function DashboardPage() {
 
   // Wrapper to ensure payment modal only shows for logged-in users
   const showPaymentModalSafely = () => {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      console.log('Auth still loading, cannot show payment modal yet');
+      return;
+    }
+    
     if (!user) {
       // If user is not logged in, show login modal instead
       console.log('User not logged in, showing login modal instead of payment modal');
@@ -43,6 +49,12 @@ export function DashboardPage() {
 
   // Handle plan selection - directly go to Stripe
   const handleSelectPlan = async (planId: string) => {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      console.log('Auth still loading, cannot proceed with checkout');
+      return;
+    }
+    
     // IMPORTANT: Check authentication first before proceeding to checkout
     if (!user) {
       console.log('User not logged in, showing login modal before checkout');
@@ -56,13 +68,17 @@ export function DashboardPage() {
     try {
       const { data, error } = await apiClient.createCheckoutSession(planId);
       if (error) {
+        console.log('Checkout error:', error);
         // If error is due to authentication, show login modal
-        if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
+        if (error.message?.includes('Unauthorized') || error.message?.includes('401') || error.code === '401') {
+          console.log('Authentication error detected, showing login modal');
           setShowLoginModal(true);
           setPurchasedPlan(planId);
+          setCheckoutLoading(null);
           return;
         }
         toast.error(error.message || 'Failed to create checkout session');
+        setCheckoutLoading(null);
         return;
       }
       if (data?.checkoutUrl) {
@@ -310,6 +326,12 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
 
   const handleDownloadResume = async () => {
     // IMPORTANT: Always check authentication first
+    // Wait for auth to finish loading before checking
+    if (authLoading) {
+      console.log('Auth still loading, waiting...');
+      return;
+    }
+    
     // If user is not logged in, show login modal immediately
     if (!user) {
       console.log('User not logged in, showing login modal');
