@@ -27,21 +27,28 @@ jobs:
         with:
           version: 8
       
-      - name: Install dependencies
+      - name: Install dependencies (root)
         run: pnpm install
       
-      - name: Run type check
-        run: pnpm run typecheck
+      - name: Install dependencies (resume-rewriter)
+        working-directory: ./resume-rewriter
+        run: pnpm install
       
-      - name: Build project
+      - name: Build React app
+        working-directory: ./resume-rewriter
         run: pnpm run build
       
-      - name: Deploy to Cloudflare Workers
+      - name: Copy functions to public
+        run: |
+          mkdir -p resume-rewriter/dist/functions
+          cp -r functions resume-rewriter/dist/functions
+      
+      - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
+          command: pages deploy resume-rewriter/dist --project-name=ai-resume-editor
           secrets: |
             RESEND_API_KEY
             OPENAI_API_KEY
