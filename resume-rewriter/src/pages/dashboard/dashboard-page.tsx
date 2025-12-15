@@ -273,6 +273,10 @@ export function DashboardPage() {
   const canProcess = extractedText && jobDescription.trim().length >= 50;
 
   const handleProcessResume = async () => {
+    console.log('=== handleProcessResume called ===');
+    console.log('User state:', user);
+    console.log('Auth loading:', authLoading);
+    
     // IMPORTANT: Check authentication first before processing
     // Wait for auth to finish loading
     if (authLoading) {
@@ -283,9 +287,12 @@ export function DashboardPage() {
     // If user is not logged in, show login modal immediately
     if (!user) {
       console.log('User not logged in, showing login modal before processing');
+      alert('User not logged in - showing login modal');
       setShowLoginModal(true);
       return;
     }
+    
+    console.log('User is logged in, proceeding with processing');
 
     if (!extractedText || !resumeTitle) {
       toast.error('Please upload resume file first');
@@ -702,7 +709,14 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                   {/* Action Button */}
                   <div className="flex justify-center">
                     <Button
-                      onClick={handleProcessResume}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Customize My Resume button clicked!');
+                        alert('Button clicked - calling handleProcessResume');
+                        handleProcessResume();
+                      }}
+                      type="button"
                       disabled={!canProcess || loading}
                       size="lg"
                       className="px-12 py-6 text-lg"
