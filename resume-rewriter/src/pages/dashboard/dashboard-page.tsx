@@ -536,11 +536,23 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                   {/* Action buttons */}
                   <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 border-t border-gray-200">
                     <Button
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert('Button mouse down - this should fire!');
+                        console.log('Button mouse down!');
+                      }}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        alert('Button clicked - handler fired!');
                         console.log('Button clicked!');
                         handleDownloadResume();
+                      }}
+                      onMouseUp={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Button mouse up!');
                       }}
                       type="button"
                       size="lg"

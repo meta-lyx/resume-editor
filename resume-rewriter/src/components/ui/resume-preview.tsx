@@ -123,13 +123,21 @@ export function ResumePreview({
                       Purchase a plan to download your AI-optimized resume
                     </p>
                     <Button 
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Unlock Now button mouse down');
+                      }}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        console.log('Unlock Now button clicked');
+                        alert('Unlock Now clicked - calling onUnlock');
                         if (onUnlock) {
                           onUnlock();
                         }
                       }}
+                      type="button"
                       size="sm"
                       className="pointer-events-auto"
                     >
