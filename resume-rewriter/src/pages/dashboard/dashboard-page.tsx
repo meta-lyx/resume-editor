@@ -124,16 +124,42 @@ export function DashboardPage() {
       
       // IMPORTANT: Reload persisted data after payment redirect
       // This ensures the resume data is restored even if the page was reloaded
-      const dataLoaded = loadPersistedData();
-      if (!dataLoaded) {
+      const savedData = loadResumeData();
+      const dataLoaded = !!(savedData.extractedText || savedData.customizedResume);
+      
+      if (dataLoaded) {
+        // Update state with loaded data
+        setExtractedText(savedData.extractedText);
+        setResumeTitle(savedData.resumeTitle);
+        setJobDescription(savedData.jobDescription);
+        setCustomizedResume(savedData.customizedResume);
+        setResumeProcessed(savedData.resumeProcessed);
+      } else {
         console.warn('No persisted resume data found after payment redirect');
       }
       
-      // Reload subscription status
+      // Reload subscription status and auto-download
       if (user) {
         apiClient.getSubscriptionUsage().then(({ data }) => {
           if (data) {
-            setHasSubscription(data.hasSubscription && data.remaining > 0);
+            const hasCredits = data.hasSubscription && data.remaining > 0;
+            setHasSubscription(hasCredits);
+            
+            // Auto-download resume if user has credits and resume is ready
+            if (hasCredits && savedData.customizedResume) {
+              // Use the loaded data directly for download
+              const blob = new Blob([savedData.customizedResume], { type: 'text/plain' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${savedData.resumeTitle || 'resume'}_optimized.txt`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              
+              toast.success('Resume downloaded successfully!');
+            }
           }
         });
       }
@@ -141,7 +167,7 @@ export function DashboardPage() {
       // Clear the URL params after showing success
       setTimeout(() => {
         setSearchParams({});
-      }, 1000);
+      }, 2000);
     } else if (payment === 'cancelled') {
       toast.error('Payment was cancelled.');
       setSearchParams({});
@@ -259,6 +285,13 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
       return;
     }
 
+    // If user just completed payment (paymentSuccess is true), skip subscription check and download directly
+    if (paymentSuccess && hasSubscription) {
+      console.log('User just completed payment, downloading resume directly');
+      downloadResumeFile();
+      return;
+    }
+
     // User is logged in, check if they have subscription/credits
     try {
       const { data, error } = await apiClient.getSubscriptionUsage();
@@ -281,17 +314,28 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
   };
 
   const downloadResumeFile = () => {
-    if (!customizedResume) {
+    // Try to get resume from state first, fallback to localStorage
+    let resumeContent = customizedResume;
+    let resumeTitleToUse = resumeTitle;
+    
+    if (!resumeContent) {
+      // Fallback to localStorage if state is not updated yet
+      const savedData = loadResumeData();
+      resumeContent = savedData.customizedResume;
+      resumeTitleToUse = savedData.resumeTitle;
+    }
+    
+    if (!resumeContent) {
       toast.error('No resume to download');
       return;
     }
 
     // Create a blob and download
-    const blob = new Blob([customizedResume], { type: 'text/plain' });
+    const blob = new Blob([resumeContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${resumeTitle || 'resume'}_optimized.txt`;
+    a.download = `${resumeTitleToUse || 'resume'}_optimized.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -310,7 +354,10 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
       } else {
         // User has subscription, allow download
         setHasSubscription(true);
-        downloadResumeFile();
+        // Only download if resume is ready
+        if (customizedResume) {
+          downloadResumeFile();
+        }
       }
     } catch (error) {
       // On error, show payment modal

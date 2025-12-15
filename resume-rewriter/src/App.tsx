@@ -40,12 +40,10 @@ export default function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 
+                {/* Dashboard is accessible without login (users can upload and process, but need login to download) */}
+                <Route path="/dashboard" element={<DashboardPage />} />
+                
                 {/* 受保护路由 */}
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                } />
                 <Route path="/optimize/:id" element={
                   <ProtectedRoute>
                     <OptimizeResumePage />
