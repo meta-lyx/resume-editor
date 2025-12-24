@@ -70,10 +70,12 @@ export async function onRequest(context: any) {
       });
     }
     
-    // Get plan details
+    // Get plan details - match by id OR plan_type (like checkout.ts does)
+    // planId can be "starter-plan" (id) or "starter" (plan_type)
+    const planType = planId.replace('-plan', '');
     const plans = await env.DB.prepare(
-      'SELECT * FROM subscription_plans WHERE id = ? AND active = 1'
-    ).bind(planId).all();
+      'SELECT * FROM subscription_plans WHERE (id = ? OR plan_type = ?) AND active = 1'
+    ).bind(planId, planType).all();
     
     if (plans.results.length === 0) {
       return new Response(JSON.stringify({ error: 'Plan not found' }), {

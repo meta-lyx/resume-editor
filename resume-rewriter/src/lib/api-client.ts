@@ -297,6 +297,7 @@ class ApiClient {
       monthlyLimit: number;
       remaining: number;
       resetDate?: string;
+      planName?: string;
     }>('/subscriptions/usage');
   }
 }

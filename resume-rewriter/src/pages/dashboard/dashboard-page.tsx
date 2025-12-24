@@ -29,6 +29,12 @@ export function DashboardPage() {
   const [purchasedPlan, setPurchasedPlan] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<{
+    planName?: string;
+    remaining: number;
+    monthlyLimit: number;
+    usageCount: number;
+  } | null>(null);
 
   // Wrapper to ensure payment modal only shows for logged-in users
   const showPaymentModalSafely = () => {
@@ -139,6 +145,7 @@ export function DashboardPage() {
     async function checkSubscription() {
       if (!user) {
         setHasSubscription(false);
+        setSubscriptionInfo(null);
         // When user logs out, data should still be in localStorage
         // So we don't need to clear it
         return;
@@ -153,11 +160,28 @@ export function DashboardPage() {
 
       try {
         const { data, error } = await apiClient.getSubscriptionUsage();
+        console.log('Subscription usage check result:', { data, error });
         if (!error && data) {
-          setHasSubscription(data.hasSubscription && data.remaining > 0);
+          const hasCredits = data.hasSubscription && data.remaining > 0;
+          setHasSubscription(hasCredits);
+          setSubscriptionInfo({
+            planName: data.planName,
+            remaining: data.remaining,
+            monthlyLimit: data.monthlyLimit,
+            usageCount: data.usageCount,
+          });
+          console.log('Subscription state updated:', {
+            hasSubscription: data.hasSubscription,
+            hasCredits,
+            remaining: data.remaining,
+            planName: data.planName,
+          });
+        } else {
+          setSubscriptionInfo(null);
         }
       } catch (error) {
         console.error('Failed to check subscription:', error);
+        setSubscriptionInfo(null);
       }
     }
 
@@ -206,18 +230,35 @@ export function DashboardPage() {
           } else if (confirmData) {
             console.log('Payment confirmed:', confirmData.message);
             toast.success(`${confirmData.plan.name} plan activated! You have ${confirmData.plan.monthlyLimit} resume credits.`);
+            
+            // Immediately set subscription state after successful payment confirmation
+            // This ensures the user can download without waiting for the subscription check
+            setHasSubscription(true);
+            setSubscriptionInfo({
+              planName: confirmData.plan.name,
+              remaining: confirmData.plan.monthlyLimit, // User just got credits, so remaining = monthlyLimit
+              monthlyLimit: confirmData.plan.monthlyLimit,
+              usageCount: 0, // Just activated, so usage is 0
+            });
           }
           
-          // Now reload subscription status
+          // Now reload subscription status to get the latest from database
           const { data } = await apiClient.getSubscriptionUsage();
           if (data) {
             const hasCredits = data.hasSubscription && data.remaining > 0;
             setHasSubscription(hasCredits);
+            setSubscriptionInfo({
+              planName: data.planName,
+              remaining: data.remaining,
+              monthlyLimit: data.monthlyLimit,
+              usageCount: data.usageCount,
+            });
             
             console.log('Subscription status after payment:', {
               hasSubscription: data.hasSubscription,
               remaining: data.remaining,
               monthlyLimit: data.monthlyLimit,
+              planName: data.planName,
             });
             
             // Auto-download resume if user has credits and resume is ready
@@ -378,6 +419,9 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
     console.log('=== handleDownloadResume called ===');
     console.log('User state:', user);
     console.log('Auth loading:', authLoading);
+    console.log('Current hasSubscription state:', hasSubscription);
+    console.log('Current subscriptionInfo:', subscriptionInfo);
+    console.log('Payment success state:', paymentSuccess);
     
     // IMPORTANT: Always check authentication first
     // Wait for auth to finish loading before checking
@@ -395,30 +439,69 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
     
     console.log('User is logged in, proceeding with download check');
 
-    // If user just completed payment (paymentSuccess is true), skip subscription check and download directly
-    if (paymentSuccess && hasSubscription) {
-      console.log('User just completed payment, downloading resume directly');
+    // If user just completed payment, allow download immediately without checking subscription
+    // This ensures users can download right after payment without waiting for subscription state to update
+    if (paymentSuccess) {
+      console.log('User just completed payment, downloading resume directly (payment success flag is true)');
       downloadResumeFile();
       return;
     }
 
-    // User is logged in, check if they have subscription/credits
+    // Use already-loaded subscription state first (faster UX)
+    if (hasSubscription && subscriptionInfo && subscriptionInfo.remaining > 0) {
+      console.log('User has subscription from cached state, downloading resume');
+      downloadResumeFile();
+      return;
+    }
+
+    // Double-check with fresh API call to be sure
     try {
       const { data, error } = await apiClient.getSubscriptionUsage();
-      if (error || !data || (!data.hasSubscription || data.remaining <= 0)) {
-        // Show payment modal if no subscription or no credits
-        console.log('No subscription or credits, showing payment modal');
+      console.log('Fresh subscription check result:', { data, error });
+      
+      if (error) {
+        console.error('Error fetching subscription:', error);
+        toast.error('Failed to verify subscription. Please try again.');
+        return;
+      }
+      
+      if (!data) {
+        console.log('No subscription data returned');
         showPaymentModalSafely();
         return;
       }
       
-      // User has subscription and credits, proceed with download
-      console.log('User has subscription, downloading resume');
+      // Update subscription state with latest data
+      setSubscriptionInfo({
+        planName: data.planName,
+        remaining: data.remaining,
+        monthlyLimit: data.monthlyLimit,
+        usageCount: data.usageCount,
+      });
+      
+      if (!data.hasSubscription) {
+        // No subscription at all
+        console.log('User has no subscription, showing payment modal');
+        showPaymentModalSafely();
+        return;
+      }
+      
+      if (data.remaining <= 0) {
+        // Has subscription but ran out of credits
+        console.log('User has subscription but no credits remaining');
+        toast.error(`You've used all ${data.monthlyLimit} resume credits from your ${data.planName || 'current'} plan. Please upgrade to continue.`);
+        showPaymentModalSafely();
+        return;
+      }
+      
+      // User has subscription and credits, update state and proceed with download
+      console.log('User has subscription with credits, downloading resume');
+      setHasSubscription(true);
       downloadResumeFile();
     } catch (error) {
       // On error, show payment modal
       console.error('Error checking subscription:', error);
-      showPaymentModalSafely();
+      toast.error('Failed to verify subscription. Please try again.');
       return;
     }
   };
@@ -479,19 +562,45 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
     // After login, check if user has subscription
     try {
       const { data, error } = await apiClient.getSubscriptionUsage();
-      if (error || !data || (!data.hasSubscription || data.remaining <= 0)) {
-        // Show payment modal if no subscription
+      console.log('Post-login subscription check:', { data, error });
+      
+      if (error) {
+        console.error('Error checking subscription after login:', error);
         showPaymentModalSafely();
-      } else {
-        // User has subscription, allow download
-        setHasSubscription(true);
-        // Only download if resume is ready
-        if (customizedResume) {
-          downloadResumeFile();
+        return;
+      }
+      
+      if (data) {
+        // Update subscription info state
+        setSubscriptionInfo({
+          planName: data.planName,
+          remaining: data.remaining,
+          monthlyLimit: data.monthlyLimit,
+          usageCount: data.usageCount,
+        });
+        
+        if (data.hasSubscription && data.remaining > 0) {
+          // User has subscription with credits
+          setHasSubscription(true);
+          toast.success(`Welcome back! You have ${data.remaining} resume credits remaining.`);
+          // Only download if resume is ready
+          if (customizedResume) {
+            downloadResumeFile();
+          }
+        } else if (data.hasSubscription && data.remaining <= 0) {
+          // User has subscription but no credits
+          toast.error(`You've used all your resume credits. Please upgrade to continue.`);
+          showPaymentModalSafely();
+        } else {
+          // No subscription
+          showPaymentModalSafely();
         }
+      } else {
+        showPaymentModalSafely();
       }
     } catch (error) {
       // On error, show payment modal
+      console.error('Error in post-login subscription check:', error);
       showPaymentModalSafely();
     }
   };
@@ -558,6 +667,41 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                       </div>
                     </div>
                   </div>
+
+                  {/* Subscription Status Banner */}
+                  {user && subscriptionInfo && (
+                    <div className={`rounded-lg p-4 mb-6 flex items-center justify-between ${
+                      hasSubscription 
+                        ? 'bg-blue-50 border border-blue-200' 
+                        : 'bg-amber-50 border border-amber-200'
+                    }`}>
+                      <div className="flex items-center">
+                        <CreditCard className={`h-5 w-5 mr-3 ${hasSubscription ? 'text-blue-600' : 'text-amber-600'}`} />
+                        <div>
+                          <p className={`font-medium ${hasSubscription ? 'text-blue-900' : 'text-amber-900'}`}>
+                            {subscriptionInfo.planName || 'Your Plan'}
+                          </p>
+                          <p className={`text-sm ${hasSubscription ? 'text-blue-700' : 'text-amber-700'}`}>
+                            {hasSubscription 
+                              ? `${subscriptionInfo.remaining} of ${subscriptionInfo.monthlyLimit} resume credits remaining`
+                              : subscriptionInfo.monthlyLimit > 0 
+                                ? `All ${subscriptionInfo.monthlyLimit} credits used - upgrade to continue`
+                                : 'No active plan - purchase to download'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                      {!hasSubscription && (
+                        <Button 
+                          size="sm" 
+                          onClick={showPaymentModalSafely}
+                          className="ml-4"
+                        >
+                          {subscriptionInfo.monthlyLimit > 0 ? 'Upgrade Plan' : 'Get Started'}
+                        </Button>
+                      )}
+                    </div>
+                  )}
 
                   {/* Side-by-side comparison with PDF-like previews */}
                   <div className="mb-6">
