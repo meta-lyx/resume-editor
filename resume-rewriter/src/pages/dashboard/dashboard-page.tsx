@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 import { extractResumeText } from '@/services/resume-service';
 import { apiClient } from '@/lib/api-client';
 import { saveResumeData, loadResumeData, clearResumeData } from '@/lib/resume-storage';
+import { jsPDF } from 'jspdf';
 
 export function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -263,18 +264,18 @@ export function DashboardPage() {
             
             // Auto-download resume if user has credits and resume is ready
             if (hasCredits && savedData.customizedResume) {
-              // Use the loaded data directly for download
-              const blob = new Blob([savedData.customizedResume], { type: 'text/plain' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `${savedData.resumeTitle || 'resume'}_optimized.txt`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
+              // Ensure state is set for download function
+              if (!customizedResume) {
+                setCustomizedResume(savedData.customizedResume);
+              }
+              if (!resumeTitle && savedData.resumeTitle) {
+                setResumeTitle(savedData.resumeTitle);
+              }
               
-              toast.success('Resume downloaded successfully!');
+              // Small delay to ensure state is set, then download as PDF
+              setTimeout(() => {
+                downloadResumeFile();
+              }, 100);
             }
           }
         } catch (error) {
@@ -523,18 +524,117 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
       return;
     }
 
-    // Create a blob and download
-    const blob = new Blob([resumeContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${resumeTitleToUse || 'resume'}_optimized.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast.success('Resume downloaded successfully!');
+    try {
+      // Create a new PDF document
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      // Set margins
+      const margin = 20;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const maxWidth = pageWidth - (margin * 2);
+      let yPosition = margin;
+      const lineHeight = 7;
+      const fontSize = 11;
+
+      // Helper function to add text with word wrapping
+      const addWrappedText = (text: string, fontSize: number, isBold: boolean = false, indent: number = 0) => {
+        pdf.setFontSize(fontSize);
+        pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
+        
+        const lines = pdf.splitTextToSize(text, maxWidth - indent);
+        
+        // Check if we need a new page
+        if (yPosition + (lines.length * lineHeight) > pageHeight - margin) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        
+        lines.forEach((line: string) => {
+          pdf.text(line, margin + indent, yPosition);
+          yPosition += lineHeight;
+        });
+      };
+
+      // Parse and format the resume content
+      const lines = resumeContent.split('\n');
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        // Skip empty lines (but add small spacing)
+        if (!line) {
+          yPosition += lineHeight * 0.5;
+          continue;
+        }
+
+        // Check if we need a new page
+        if (yPosition > pageHeight - margin - lineHeight) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        // Detect headers (all caps or common resume section headers)
+        const isHeader = /^(EXPERIENCE|EDUCATION|SKILLS|SUMMARY|OBJECTIVE|WORK EXPERIENCE|PROFESSIONAL|PROJECTS|CERTIFICATIONS|AWARDS|PROCESSING DETAILS|SUGGESTIONS)/i.test(line) ||
+                         /^---/.test(line) ||
+                         (line.length < 50 && line === line.toUpperCase() && !line.includes('•'));
+
+        // Handle section separators
+        if (/^---+/.test(line)) {
+          yPosition += lineHeight;
+          continue;
+        }
+
+        // Handle headers
+        if (isHeader && !line.startsWith('•') && !line.startsWith('-') && !line.startsWith('*')) {
+          yPosition += lineHeight * 0.5; // Add spacing before header
+          addWrappedText(line, fontSize + 2, true);
+          yPosition += lineHeight * 0.3; // Add spacing after header
+          continue;
+        }
+
+        // Handle bullet points
+        if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
+          const bulletText = line.replace(/^[•\-\*]\s*/, '');
+          addWrappedText(`• ${bulletText}`, fontSize, false, 5);
+          continue;
+        }
+
+        // Handle emoji lines (like 📊 Processing Details, 💡 Suggestions)
+        if (/^[📊💡🎯✅]/.test(line)) {
+          yPosition += lineHeight * 0.5;
+          addWrappedText(line, fontSize, true);
+          continue;
+        }
+
+        // Regular text
+        addWrappedText(line, fontSize);
+      }
+
+      // Save the PDF
+      const fileName = `${resumeTitleToUse || 'resume'}_optimized.pdf`;
+      pdf.save(fileName);
+      
+      toast.success('Resume downloaded as PDF successfully!');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF. Downloading as text file instead.');
+      
+      // Fallback to text file if PDF generation fails
+      const blob = new Blob([resumeContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${resumeTitleToUse || 'resume'}_optimized.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
 
   const handleLoginSuccess = async () => {
