@@ -507,6 +507,49 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
     }
   };
 
+  // Function to parse markdown and convert to plain text
+  const parseMarkdownToPlainText = (markdown: string): string => {
+    let text = markdown;
+    
+    // Remove markdown headers (# ## ### #### ##### ######)
+    text = text.replace(/^#{1,6}\s+(.+)$/gm, '$1');
+    
+    // Remove bold markdown (**text** or __text__)
+    text = text.replace(/\*\*(.+?)\*\*/g, '$1');
+    text = text.replace(/__(.+?)__/g, '$1');
+    
+    // Remove italic markdown (*text* or _text_)
+    text = text.replace(/\*(.+?)\*/g, '$1');
+    text = text.replace(/_(.+?)_/g, '$1');
+    
+    // Remove inline code (`code`)
+    text = text.replace(/`(.+?)`/g, '$1');
+    
+    // Remove links [text](url) -> text
+    text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+    
+    // Remove horizontal rules (--- or ***)
+    text = text.replace(/^[-*]{3,}$/gm, '');
+    
+    // Convert markdown bullet points to regular bullets
+    // Keep - * + as bullets but remove extra markdown formatting
+    text = text.replace(/^[\s]*[-*+]\s+/gm, '• ');
+    
+    // Convert numbered lists (1. 2. etc.) - keep the numbers
+    text = text.replace(/^\d+\.\s+/gm, '');
+    
+    // Remove markdown code blocks (```code```)
+    text = text.replace(/```[\s\S]*?```/g, '');
+    
+    // Remove markdown blockquotes (> text)
+    text = text.replace(/^>\s+(.+)$/gm, '$1');
+    
+    // Clean up multiple empty lines
+    text = text.replace(/\n{3,}/g, '\n\n');
+    
+    return text.trim();
+  };
+
   const downloadResumeFile = () => {
     // Try to get resume from state first, fallback to localStorage
     let resumeContent = customizedResume;
@@ -525,6 +568,9 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
     }
 
     try {
+      // Parse markdown to plain text first
+      const parsedContent = parseMarkdownToPlainText(resumeContent);
+      
       // Create a new PDF document
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -560,8 +606,8 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
         });
       };
 
-      // Parse and format the resume content
-      const lines = resumeContent.split('\n');
+      // Parse and format the resume content (now plain text)
+      const lines = parsedContent.split('\n');
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
