@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ResumePreview } from '@/components/ui/resume-preview';
 import { LoginModal } from '@/components/auth/login-modal';
 import { AccountInfo } from '@/components/ui/account-info';
-import { Plus, Upload, FileText, AlertCircle, Check, Sparkles, ArrowRight, CreditCard, Loader2, Download } from 'lucide-react';
+import { Plus, Upload, FileText, AlertCircle, Check, Sparkles, ArrowRight, CreditCard, Loader2, Download, Zap, ChevronRight, X, Crown, Rocket, Star } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
 import { extractResumeText } from '@/services/resume-service';
@@ -37,41 +37,20 @@ export function DashboardPage() {
     usageCount: number;
   } | null>(null);
 
-  // Wrapper to ensure payment modal only shows for logged-in users
   const showPaymentModalSafely = () => {
-    console.log('=== showPaymentModalSafely called ===');
-    console.log('User state:', user);
-    console.log('Auth loading:', authLoading);
-    
-    // Wait for auth to finish loading
-    if (authLoading) {
-      console.log('Auth still loading, cannot show payment modal yet');
-      return;
-    }
-    
+    if (authLoading) return;
     if (!user) {
-      // If user is not logged in, show login modal instead
-      console.log('User not logged in, showing login modal instead of payment modal');
       setShowLoginModal(true);
       return;
     }
-    console.log('User is logged in, showing payment modal');
     setShowPaymentModal(true);
   };
 
-  // Handle plan selection - directly go to Stripe
   const handleSelectPlan = async (planId: string) => {
-    // Wait for auth to finish loading
-    if (authLoading) {
-      console.log('Auth still loading, cannot proceed with checkout');
-      return;
-    }
+    if (authLoading) return;
     
-    // IMPORTANT: Check authentication first before proceeding to checkout
     if (!user) {
-      console.log('User not logged in, showing login modal before checkout');
       setShowLoginModal(true);
-      // Store the selected plan so we can proceed after login
       setPurchasedPlan(planId);
       return;
     }
@@ -80,10 +59,7 @@ export function DashboardPage() {
     try {
       const { data, error } = await apiClient.createCheckoutSession(planId);
       if (error) {
-        console.log('Checkout error:', error);
-        // If error is due to authentication, show login modal
         if (error.message?.includes('Unauthorized') || error.message?.includes('401') || error.code === '401') {
-          console.log('Authentication error detected, showing login modal');
           setShowLoginModal(true);
           setPurchasedPlan(planId);
           setCheckoutLoading(null);
@@ -94,13 +70,11 @@ export function DashboardPage() {
         return;
       }
       if (data?.checkoutUrl) {
-        // Redirect to Stripe checkout
         window.location.href = data.checkoutUrl;
       } else {
         toast.error('No checkout URL returned');
       }
     } catch (err: any) {
-      // If error is due to authentication, show login modal
       if (err.message?.includes('Unauthorized') || err.message?.includes('401')) {
         setShowLoginModal(true);
         setPurchasedPlan(planId);
@@ -112,22 +86,16 @@ export function DashboardPage() {
     }
   };
 
-  // Function to load persisted data
   const loadPersistedData = () => {
     try {
       const savedData = loadResumeData();
       if (savedData.extractedText || savedData.customizedResume) {
-        console.log('Loading persisted resume data:', {
-          hasExtractedText: !!savedData.extractedText,
-          hasCustomizedResume: !!savedData.customizedResume,
-          isProcessed: savedData.resumeProcessed,
-        });
         setExtractedText(savedData.extractedText);
         setResumeTitle(savedData.resumeTitle);
         setJobDescription(savedData.jobDescription);
         setCustomizedResume(savedData.customizedResume);
         setResumeProcessed(savedData.resumeProcessed);
-        return true; // Return true if data was loaded
+        return true;
       }
       return false;
     } catch (error) {
@@ -136,32 +104,22 @@ export function DashboardPage() {
     }
   };
 
-  // Load persisted data on mount
   useEffect(() => {
     loadPersistedData();
   }, []);
 
-  // Check subscription status and reload data when user logs in
   useEffect(() => {
     async function checkSubscription() {
       if (!user) {
         setHasSubscription(false);
         setSubscriptionInfo(null);
-        // When user logs out, data should still be in localStorage
-        // So we don't need to clear it
         return;
       }
 
-      // When user logs in, try to reload persisted data
-      // This ensures data is available even if page was reloaded
-      const dataLoaded = loadPersistedData();
-      if (dataLoaded) {
-        console.log('Reloaded persisted resume data after login');
-      }
+      loadPersistedData();
 
       try {
         const { data, error } = await apiClient.getSubscriptionUsage();
-        console.log('Subscription usage check result:', { data, error });
         if (!error && data) {
           const hasCredits = data.hasSubscription && data.remaining > 0;
           setHasSubscription(hasCredits);
@@ -170,12 +128,6 @@ export function DashboardPage() {
             remaining: data.remaining,
             monthlyLimit: data.monthlyLimit,
             usageCount: data.usageCount,
-          });
-          console.log('Subscription state updated:', {
-            hasSubscription: data.hasSubscription,
-            hasCredits,
-            remaining: data.remaining,
-            planName: data.planName,
           });
         } else {
           setSubscriptionInfo(null);
@@ -189,7 +141,6 @@ export function DashboardPage() {
     checkSubscription();
   }, [user]);
 
-  // Handle payment success redirect from Stripe
   useEffect(() => {
     const payment = searchParams.get('payment');
     const plan = searchParams.get('plan');
@@ -198,23 +149,17 @@ export function DashboardPage() {
       setPaymentSuccess(true);
       setPurchasedPlan(plan);
       
-      // IMPORTANT: Reload persisted data after payment redirect
-      // This ensures the resume data is restored even if the page was reloaded
       const savedData = loadResumeData();
       const dataLoaded = !!(savedData.extractedText || savedData.customizedResume);
       
       if (dataLoaded) {
-        // Update state with loaded data
         setExtractedText(savedData.extractedText);
         setResumeTitle(savedData.resumeTitle);
         setJobDescription(savedData.jobDescription);
         setCustomizedResume(savedData.customizedResume);
         setResumeProcessed(savedData.resumeProcessed);
-      } else {
-        console.warn('No persisted resume data found after payment redirect');
       }
       
-      // Confirm payment and create subscription record, then reload status
       const confirmAndDownload = async () => {
         if (!user) {
           toast.error('Please log in to complete your purchase');
@@ -222,28 +167,19 @@ export function DashboardPage() {
         }
         
         try {
-          // First, confirm the payment and create/update subscription in database
           const { data: confirmData, error: confirmError } = await apiClient.confirmPayment(plan);
           
-          if (confirmError) {
-            console.error('Failed to confirm payment:', confirmError);
-            // Continue anyway - the webhook may have already processed it
-          } else if (confirmData) {
-            console.log('Payment confirmed:', confirmData.message);
+          if (!confirmError && confirmData) {
             toast.success(`${confirmData.plan.name} plan activated! You have ${confirmData.plan.monthlyLimit} resume credits.`);
-            
-            // Immediately set subscription state after successful payment confirmation
-            // This ensures the user can download without waiting for the subscription check
             setHasSubscription(true);
             setSubscriptionInfo({
               planName: confirmData.plan.name,
-              remaining: confirmData.plan.monthlyLimit, // User just got credits, so remaining = monthlyLimit
+              remaining: confirmData.plan.monthlyLimit,
               monthlyLimit: confirmData.plan.monthlyLimit,
-              usageCount: 0, // Just activated, so usage is 0
+              usageCount: 0,
             });
           }
           
-          // Now reload subscription status to get the latest from database
           const { data } = await apiClient.getSubscriptionUsage();
           if (data) {
             const hasCredits = data.hasSubscription && data.remaining > 0;
@@ -255,24 +191,13 @@ export function DashboardPage() {
               usageCount: data.usageCount,
             });
             
-            console.log('Subscription status after payment:', {
-              hasSubscription: data.hasSubscription,
-              remaining: data.remaining,
-              monthlyLimit: data.monthlyLimit,
-              planName: data.planName,
-            });
-            
-            // Auto-download resume if user has credits and resume is ready
             if (hasCredits && savedData.customizedResume) {
-              // Ensure state is set for download function
               if (!customizedResume) {
                 setCustomizedResume(savedData.customizedResume);
               }
               if (!resumeTitle && savedData.resumeTitle) {
                 setResumeTitle(savedData.resumeTitle);
               }
-              
-              // Small delay to ensure state is set, then download as PDF
               setTimeout(() => {
                 downloadResumeFile();
               }, 100);
@@ -285,7 +210,6 @@ export function DashboardPage() {
       
       confirmAndDownload();
       
-      // Clear the URL params after showing success
       setTimeout(() => {
         setSearchParams({});
       }, 2000);
@@ -315,12 +239,10 @@ export function DashboardPage() {
       setLoading(true);
 
       try {
-        // Allow unauthenticated users to extract text
         const result = await extractResumeText(file);
         const text = result.extractedText || result.text || '';
         setExtractedText(text);
         
-        // Persist to localStorage
         saveResumeData({
           extractedText: text,
           resumeTitle: title,
@@ -337,28 +259,15 @@ export function DashboardPage() {
     },
   });
 
-  // Check if user can proceed to customization
   const canProcess = extractedText && jobDescription.trim().length >= 50;
 
   const handleProcessResume = async () => {
-    console.log('=== handleProcessResume called ===');
-    console.log('User state:', user);
-    console.log('Auth loading:', authLoading);
+    if (authLoading) return;
     
-    // IMPORTANT: Check authentication first before processing
-    // Wait for auth to finish loading
-    if (authLoading) {
-      console.log('Auth still loading, waiting...');
-      return;
-    }
-    
-    // If user is not logged in, show login modal immediately
     if (!user) {
       setShowLoginModal(true);
       return;
     }
-    
-    console.log('User is logged in, proceeding with processing');
 
     if (!extractedText || !resumeTitle) {
       toast.error('Please upload resume file first');
@@ -372,8 +281,6 @@ export function DashboardPage() {
 
     setLoading(true);
     try {
-      // User is logged in, proceed with processing
-      // Call the AI processing API
       const { data, error } = await apiClient.processResume(extractedText, jobDescription);
       
       if (error) {
@@ -384,7 +291,6 @@ export function DashboardPage() {
         throw new Error('No result returned from AI service');
       }
 
-      // Format the result with metadata
       const formattedResume = `${data.result.customizedResume}
 
 ---
@@ -395,13 +301,12 @@ export function DashboardPage() {
 • Keywords Matched: ${data.result.keywordsMatched.length > 0 ? data.result.keywordsMatched.join(', ') : 'See above'}
 
 💡 Suggestions:
-${data.result.suggestions.map(s => `• ${s}`).join('\n')}
+${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
 `;
       
       setCustomizedResume(formattedResume);
       setResumeProcessed(true);
       
-      // Persist to localStorage
       saveResumeData({
         customizedResume: formattedResume,
         resumeProcessed: true,
@@ -417,62 +322,36 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
   };
 
   const handleDownloadResume = async () => {
-    console.log('=== handleDownloadResume called ===');
-    console.log('User state:', user);
-    console.log('Auth loading:', authLoading);
-    console.log('Current hasSubscription state:', hasSubscription);
-    console.log('Current subscriptionInfo:', subscriptionInfo);
-    console.log('Payment success state:', paymentSuccess);
+    if (authLoading) return;
     
-    // IMPORTANT: Always check authentication first
-    // Wait for auth to finish loading before checking
-    if (authLoading) {
-      console.log('Auth still loading, waiting...');
-      return;
-    }
-    
-    // If user is not logged in, show login modal immediately
     if (!user) {
-      console.log('User not logged in, showing login modal');
       setShowLoginModal(true);
       return;
     }
-    
-    console.log('User is logged in, proceeding with download check');
 
-    // If user just completed payment, allow download immediately without checking subscription
-    // This ensures users can download right after payment without waiting for subscription state to update
     if (paymentSuccess) {
-      console.log('User just completed payment, downloading resume directly (payment success flag is true)');
       downloadResumeFile();
       return;
     }
 
-    // Use already-loaded subscription state first (faster UX)
     if (hasSubscription && subscriptionInfo && subscriptionInfo.remaining > 0) {
-      console.log('User has subscription from cached state, downloading resume');
       downloadResumeFile();
       return;
     }
 
-    // Double-check with fresh API call to be sure
     try {
       const { data, error } = await apiClient.getSubscriptionUsage();
-      console.log('Fresh subscription check result:', { data, error });
       
       if (error) {
-        console.error('Error fetching subscription:', error);
         toast.error('Failed to verify subscription. Please try again.');
         return;
       }
       
       if (!data) {
-        console.log('No subscription data returned');
         showPaymentModalSafely();
         return;
       }
       
-      // Update subscription state with latest data
       setSubscriptionInfo({
         planName: data.planName,
         remaining: data.remaining,
@@ -481,82 +360,47 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
       });
       
       if (!data.hasSubscription) {
-        // No subscription at all
-        console.log('User has no subscription, showing payment modal');
         showPaymentModalSafely();
         return;
       }
       
       if (data.remaining <= 0) {
-        // Has subscription but ran out of credits
-        console.log('User has subscription but no credits remaining');
-        toast.error(`You've used all ${data.monthlyLimit} resume credits from your ${data.planName || 'current'} plan. Please upgrade to continue.`);
+        toast.error(`You've used all ${data.monthlyLimit} resume credits. Please upgrade to continue.`);
         showPaymentModalSafely();
         return;
       }
       
-      // User has subscription and credits, update state and proceed with download
-      console.log('User has subscription with credits, downloading resume');
       setHasSubscription(true);
       downloadResumeFile();
     } catch (error) {
-      // On error, show payment modal
       console.error('Error checking subscription:', error);
       toast.error('Failed to verify subscription. Please try again.');
-      return;
     }
   };
 
-  // Function to parse markdown and convert to plain text
   const parseMarkdownToPlainText = (markdown: string): string => {
     let text = markdown;
-    
-    // Remove markdown headers (# ## ### #### ##### ######)
     text = text.replace(/^#{1,6}\s+(.+)$/gm, '$1');
-    
-    // Remove bold markdown (**text** or __text__)
     text = text.replace(/\*\*(.+?)\*\*/g, '$1');
     text = text.replace(/__(.+?)__/g, '$1');
-    
-    // Remove italic markdown (*text* or _text_)
     text = text.replace(/\*(.+?)\*/g, '$1');
     text = text.replace(/_(.+?)_/g, '$1');
-    
-    // Remove inline code (`code`)
     text = text.replace(/`(.+?)`/g, '$1');
-    
-    // Remove links [text](url) -> text
     text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
-    
-    // Remove horizontal rules (--- or ***)
     text = text.replace(/^[-*]{3,}$/gm, '');
-    
-    // Convert markdown bullet points to regular bullets
-    // Keep - * + as bullets but remove extra markdown formatting
     text = text.replace(/^[\s]*[-*+]\s+/gm, '• ');
-    
-    // Convert numbered lists (1. 2. etc.) - keep the numbers
     text = text.replace(/^\d+\.\s+/gm, '');
-    
-    // Remove markdown code blocks (```code```)
     text = text.replace(/```[\s\S]*?```/g, '');
-    
-    // Remove markdown blockquotes (> text)
     text = text.replace(/^>\s+(.+)$/gm, '$1');
-    
-    // Clean up multiple empty lines
     text = text.replace(/\n{3,}/g, '\n\n');
-    
     return text.trim();
   };
 
   const downloadResumeFile = () => {
-    // Try to get resume from state first, fallback to localStorage
     let resumeContent = customizedResume;
     let resumeTitleToUse = resumeTitle;
     
     if (!resumeContent) {
-      // Fallback to localStorage if state is not updated yet
       const savedData = loadResumeData();
       resumeContent = savedData.customizedResume;
       resumeTitleToUse = savedData.resumeTitle;
@@ -568,17 +412,9 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
     }
 
     try {
-      // Parse markdown to plain text first
       const parsedContent = parseMarkdownToPlainText(resumeContent);
-      
-      // Create a new PDF document
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-      // Set margins
       const margin = 20;
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -587,14 +423,11 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
       const lineHeight = 7;
       const fontSize = 11;
 
-      // Helper function to add text with word wrapping
-      const addWrappedText = (text: string, fontSize: number, isBold: boolean = false, indent: number = 0) => {
-        pdf.setFontSize(fontSize);
+      const addWrappedText = (text: string, fs: number, isBold: boolean = false, indent: number = 0) => {
+        pdf.setFontSize(fs);
         pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-        
         const lines = pdf.splitTextToSize(text, maxWidth - indent);
         
-        // Check if we need a new page
         if (yPosition + (lines.length * lineHeight) > pageHeight - margin) {
           pdf.addPage();
           yPosition = margin;
@@ -606,71 +439,59 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
         });
       };
 
-      // Parse and format the resume content (now plain text)
       const lines = parsedContent.split('\n');
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         
-        // Skip empty lines (but add small spacing)
         if (!line) {
           yPosition += lineHeight * 0.5;
           continue;
         }
 
-        // Check if we need a new page
         if (yPosition > pageHeight - margin - lineHeight) {
           pdf.addPage();
           yPosition = margin;
         }
 
-        // Detect headers (all caps or common resume section headers)
         const isHeader = /^(EXPERIENCE|EDUCATION|SKILLS|SUMMARY|OBJECTIVE|WORK EXPERIENCE|PROFESSIONAL|PROJECTS|CERTIFICATIONS|AWARDS|PROCESSING DETAILS|SUGGESTIONS)/i.test(line) ||
                          /^---/.test(line) ||
                          (line.length < 50 && line === line.toUpperCase() && !line.includes('•'));
 
-        // Handle section separators
         if (/^---+/.test(line)) {
           yPosition += lineHeight;
           continue;
         }
 
-        // Handle headers
         if (isHeader && !line.startsWith('•') && !line.startsWith('-') && !line.startsWith('*')) {
-          yPosition += lineHeight * 0.5; // Add spacing before header
+          yPosition += lineHeight * 0.5;
           addWrappedText(line, fontSize + 2, true);
-          yPosition += lineHeight * 0.3; // Add spacing after header
+          yPosition += lineHeight * 0.3;
           continue;
         }
 
-        // Handle bullet points
         if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
           const bulletText = line.replace(/^[•\-\*]\s*/, '');
           addWrappedText(`• ${bulletText}`, fontSize, false, 5);
           continue;
         }
 
-        // Handle emoji lines (like 📊 Processing Details, 💡 Suggestions)
         if (/^[📊💡🎯✅]/.test(line)) {
           yPosition += lineHeight * 0.5;
           addWrappedText(line, fontSize, true);
           continue;
         }
 
-        // Regular text
         addWrappedText(line, fontSize);
       }
 
-      // Save the PDF
       const fileName = `${resumeTitleToUse || 'resume'}_optimized.pdf`;
       pdf.save(fileName);
-      
-      toast.success('Resume downloaded as PDF successfully!');
+      toast.success('Resume downloaded as PDF!');
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error('Failed to generate PDF. Downloading as text file instead.');
       
-      // Fallback to text file if PDF generation fails
       const blob = new Blob([resumeContent], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -684,40 +505,31 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
   };
 
   const handleLoginSuccess = async () => {
-    // Close login modal
     setShowLoginModal(false);
     
-    // If user had selected a plan before logging in, proceed to checkout
     if (purchasedPlan) {
-      // Small delay to ensure modal closes
       setTimeout(() => {
         handleSelectPlan(purchasedPlan);
       }, 100);
       return;
     }
     
-    // If user was trying to process resume, proceed with processing
     if (extractedText && jobDescription && !customizedResume) {
-      // User just logged in and wants to process resume
       setTimeout(() => {
         handleProcessResume();
       }, 100);
       return;
     }
     
-    // After login, check if user has subscription
     try {
       const { data, error } = await apiClient.getSubscriptionUsage();
-      console.log('Post-login subscription check:', { data, error });
       
       if (error) {
-        console.error('Error checking subscription after login:', error);
         showPaymentModalSafely();
         return;
       }
       
       if (data) {
-        // Update subscription info state
         setSubscriptionInfo({
           planName: data.planName,
           remaining: data.remaining,
@@ -726,26 +538,21 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
         });
         
         if (data.hasSubscription && data.remaining > 0) {
-          // User has subscription with credits
           setHasSubscription(true);
           toast.success(`Welcome back! You have ${data.remaining} resume credits remaining.`);
-          // Only download if resume is ready
           if (customizedResume) {
             downloadResumeFile();
           }
         } else if (data.hasSubscription && data.remaining <= 0) {
-          // User has subscription but no credits
           toast.error(`You've used all your resume credits. Please upgrade to continue.`);
           showPaymentModalSafely();
         } else {
-          // No subscription
           showPaymentModalSafely();
         }
       } else {
         showPaymentModalSafely();
       }
     } catch (error) {
-      // On error, show payment modal
       console.error('Error in post-login subscription check:', error);
       showPaymentModalSafely();
     }
@@ -762,53 +569,66 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-white">
-      <div className="container mx-auto px-4 py-8">
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 grid-pattern opacity-30" />
+      <div className="orb orb-pear w-[500px] h-[500px] -top-32 -right-32 opacity-20" />
+      <div className="orb orb-cyan w-[400px] h-[400px] bottom-0 -left-32 opacity-15" />
+      
+      <div className="container mx-auto px-4 py-8 relative">
         {/* Payment Success Banner */}
         {paymentSuccess && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="mb-6 glass-card p-4 border-green-500/30 animate-scale-in">
             <div className="flex items-center">
-              <CreditCard className="h-6 w-6 text-green-600 mr-3" />
-              <div>
-                <h3 className="font-bold text-green-900">Payment Successful!</h3>
-                <p className="text-green-700 text-sm">
-                  Your {purchasedPlan?.replace('-plan', '').replace('-', ' ')} plan has been activated. 
-                  You can now download your customized resumes.
+              <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center mr-4">
+                <CreditCard className="h-5 w-5 text-green-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display font-semibold text-green-400">Payment Successful!</h3>
+                <p className="text-muted-foreground text-sm">
+                  Your {purchasedPlan?.replace('-plan', '').replace('-', ' ')} plan is now active. 
                 </p>
               </div>
               <button 
                 onClick={() => setPaymentSuccess(false)}
-                className="ml-auto text-green-600 hover:text-green-800"
+                className="p-2 hover:bg-white/5 rounded-lg transition-colors"
               >
-                ✕
+                <X className="h-4 w-4 text-muted-foreground" />
               </button>
             </div>
           </div>
         )}
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-          <p className="text-gray-600">
-            Welcome back{user?.name ? `, ${user.name}` : ''}! Upload your resume and customize it for your target job.
+        <div className="mb-8 animate-fade-in">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-xl bg-pear-400/10">
+              <Zap className="h-6 w-6 text-pear-400" />
+            </div>
+            <h1 className="font-display text-3xl font-bold">Dashboard</h1>
+          </div>
+          <p className="text-muted-foreground">
+            {user?.email ? `Welcome, ${user.email.split('@')[0]}!` : 'Welcome!'} Upload your resume and customize it for your target job.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Area */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="glass-card p-6 md:p-8 animate-fade-in-up">
               
               {/* Show processed result */}
               {resumeProcessed ? (
                 <div>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
-                    <div className="flex items-start">
-                      <Check className="h-6 w-6 text-green-600 mr-3 mt-1 flex-shrink-0" />
+                  <div className="rounded-2xl bg-green-500/10 border border-green-500/20 p-6 mb-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                        <Check className="h-6 w-6 text-green-400" />
+                      </div>
                       <div>
-                        <h3 className="font-bold text-green-900 mb-2">✓ Your Customized Resume is Ready!</h3>
-                        <p className="text-green-800 text-sm">
-                          Your resume has been optimized for ATS compatibility. Compare the original and customized versions below.
+                        <h3 className="font-display font-semibold text-green-400 mb-1">Your Customized Resume is Ready!</h3>
+                        <p className="text-muted-foreground text-sm">
+                          Your resume has been optimized for ATS compatibility. Compare the versions below.
                         </p>
                       </div>
                     </div>
@@ -816,23 +636,27 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
 
                   {/* Subscription Status Banner */}
                   {user && subscriptionInfo && (
-                    <div className={`rounded-lg p-4 mb-6 flex items-center justify-between ${
+                    <div className={`rounded-2xl p-4 mb-6 flex items-center justify-between ${
                       hasSubscription 
-                        ? 'bg-blue-50 border border-blue-200' 
-                        : 'bg-amber-50 border border-amber-200'
+                        ? 'bg-pear-400/10 border border-pear-400/20' 
+                        : 'bg-amber-500/10 border border-amber-500/20'
                     }`}>
-                      <div className="flex items-center">
-                        <CreditCard className={`h-5 w-5 mr-3 ${hasSubscription ? 'text-blue-600' : 'text-amber-600'}`} />
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          hasSubscription ? 'bg-pear-400/20' : 'bg-amber-500/20'
+                        }`}>
+                          <CreditCard className={`h-5 w-5 ${hasSubscription ? 'text-pear-400' : 'text-amber-400'}`} />
+                        </div>
                         <div>
-                          <p className={`font-medium ${hasSubscription ? 'text-blue-900' : 'text-amber-900'}`}>
+                          <p className={`font-medium ${hasSubscription ? 'text-pear-400' : 'text-amber-400'}`}>
                             {subscriptionInfo.planName || 'Your Plan'}
                           </p>
-                          <p className={`text-sm ${hasSubscription ? 'text-blue-700' : 'text-amber-700'}`}>
+                          <p className="text-sm text-muted-foreground">
                             {hasSubscription 
-                              ? `${subscriptionInfo.remaining} of ${subscriptionInfo.monthlyLimit} resume credits remaining`
+                              ? `${subscriptionInfo.remaining} of ${subscriptionInfo.monthlyLimit} credits remaining`
                               : subscriptionInfo.monthlyLimit > 0 
-                                ? `All ${subscriptionInfo.monthlyLimit} credits used - upgrade to continue`
-                                : 'No active plan - purchase to download'
+                                ? `All ${subscriptionInfo.monthlyLimit} credits used`
+                                : 'No active plan'
                             }
                           </p>
                         </div>
@@ -841,26 +665,24 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                         <Button 
                           size="sm" 
                           onClick={showPaymentModalSafely}
-                          className="ml-4"
                         >
-                          {subscriptionInfo.monthlyLimit > 0 ? 'Upgrade Plan' : 'Get Started'}
+                          {subscriptionInfo.monthlyLimit > 0 ? 'Upgrade' : 'Get Started'}
                         </Button>
                       )}
                     </div>
                   )}
 
-                  {/* Side-by-side comparison with PDF-like previews */}
+                  {/* Resume Comparison */}
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-bold">Resume Comparison</h3>
+                      <h3 className="font-display text-lg font-semibold">Resume Comparison</h3>
                       <div className="flex gap-2">
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">Original</span>
-                        <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full">Optimized</span>
+                        <span className="px-3 py-1 bg-white/5 text-muted-foreground text-xs rounded-full border border-white/10">Original</span>
+                        <span className="px-3 py-1 bg-pear-400/10 text-pear-400 text-xs rounded-full border border-pear-400/20">Optimized</span>
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Original Resume Preview */}
                       <ResumePreview
                         content={extractedText}
                         title="📄 Original Resume"
@@ -868,7 +690,6 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                         isUnlocked={true}
                       />
                       
-                      {/* Optimized Resume Preview - Locked until payment/login */}
                       <ResumePreview
                         content={customizedResume}
                         title="✨ AI-Optimized Resume"
@@ -880,14 +701,15 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 border-t border-white/5">
                     <Button
                       onClick={handleDownloadResume}
                       type="button"
                       size="lg"
                       className="px-8"
                     >
-                      Download My Custom Resume
+                      <Download className="mr-2 h-5 w-5" />
+                      Download My Resume
                     </Button>
                     <Button
                       onClick={handleStartOver}
@@ -901,40 +723,45 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
               ) : (
                 <>
                   {/* Step 1: Upload Resume */}
-                  <div className="mb-8">
-                    <div className="flex items-center mb-4">
-                      <div className={`rounded-full w-8 h-8 flex items-center justify-center font-bold mr-3 ${
-                        extractedText ? 'bg-green-500 text-white' : 'bg-primary text-white'
-                      }`}>
-                        {extractedText ? <Check className="h-5 w-5" /> : '1'}
+                  <div className="mb-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className={`step-indicator ${extractedText ? 'completed' : ''}`}>
+                        {extractedText ? <Check className="w-5 h-5" /> : '1'}
                       </div>
-                      <h2 className="text-xl font-bold">Upload Your Resume</h2>
+                      <div>
+                        <h2 className="font-display text-xl font-semibold">Upload Your Resume</h2>
+                        <p className="text-sm text-muted-foreground">PDF, Word, or image formats</p>
+                      </div>
                     </div>
 
                     <div
                       {...getRootProps()}
-                      className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                        isDragActive
-                          ? 'border-primary bg-primary/5'
-                          : resumeFile
-                          ? 'border-green-500 bg-green-50'
-                          : 'border-gray-300 hover:border-primary hover:bg-primary/5'
-                      } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`upload-zone p-10 text-center cursor-pointer ${
+                        isDragActive ? 'active border-pear-400' : ''
+                      } ${resumeFile ? 'success-glow border-green-500/50' : ''} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <input {...getInputProps()} />
-                      <Upload className={`h-12 w-12 mx-auto mb-4 ${resumeFile ? 'text-green-500' : 'text-gray-400'}`} />
+                      <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
+                        resumeFile ? 'bg-green-500/20' : 'bg-pear-400/10'
+                      }`}>
+                        <Upload className={`h-8 w-8 ${resumeFile ? 'text-green-400' : 'text-pear-400'}`} />
+                      </div>
+                      
                       {resumeFile ? (
                         <div>
-                          <p className="text-green-700 font-medium mb-2">✓ Resume uploaded successfully</p>
-                          <p className="text-gray-600 text-sm">{resumeFile.name}</p>
-                          <p className="text-gray-500 text-xs mt-2">Click or drag to replace</p>
+                          <p className="text-green-400 font-medium mb-2 flex items-center justify-center gap-2">
+                            <Check className="w-5 h-5" />
+                            Resume uploaded successfully
+                          </p>
+                          <p className="text-muted-foreground text-sm">{resumeFile.name}</p>
+                          <p className="text-muted-foreground/60 text-xs mt-2">Click or drag to replace</p>
                         </div>
                       ) : isDragActive ? (
-                        <p className="text-primary">Drop your resume here...</p>
+                        <p className="text-pear-400 font-medium">Drop your resume here...</p>
                       ) : (
                         <>
-                          <p className="text-gray-600 mb-2">Drag and drop your resume, or click to browse</p>
-                          <p className="text-gray-500 text-sm">Supports PDF, Word, PNG, JPG, WEBP</p>
+                          <p className="text-foreground font-medium mb-2">Drag and drop your resume, or click to browse</p>
+                          <p className="text-muted-foreground text-sm">Supports PDF, Word, PNG, JPG, WEBP</p>
                         </>
                       )}
                     </div>
@@ -943,95 +770,115 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
                     {extractedText && (
                       <div className="mt-4">
                         <div className="flex justify-between items-center mb-2">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Extracted Resume Content
+                          <label className="text-sm font-medium text-muted-foreground">
+                            Extracted Content
                           </label>
-                          <span className="text-xs text-gray-500">
-                            {extractedText.length} characters extracted
+                          <span className="font-mono text-xs text-pear-400">
+                            {extractedText.length} chars
                           </span>
                         </div>
-                        <div className="bg-gray-50 rounded-md p-4 border border-gray-200 h-40 overflow-y-auto">
-                          <pre className="whitespace-pre-wrap text-sm text-gray-700">{extractedText}</pre>
+                        <div className="bg-surface-light rounded-xl p-4 border border-border h-40 overflow-y-auto scrollbar-custom">
+                          <pre className="whitespace-pre-wrap text-sm text-muted-foreground font-mono">{extractedText}</pre>
                         </div>
                       </div>
                     )}
                   </div>
 
                   {/* Step 2: Job Description */}
-                  <div className="mb-8">
-                    <div className="flex items-center mb-4">
-                      <div className={`rounded-full w-8 h-8 flex items-center justify-center font-bold mr-3 ${
-                        jobDescription.length >= 50 ? 'bg-green-500 text-white' : 'bg-primary text-white'
-                      }`}>
-                        {jobDescription.length >= 50 ? <Check className="h-5 w-5" /> : '2'}
+                  <div className="mb-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className={`step-indicator ${jobDescription.length >= 50 ? 'completed' : ''}`}>
+                        {jobDescription.length >= 50 ? <Check className="w-5 h-5" /> : '2'}
                       </div>
-                      <h2 className="text-xl font-bold">Paste Job Description</h2>
+                      <div>
+                        <h2 className="font-display text-xl font-semibold">Paste Job Description</h2>
+                        <p className="text-sm text-muted-foreground">The more detail, the better the match</p>
+                      </div>
                     </div>
 
-                    <textarea
-                      value={jobDescription}
-                      onChange={(e) => {
-                        setJobDescription(e.target.value);
-                        saveResumeData({ jobDescription: e.target.value });
-                      }}
-                      placeholder="Paste the full job description here. Include requirements, responsibilities, and qualifications. The more detail you provide, the better we can tailor your resume."
-                      className="w-full p-4 border border-gray-300 rounded-lg h-48 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-                    />
-                    <div className="flex justify-between items-center mt-2">
-                      <p className="text-sm text-gray-500">
-                        {jobDescription.length} characters (minimum 50 required)
-                      </p>
-                      {jobDescription.length >= 50 && (
-                        <p className="text-sm text-green-600 font-medium">✓ Looks good!</p>
-                      )}
+                    <div className="relative">
+                      <textarea
+                        value={jobDescription}
+                        onChange={(e) => {
+                          setJobDescription(e.target.value);
+                          saveResumeData({ jobDescription: e.target.value });
+                        }}
+                        placeholder="Paste the full job description here. Include requirements, responsibilities, and qualifications."
+                        className="w-full p-5 bg-surface-light border border-border rounded-xl h-48 focus:outline-none focus:ring-2 focus:ring-pear-400/50 focus:border-pear-400/50 resize-none text-foreground placeholder:text-muted-foreground/60 transition-all"
+                      />
+                      <div className="absolute bottom-4 right-4 flex items-center gap-3">
+                        <span className={`text-sm ${jobDescription.length >= 50 ? 'text-green-400' : 'text-muted-foreground'}`}>
+                          {jobDescription.length} / 50 min
+                        </span>
+                        {jobDescription.length >= 50 && (
+                          <span className="text-green-400 text-sm font-medium flex items-center gap-1">
+                            <Check className="w-4 h-4" /> Ready
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* How It Works Info Box */}
-                  <div className="bg-blue-50 rounded-lg p-6 mb-8 border border-blue-100">
-                    <div className="flex items-start">
-                      <Sparkles className="h-6 w-6 text-blue-600 mr-3 mt-1 flex-shrink-0" />
+                  <div className="rounded-2xl bg-gradient-to-br from-pear-400/10 via-cyan-400/5 to-pink-400/10 border border-pear-400/20 p-6 mb-8">
+                    <div className="flex items-start gap-4">
+                      <div className="feature-icon flex-shrink-0">
+                        <Sparkles className="h-6 w-6 text-pear-400" />
+                      </div>
                       <div>
-                        <h3 className="font-bold text-blue-900 mb-2">How Our AI Customization Works</h3>
-                        <ul className="text-blue-800 text-sm space-y-2">
-                          <li>✓ Extracts key requirements and keywords from the job description</li>
-                          <li>✓ Highlights your most relevant experience and skills</li>
-                          <li>✓ Optimizes for Applicant Tracking Systems (ATS)</li>
-                          <li>✓ Rewrites accomplishments with powerful, quantifiable language</li>
+                        <h3 className="font-display font-semibold mb-3">How Our AI Works</h3>
+                        <ul className="grid sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                          <li className="flex items-center gap-2">
+                            <ChevronRight className="w-4 h-4 text-pear-400 flex-shrink-0" />
+                            Extracts key requirements
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <ChevronRight className="w-4 h-4 text-pear-400 flex-shrink-0" />
+                            Highlights relevant experience
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <ChevronRight className="w-4 h-4 text-pear-400 flex-shrink-0" />
+                            Optimizes for ATS systems
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <ChevronRight className="w-4 h-4 text-pear-400 flex-shrink-0" />
+                            Rewrites with impact
+                          </li>
                         </ul>
                       </div>
                     </div>
                   </div>
 
                   {/* Action Button */}
-                  <div className="flex justify-center">
+                  <div className="text-center">
                     <Button
                       onClick={handleProcessResume}
                       disabled={!canProcess || loading}
-                      size="lg"
-                      className="px-12 py-6 text-lg"
+                      size="xl"
+                      className="px-12 group"
                     >
                       {loading ? (
-                        'Processing Your Resume...'
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Processing...
+                        </>
                       ) : (
                         <>
                           Customize My Resume
-                          <ArrowRight className="ml-2 h-5 w-5" />
+                          <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                         </>
                       )}
                     </Button>
-                  </div>
 
-                  {!canProcess && (
-                    <p className="text-center text-gray-500 text-sm mt-4">
-                      {!extractedText 
-                        ? 'Upload your resume to continue' 
-                        : jobDescription.length < 50 
-                        ? `Add ${50 - jobDescription.length} more characters to the job description`
-                        : 'Complete both steps above to continue'
-                      }
-                    </p>
-                  )}
+                    {!canProcess && (
+                      <p className="text-muted-foreground text-sm mt-4">
+                        {!extractedText 
+                          ? 'Upload your resume to continue' 
+                          : `Add ${50 - jobDescription.length} more characters to job description`
+                        }
+                      </p>
+                    )}
+                  </div>
                 </>
               )}
             </div>
@@ -1040,53 +887,59 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Start Guide */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold mb-4">Quick Start Guide</h2>
+            <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+              <h2 className="font-display text-lg font-semibold mb-4">Quick Start</h2>
 
               <ul className="space-y-4">
-                <li className="flex">
-                  <div className={`p-2 rounded-full mr-3 ${extractedText ? 'bg-green-100' : 'bg-primary/10'}`}>
-                    <Upload className={`h-5 w-5 ${extractedText ? 'text-green-600' : 'text-primary'}`} />
+                <li className="flex gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    extractedText ? 'bg-green-500/20' : 'bg-pear-400/10'
+                  }`}>
+                    <Upload className={`h-5 w-5 ${extractedText ? 'text-green-400' : 'text-pear-400'}`} />
                   </div>
                   <div>
-                    <h3 className="font-medium">1. Upload Your Resume</h3>
-                    <p className="text-gray-600 text-sm">PDF, Word, or image formats</p>
+                    <h3 className="font-medium text-sm">1. Upload Resume</h3>
+                    <p className="text-muted-foreground text-xs">PDF, Word, or image</p>
                   </div>
                 </li>
-                <li className="flex">
-                  <div className={`p-2 rounded-full mr-3 ${jobDescription.length >= 50 ? 'bg-green-100' : 'bg-primary/10'}`}>
-                    <FileText className={`h-5 w-5 ${jobDescription.length >= 50 ? 'text-green-600' : 'text-primary'}`} />
+                <li className="flex gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    jobDescription.length >= 50 ? 'bg-green-500/20' : 'bg-pear-400/10'
+                  }`}>
+                    <FileText className={`h-5 w-5 ${jobDescription.length >= 50 ? 'text-green-400' : 'text-pear-400'}`} />
                   </div>
                   <div>
-                    <h3 className="font-medium">2. Paste Job Description</h3>
-                    <p className="text-gray-600 text-sm">The job you're applying for</p>
+                    <h3 className="font-medium text-sm">2. Paste Job Description</h3>
+                    <p className="text-muted-foreground text-xs">Target role details</p>
                   </div>
                 </li>
-                <li className="flex">
-                  <div className={`p-2 rounded-full mr-3 ${resumeProcessed ? 'bg-green-100' : 'bg-primary/10'}`}>
-                    <Sparkles className={`h-5 w-5 ${resumeProcessed ? 'text-green-600' : 'text-primary'}`} />
+                <li className="flex gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    resumeProcessed ? 'bg-green-500/20' : 'bg-pear-400/10'
+                  }`}>
+                    <Sparkles className={`h-5 w-5 ${resumeProcessed ? 'text-green-400' : 'text-pear-400'}`} />
                   </div>
                   <div>
-                    <h3 className="font-medium">3. Get AI-Optimized Resume</h3>
-                    <p className="text-gray-600 text-sm">Tailored for the job</p>
+                    <h3 className="font-medium text-sm">3. Get AI-Optimized Resume</h3>
+                    <p className="text-muted-foreground text-xs">Tailored for the job</p>
                   </div>
                 </li>
               </ul>
             </div>
 
             {/* Tips Box */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
-                <h3 className="font-medium text-amber-800 mb-2">💡 Pro Tip</h3>
-                <p className="text-amber-700 text-sm">
-                  For best results, paste the complete job description including requirements, responsibilities, and qualifications. Our AI uses this to match your experience with what employers are looking for.
+            <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4">
+                <h3 className="font-medium text-amber-400 mb-2 text-sm">💡 Pro Tip</h3>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  For best results, paste the complete job description including requirements, responsibilities, and qualifications.
                 </p>
               </div>
             </div>
 
-            {/* Account Info Component - Fixed position in bottom right (only when logged in) */}
+            {/* Account Info Component */}
             {user && (
-              <div className="lg:fixed lg:bottom-6 lg:right-6 lg:w-80 z-10">
+              <div className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                 <AccountInfo />
               </div>
             )}
@@ -1094,46 +947,51 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
         </div>
       </div>
 
-      {/* Payment Modal - Only show if user is logged in */}
+      {/* Payment Modal */}
       {showPaymentModal && user && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-8 relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="glass-card max-w-4xl w-full p-8 relative max-h-[90vh] overflow-y-auto animate-scale-in">
             <button
               onClick={() => setShowPaymentModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              className="absolute top-4 right-4 p-2 hover:bg-white/5 rounded-lg transition-colors"
             >
-              ✕
+              <X className="h-5 w-5 text-muted-foreground" />
             </button>
             
-            <h2 className="text-3xl font-bold mb-2 text-center">Choose Your Plan</h2>
-            <p className="text-gray-600 mb-8 text-center">
-              Select a plan to download your customized resume
-            </p>
+            <div className="text-center mb-8">
+              <h2 className="font-display text-3xl font-bold mb-2">Choose Your Plan</h2>
+              <p className="text-muted-foreground">
+                Select a plan to download your customized resume
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Starter Plan */}
-              <div className="border-2 border-gray-200 rounded-lg p-6 hover:border-primary transition-colors">
-                <h3 className="text-xl font-bold mb-2">Starter</h3>
+              <div className="glass-card-hover p-6 relative">
+                <div className="w-12 h-12 rounded-xl bg-pear-400/10 flex items-center justify-center mb-4">
+                  <Rocket className="h-6 w-6 text-pear-400" />
+                </div>
+                <h3 className="font-display text-xl font-semibold mb-2">Starter</h3>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold">$9</span>
-                  <span className="text-gray-500"> one-time</span>
+                  <span className="font-mono text-4xl font-bold text-pear-400">$9</span>
+                  <span className="text-muted-foreground"> one-time</span>
                 </div>
                 <ul className="space-y-3 mb-6">
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>3 Custom Resumes</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">3 Custom Resumes</span>
                   </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>ATS Optimization</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">ATS Optimization</span>
                   </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>Job Matching</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">Job Matching</span>
                   </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>Email Support</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">Email Support</span>
                   </li>
                 </ul>
                 <Button
@@ -1151,35 +1009,40 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
               </div>
 
               {/* Professional Plan - Most Popular */}
-              <div className="border-2 border-primary rounded-lg p-6 relative shadow-lg">
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-1 rounded-full text-sm font-medium">
-                  Most Popular
+              <div className="glass-card p-6 relative border-pear-400/30 shadow-glow">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="px-4 py-1 bg-gradient-pear text-background text-xs font-semibold rounded-full">
+                    Most Popular
+                  </span>
                 </div>
-                <h3 className="text-xl font-bold mb-2">Professional</h3>
+                <div className="w-12 h-12 rounded-xl bg-pear-400/20 flex items-center justify-center mb-4">
+                  <Star className="h-6 w-6 text-pear-400" />
+                </div>
+                <h3 className="font-display text-xl font-semibold mb-2">Professional</h3>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold">$19</span>
-                  <span className="text-gray-500"> one-time</span>
+                  <span className="font-mono text-4xl font-bold text-pear-400">$19</span>
+                  <span className="text-muted-foreground"> one-time</span>
                 </div>
                 <ul className="space-y-3 mb-6">
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>10 Custom Resumes</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">10 Custom Resumes</span>
                   </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>Advanced ATS Optimization</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">Advanced ATS Optimization</span>
                   </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>AI-Powered Job Matching</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">AI-Powered Job Matching</span>
                   </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>Priority Support</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">Priority Support</span>
                   </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>LinkedIn Optimization Tips</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">LinkedIn Tips</span>
                   </li>
                 </ul>
                 <Button
@@ -1196,32 +1059,35 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
               </div>
 
               {/* Lifetime Plan */}
-              <div className="border-2 border-gray-200 rounded-lg p-6 hover:border-primary transition-colors">
-                <h3 className="text-xl font-bold mb-2">Lifetime</h3>
+              <div className="glass-card-hover p-6 relative">
+                <div className="w-12 h-12 rounded-xl bg-pink-400/10 flex items-center justify-center mb-4">
+                  <Crown className="h-6 w-6 text-pink-400" />
+                </div>
+                <h3 className="font-display text-xl font-semibold mb-2">Lifetime</h3>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold">$49</span>
-                  <span className="text-gray-500"> one-time</span>
+                  <span className="font-mono text-4xl font-bold text-pink-400">$49</span>
+                  <span className="text-muted-foreground"> one-time</span>
                 </div>
                 <ul className="space-y-3 mb-6">
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span className="font-bold">Unlimited Custom Resumes</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-foreground font-medium">Unlimited Resumes</span>
                   </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>All Professional Features</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">All Pro Features</span>
                   </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>Lifetime Updates</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">Lifetime Updates</span>
                   </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>VIP Support</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">VIP Support</span>
                   </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>Early Access to New Features</span>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">Early Access</span>
                   </li>
                 </ul>
                 <Button
@@ -1239,8 +1105,8 @@ ${data.result.suggestions.map(s => `• ${s}`).join('\n')}
               </div>
             </div>
 
-            <p className="text-center text-gray-500 text-sm mt-6">
-              Secure payment powered by Stripe. Cancel anytime.
+            <p className="text-center text-muted-foreground text-sm mt-8">
+              🔒 Secure payment powered by Stripe
             </p>
           </div>
         </div>

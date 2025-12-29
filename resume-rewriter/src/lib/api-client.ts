@@ -52,22 +52,49 @@ class ApiClient {
         credentials: 'include',
       });
 
-      const data = await response.json();
+      // Handle empty responses
+      const text = await response.text();
+      let data: any = null;
+      
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          // Response is not JSON
+          if (!response.ok) {
+            return {
+              error: {
+                message: text || 'An error occurred',
+              },
+            };
+          }
+          return { data: { message: text } as T };
+        }
+      }
 
       if (!response.ok) {
         return {
           error: {
-            message: data.message || 'An error occurred',
-            code: data.code,
+            message: data?.message || data?.error || 'An error occurred',
+            code: data?.code,
           },
         };
       }
 
       return { data };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Network error';
+      // Provide more helpful error messages for common scenarios
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        return {
+          error: {
+            message: 'Unable to connect to server. Please check if the backend is running.',
+          },
+        };
+      }
       return {
         error: {
-          message: error instanceof Error ? error.message : 'Network error',
+          message: errorMessage,
         },
       };
     }

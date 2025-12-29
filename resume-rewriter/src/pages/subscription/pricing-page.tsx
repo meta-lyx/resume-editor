@@ -3,8 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { getSubscriptionPlans, createCheckoutSession } from '@/services/subscription-service';
-import { formatCurrency } from '@/lib/utils';
-import { Check, AlertCircle, Mail, Lock, User } from 'lucide-react';
+import { Check, AlertCircle, Mail, Lock, Rocket, Star, Crown, Zap, X, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -58,7 +57,6 @@ export function PricingPage() {
   }, []);
 
   const handleSubscribe = async (planType: string) => {
-    // If coming from onboarding and no user, show account creation
     if (!user && isOnboarding) {
       setSelectedPlan(planType);
       setShowAccountCreation(true);
@@ -93,7 +91,6 @@ export function PricingPage() {
       await signUp(data.email, data.password);
       toast.success('Account created successfully! Proceeding to payment...');
       
-      // Proceed to checkout immediately (signUp already sets the token)
       if (selectedPlan) {
         try {
           const checkoutUrl = await createCheckoutSession(selectedPlan);
@@ -115,184 +112,214 @@ export function PricingPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      {/* Show onboarding context if coming from onboarding */}
-      {isOnboarding && (
-        <div className="mb-8 bg-green-50 border border-green-200 rounded-lg p-6 max-w-4xl mx-auto">
-          <div className="flex items-start">
-            <Check className="h-6 w-6 text-green-600 mr-3 mt-1 flex-shrink-0" />
-            <div>
-              <h3 className="font-bold text-green-900 mb-2">Resume and Job Description Uploaded!</h3>
-              <p className="text-green-800 text-sm">
-                Great! Your resume is ready to be customized. Choose a plan below to get your AI-optimized resume.
-                {!user && ' You\'ll create an account after selecting a plan.'}
-              </p>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 grid-pattern opacity-30" />
+      <div className="orb orb-pear w-[500px] h-[500px] -top-32 left-1/4 opacity-20" />
+      <div className="orb orb-pink w-[400px] h-[400px] bottom-0 right-0 opacity-15" />
+      
+      <div className="container mx-auto px-4 py-12 relative">
+        {/* Show onboarding context if coming from onboarding */}
+        {isOnboarding && (
+          <div className="mb-8 glass-card p-6 max-w-4xl mx-auto border-green-500/30 animate-fade-in">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                <Check className="h-5 w-5 text-green-400" />
+              </div>
+              <div>
+                <h3 className="font-display font-semibold text-green-400 mb-1">Resume Ready!</h3>
+                <p className="text-muted-foreground text-sm">
+                  Your resume is ready to be customized. Choose a plan below to get your AI-optimized resume.
+                  {!user && ' You\'ll create an account after selecting a plan.'}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Account Creation Modal */}
-      {showAccountCreation && !user && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-8 relative">
-            <button
-              onClick={() => setShowAccountCreation(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </button>
-            
-            <h2 className="text-2xl font-bold mb-2">Create Your Account</h2>
-            <p className="text-gray-600 mb-6">
-              Create an account to proceed with your purchase and access your customized resume.
-            </p>
-
-            <form onSubmit={handleSubmit(onSubmitRegistration)} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    className={`block w-full pl-10 pr-3 py-2 border ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
-                    placeholder="your@email.com"
-                    {...register('email')}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="password"
-                    type="password"
-                    autoComplete="new-password"
-                    className={`block w-full pl-10 pr-3 py-2 border ${
-                      errors.password ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
-                    placeholder="At least 6 characters"
-                    {...register('password')}
-                  />
-                </div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    autoComplete="new-password"
-                    className={`block w-full pl-10 pr-3 py-2 border ${
-                      errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
-                    placeholder="Re-enter password"
-                    {...register('confirmPassword')}
-                  />
-                </div>
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
-                )}
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={creatingAccount}
+        {/* Account Creation Modal */}
+        {showAccountCreation && !user && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="glass-card max-w-md w-full p-8 relative animate-scale-in">
+              <button
+                onClick={() => setShowAccountCreation(false)}
+                className="absolute top-4 right-4 p-2 hover:bg-white/5 rounded-lg transition-colors"
               >
-                {creatingAccount ? 'Creating Account...' : 'Create Account & Continue to Payment'}
-              </Button>
+                <X className="h-5 w-5 text-muted-foreground" />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-pear-400/10 border border-pear-400/20 flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="h-7 w-7 text-pear-400" />
+                </div>
+                <h2 className="font-display text-2xl font-bold mb-2">Create Your Account</h2>
+                <p className="text-muted-foreground text-sm">
+                  Create an account to proceed with your purchase.
+                </p>
+              </div>
 
-              <p className="text-xs text-gray-500 text-center">
-                By creating an account, you agree to our Terms of Service and Privacy Policy.
-              </p>
-            </form>
+              <form onSubmit={handleSubmit(onSubmitRegistration)} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      className={`block w-full pl-11 pr-4 py-3 bg-surface-light border rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-pear-400/50 transition-all ${
+                        errors.email ? 'border-red-500' : 'border-border focus:border-pear-400/50'
+                      }`}
+                      placeholder="your@email.com"
+                      {...register('email')}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <input
+                      id="password"
+                      type="password"
+                      autoComplete="new-password"
+                      className={`block w-full pl-11 pr-4 py-3 bg-surface-light border rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-pear-400/50 transition-all ${
+                        errors.password ? 'border-red-500' : 'border-border focus:border-pear-400/50'
+                      }`}
+                      placeholder="At least 6 characters"
+                      {...register('password')}
+                    />
+                  </div>
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-400">{errors.password.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-2">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <input
+                      id="confirmPassword"
+                      type="password"
+                      autoComplete="new-password"
+                      className={`block w-full pl-11 pr-4 py-3 bg-surface-light border rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-pear-400/50 transition-all ${
+                        errors.confirmPassword ? 'border-red-500' : 'border-border focus:border-pear-400/50'
+                      }`}
+                      placeholder="Re-enter password"
+                      {...register('confirmPassword')}
+                    />
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-400">{errors.confirmPassword.message}</p>
+                  )}
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="lg"
+                  disabled={creatingAccount}
+                >
+                  {creatingAccount ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    'Create Account & Continue'
+                  )}
+                </Button>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  By creating an account, you agree to our Terms of Service and Privacy Policy.
+                </p>
+              </form>
+            </div>
           </div>
+        )}
+
+        {/* Header */}
+        <div className="text-center mb-16 animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-pear-400/10 border border-pear-400/20 text-pear-400 text-sm font-medium mb-6">
+            <Zap className="w-4 h-4" />
+            Simple, One-Time Pricing
+          </div>
+          <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
+            Choose Your Plan
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Get AI-powered resume customization with our flexible pricing options. 
+            No subscriptions, no hidden fees.
+          </p>
         </div>
-      )}
 
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Get AI-powered resume customization with our flexible pricing options.
-        </p>
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse">
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 h-96">
-                <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
-                <div className="h-12 bg-gray-200 rounded w-3/4 mb-6"></div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="glass-card p-8 animate-pulse">
+                <div className="h-12 w-12 bg-white/10 rounded-xl mb-6"></div>
+                <div className="h-8 bg-white/10 rounded w-1/2 mb-4"></div>
+                <div className="h-12 bg-white/10 rounded w-3/4 mb-6"></div>
                 <div className="space-y-3">
                   {[1, 2, 3, 4].map((j) => (
-                    <div key={j} className="h-4 bg-gray-200 rounded w-full"></div>
+                    <div key={j} className="h-4 bg-white/10 rounded w-full"></div>
                   ))}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : plans.length === 0 ? (
-        <div className="bg-white p-12 rounded-lg shadow-sm border border-gray-200 text-center">
-          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-medium text-gray-900 mb-2">No subscription plans available</h2>
-          <p className="text-gray-500">Please check back later.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Starter Plan */}
-          <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200">
-            <div className="p-8">
-              <h2 className="text-2xl font-bold mb-2">Starter</h2>
+            ))}
+          </div>
+        ) : plans.length === 0 ? (
+          <div className="glass-card p-12 text-center max-w-md mx-auto">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="font-display text-xl font-semibold mb-2">No plans available</h2>
+            <p className="text-muted-foreground">Please check back later.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto animate-fade-in-up">
+            {/* Starter Plan */}
+            <div className="glass-card-hover p-8 relative">
+              <div className="w-12 h-12 rounded-xl bg-pear-400/10 flex items-center justify-center mb-6">
+                <Rocket className="h-6 w-6 text-pear-400" />
+              </div>
+              <h2 className="font-display text-2xl font-bold mb-2">Starter</h2>
               <div className="mb-6">
-                <span className="text-4xl font-bold">$9</span>
-                <span className="text-gray-500"> one-time</span>
+                <span className="font-mono text-4xl font-bold text-pear-400">$9</span>
+                <span className="text-muted-foreground"> one-time</span>
               </div>
               
               <ul className="space-y-3 mb-8">
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>3 Custom Resumes</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">3 Custom Resumes</span>
                 </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>ATS Optimization</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">ATS Optimization</span>
                 </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Job Matching</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">Job Matching</span>
                 </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Email Support</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">Email Support</span>
                 </li>
               </ul>
               
@@ -302,43 +329,50 @@ export function PricingPage() {
                 onClick={() => handleSubscribe('starter')}
                 disabled={!!subscribing}
               >
-                {subscribing === 'starter' ? 'Processing...' : 'Choose Plan'}
+                {subscribing === 'starter' ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
+                ) : (
+                  'Choose Plan'
+                )}
               </Button>
             </div>
-          </div>
 
-          {/* Professional Plan - Most Popular */}
-          <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow ring-2 ring-primary border-transparent relative">
-            <div className="bg-primary text-white text-center py-2 font-medium">
-              Most Popular
-            </div>
-            <div className="p-8">
-              <h2 className="text-2xl font-bold mb-2">Professional</h2>
+            {/* Professional Plan - Most Popular */}
+            <div className="glass-card p-8 relative border-pear-400/30 shadow-glow">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="px-4 py-1 bg-gradient-pear text-background text-xs font-semibold rounded-full">
+                  Most Popular
+                </span>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-pear-400/20 flex items-center justify-center mb-6">
+                <Star className="h-6 w-6 text-pear-400" />
+              </div>
+              <h2 className="font-display text-2xl font-bold mb-2">Professional</h2>
               <div className="mb-6">
-                <span className="text-4xl font-bold">$19</span>
-                <span className="text-gray-500"> one-time</span>
+                <span className="font-mono text-4xl font-bold text-pear-400">$19</span>
+                <span className="text-muted-foreground"> one-time</span>
               </div>
               
               <ul className="space-y-3 mb-8">
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span className="font-medium">10 Custom Resumes</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground font-medium">10 Custom Resumes</span>
                 </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Advanced ATS Optimization</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">Advanced ATS Optimization</span>
                 </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>AI-Powered Job Matching</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">AI-Powered Job Matching</span>
                 </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Priority Support</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">Priority Support</span>
                 </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>LinkedIn Optimization Tips</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">LinkedIn Tips</span>
                 </li>
               </ul>
               
@@ -347,40 +381,45 @@ export function PricingPage() {
                 onClick={() => handleSubscribe('professional')}
                 disabled={!!subscribing}
               >
-                {subscribing === 'professional' ? 'Processing...' : 'Choose Plan'}
+                {subscribing === 'professional' ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
+                ) : (
+                  'Choose Plan'
+                )}
               </Button>
             </div>
-          </div>
 
-          {/* Lifetime Plan */}
-          <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200">
-            <div className="p-8">
-              <h2 className="text-2xl font-bold mb-2">Lifetime</h2>
+            {/* Lifetime Plan */}
+            <div className="glass-card-hover p-8 relative">
+              <div className="w-12 h-12 rounded-xl bg-pink-400/10 flex items-center justify-center mb-6">
+                <Crown className="h-6 w-6 text-pink-400" />
+              </div>
+              <h2 className="font-display text-2xl font-bold mb-2">Lifetime</h2>
               <div className="mb-6">
-                <span className="text-4xl font-bold">$49</span>
-                <span className="text-gray-500"> one-time</span>
+                <span className="font-mono text-4xl font-bold text-pink-400">$49</span>
+                <span className="text-muted-foreground"> one-time</span>
               </div>
               
               <ul className="space-y-3 mb-8">
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span className="font-bold">Unlimited Custom Resumes</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground font-semibold">Unlimited Resumes</span>
                 </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>All Professional Features</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">All Pro Features</span>
                 </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Lifetime Updates</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">Lifetime Updates</span>
                 </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>VIP Support</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">VIP Support</span>
                 </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Early Access to New Features</span>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">Early Access</span>
                 </li>
               </ul>
               
@@ -390,31 +429,36 @@ export function PricingPage() {
                 onClick={() => handleSubscribe('lifetime')}
                 disabled={!!subscribing}
               >
-                {subscribing === 'lifetime' ? 'Processing...' : 'Choose Plan'}
+                {subscribing === 'lifetime' ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
+                ) : (
+                  'Choose Plan'
+                )}
               </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="mt-12 bg-gray-50 rounded-lg p-6 border border-gray-200 max-w-3xl mx-auto">
-        <h2 className="text-xl font-bold mb-4">Frequently Asked Questions</h2>
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-medium mb-2">Are these one-time payments?</h3>
-            <p className="text-gray-600">Yes! All plans are one-time purchases. Pay once and use your credits whenever you need them. No recurring charges.</p>
-          </div>
-          <div>
-            <h3 className="font-medium mb-2">What happens if I use up all my custom resumes?</h3>
-            <p className="text-gray-600">You can purchase additional credits by selecting another plan, or upgrade to the Lifetime plan for unlimited resumes.</p>
-          </div>
-          <div>
-            <h3 className="font-medium mb-2">Do the credits expire?</h3>
-            <p className="text-gray-600">No! Your credits never expire. Use them at your own pace.</p>
-          </div>
-          <div>
-            <h3 className="font-medium mb-2">What payment methods are supported?</h3>
-            <p className="text-gray-600">We support all major credit and debit cards. All payments are securely processed through Stripe.</p>
+        {/* FAQ Section */}
+        <div className="mt-20 glass-card p-8 max-w-3xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <h2 className="font-display text-2xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-medium text-foreground mb-2">Are these one-time payments?</h3>
+              <p className="text-muted-foreground text-sm">Yes! All plans are one-time purchases. Pay once and use your credits whenever you need them. No recurring charges.</p>
+            </div>
+            <div className="border-t border-white/5 pt-6">
+              <h3 className="font-medium text-foreground mb-2">What happens if I use up all my custom resumes?</h3>
+              <p className="text-muted-foreground text-sm">You can purchase additional credits by selecting another plan, or upgrade to the Lifetime plan for unlimited resumes.</p>
+            </div>
+            <div className="border-t border-white/5 pt-6">
+              <h3 className="font-medium text-foreground mb-2">Do the credits expire?</h3>
+              <p className="text-muted-foreground text-sm">No! Your credits never expire. Use them at your own pace.</p>
+            </div>
+            <div className="border-t border-white/5 pt-6">
+              <h3 className="font-medium text-foreground mb-2">What payment methods are supported?</h3>
+              <p className="text-muted-foreground text-sm">We support all major credit and debit cards. All payments are securely processed through Stripe.</p>
+            </div>
           </div>
         </div>
       </div>
