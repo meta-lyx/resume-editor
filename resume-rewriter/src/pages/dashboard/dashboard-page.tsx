@@ -105,6 +105,27 @@ export function DashboardPage() {
   };
 
   useEffect(() => {
+    const onboardingFile = sessionStorage.getItem('onboarding_resume_file');
+    const onboardingJob = sessionStorage.getItem('onboarding_job_description');
+    const onboardingText = sessionStorage.getItem('onboarding_resume_text');
+
+    if (onboardingText && onboardingJob) {
+      // Prioritize onboarding data
+      const newData = {
+        extractedText: onboardingText,
+        jobDescription: onboardingJob,
+        resumeTitle: onboardingFile ? onboardingFile.replace(/\.[^/.]+$/, '') : '',
+        resumeFileName: onboardingFile || '',
+      };
+      
+      saveResumeData(newData);
+      
+      // Clear storage
+      sessionStorage.removeItem('onboarding_resume_file');
+      sessionStorage.removeItem('onboarding_job_description');
+      sessionStorage.removeItem('onboarding_resume_text');
+    }
+    
     loadPersistedData();
   }, []);
 

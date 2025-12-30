@@ -61,7 +61,7 @@ export function OnboardingPage() {
     sessionStorage.setItem('onboarding_job_description', jobDescription);
     sessionStorage.setItem('onboarding_resume_text', extractedText);
 
-    navigate('/pricing?onboarding=true');
+    navigate('/dashboard');
   };
 
   const handleLoginSuccess = () => {
