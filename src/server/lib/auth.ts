@@ -68,19 +68,16 @@ export async function authMiddleware(c: any, next: any) {
   }
   
   try {
-    const db = createDb(c.env.DB);
-    const auth = createAuth(db, c.env);
-    
-    const session = await auth.api.getSession({
-      headers: c.req.raw.headers,
-    });
-    
-    if (!session) {
+    const now = Math.floor(Date.now() / 1000);
+    const sessionResult = await c.env.DB.prepare(
+      'SELECT s.user_id as userId, u.email as email, u.name as name FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ? AND s.expires_at > ?'
+    ).bind(token, now).all();
+    const row = sessionResult.results?.[0];
+    if (!row) {
       return c.json({ error: 'Invalid session' }, 401);
     }
-    
-    c.set('user', session.user);
-    c.set('session', session.session);
+    c.set('user', { id: row.userId, email: row.email, name: row.name });
+    c.set('session', { token, expiresAt: now });
     
     await next();
   } catch (error) {
@@ -96,16 +93,14 @@ export async function optionalAuthMiddleware(c: any, next: any) {
     const token = authHeader?.replace('Bearer ', '');
     
     if (token) {
-      const db = createDb(c.env.DB);
-      const auth = createAuth(db, c.env);
-      
-      const session = await auth.api.getSession({
-        headers: c.req.raw.headers,
-      });
-      
-      if (session) {
-        c.set('user', session.user);
-        c.set('session', session.session);
+      const now = Math.floor(Date.now() / 1000);
+      const sessionResult = await c.env.DB.prepare(
+        'SELECT s.user_id as userId, u.email as email, u.name as name FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ? AND s.expires_at > ?'
+      ).bind(token, now).all();
+      const row = sessionResult.results?.[0];
+      if (row) {
+        c.set('user', { id: row.userId, email: row.email, name: row.name });
+        c.set('session', { token, expiresAt: now });
       }
     }
   } catch (error) {
