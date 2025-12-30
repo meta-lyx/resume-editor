@@ -269,12 +269,16 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
   subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
     try {
       const user = getCurrentUser(c);
+      console.log('[Consume] Request for user:', user?.id);
+
       if (!c.env.DB) {
+        console.error('[Consume] Database binding missing');
         throw new Error('Database binding missing');
       }
       const db = createDb(c.env.DB);
       
       // Get user's subscription and plan
+      console.log('[Consume] Querying subscription...');
       const subscription = await db
         .select({
           sub: userSubscriptions,
@@ -288,19 +292,24 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
         ))
         .limit(1);
       
+      console.log('[Consume] Subscription query result:', JSON.stringify(subscription));
+
       if (subscription.length === 0) {
+        console.warn('[Consume] No active subscription found');
         return c.json({ error: 'No active subscription found' }, 403);
       }
       
       const { sub, plan } = subscription[0];
       
       if (!plan) {
+         console.warn('[Consume] Subscription plan not found for sub:', sub.id);
          return c.json({ error: 'Subscription plan not found' }, 403);
       }
 
       // Check if user has credits remaining
       // For lifetime plans, we might want to skip this check or have a different limit
       if (plan.interval !== 'lifetime' && sub.usageCount >= plan.monthlyLimit) {
+        console.warn('[Consume] No credits remaining. Usage:', sub.usageCount, 'Limit:', plan.monthlyLimit);
         return c.json({ 
           error: 'No credits remaining',
           usageCount: sub.usageCount,
@@ -311,6 +320,7 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
       
       // Increment usage count
       const newUsageCount = sub.usageCount + 1;
+      console.log('[Consume] Incrementing usage count to:', newUsageCount);
       
       await db
         .update(userSubscriptions)
@@ -320,6 +330,7 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
         })
         .where(eq(userSubscriptions.id, sub.id));
       
+      console.log('[Consume] Credit consumed successfully');
       return c.json({
         success: true,
         usageCount: newUsageCount,
@@ -329,8 +340,8 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
       });
       
     } catch (error: any) {
-      console.error('Consume credit error:', error);
-      return c.json({ error: 'Failed to consume credit' }, 500);
+      console.error('[Consume] Error:', error);
+      return c.json({ error: 'Failed to consume credit', details: error.message }, 500);
     }
   });
 
