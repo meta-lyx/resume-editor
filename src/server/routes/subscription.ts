@@ -292,7 +292,7 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
         ))
         .limit(1);
       
-      console.log('[Consume] Subscription query result:', JSON.stringify(subscription));
+      console.log('[Consume] Subscription query result count:', subscription.length);
 
       if (subscription.length === 0) {
         console.warn('[Consume] No active subscription found');
