@@ -15,6 +15,7 @@ workers_dev = true
 binding = "DB"
 database_name = "ai-resume-editor-db"
 database_id = "afb1de3b-3cb7-48b6-a54b-662ac35f0a80"
+migrations_dir = "drizzle/migrations"
 
 # R2 Storage binding
 [[r2_buckets]]
