@@ -97,6 +97,10 @@ export async function onRequest(context: any) {
     
     const userEmail = users.results.length > 0 ? (users.results[0] as any).email : '';
     
+    // Determine frontend base URL for redirect
+    const originHeader = request.headers.get('origin');
+    const baseUrl = originHeader || env.APP_URL || new URL(request.url).origin;
+
     // Create Stripe checkout session using Stripe API directly
     // (Stripe SDK doesn't work in Cloudflare Workers/Pages Functions)
     const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
@@ -113,8 +117,8 @@ export async function onRequest(context: any) {
         'line_items[0][price_data][unit_amount]': Math.round(plan.price * 100).toString(),
         'line_items[0][quantity]': '1',
         'mode': 'payment',
-        'success_url': `${env.APP_URL}/dashboard?payment=success&plan=${planId}`,
-        'cancel_url': `${env.APP_URL}/pricing?payment=cancelled`,
+        'success_url': `${baseUrl}/dashboard?payment=success&plan=${planId}`,
+        'cancel_url': `${baseUrl}/pricing?payment=cancelled`,
         'customer_email': userEmail,
         'client_reference_id': userId,
         'metadata[userId]': userId,

@@ -326,10 +326,10 @@ export function PricingPage() {
               <Button
                 className="w-full"
                 variant="outline"
-                onClick={() => handleSubscribe('starter')}
+                onClick={() => handleSubscribe('starter-plan')}
                 disabled={!!subscribing}
               >
-                {subscribing === 'starter' ? (
+                {subscribing === 'starter-plan' ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
                 ) : (
                   'Choose Plan'
@@ -378,10 +378,10 @@ export function PricingPage() {
               
               <Button
                 className="w-full"
-                onClick={() => handleSubscribe('professional')}
+                onClick={() => handleSubscribe('professional-plan')}
                 disabled={!!subscribing}
               >
-                {subscribing === 'professional' ? (
+                {subscribing === 'professional-plan' ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
                 ) : (
                   'Choose Plan'
@@ -426,10 +426,10 @@ export function PricingPage() {
               <Button
                 className="w-full"
                 variant="outline"
-                onClick={() => handleSubscribe('lifetime')}
+                onClick={() => handleSubscribe('lifetime-plan')}
                 disabled={!!subscribing}
               >
-                {subscribing === 'lifetime' ? (
+                {subscribing === 'lifetime-plan' ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
                 ) : (
                   'Choose Plan'

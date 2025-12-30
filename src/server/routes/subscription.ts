@@ -126,6 +126,10 @@ subscriptionRoutes.post('/checkout', authMiddleware, async (c) => {
     // 'lifetime' plans use one-time payment mode
     const isOneTime = plan[0].interval === 'lifetime';
     
+    // Determine frontend base URL for redirect
+    const originHeader = c.req.header('origin');
+    const baseUrl = originHeader || c.env.APP_URL || new URL(c.req.url).origin;
+
     // Build checkout session params
     const checkoutParams = new URLSearchParams({
       'customer': customerId,
@@ -135,8 +139,8 @@ subscriptionRoutes.post('/checkout', authMiddleware, async (c) => {
       'line_items[0][price_data][unit_amount]': Math.round(plan[0].price * 100).toString(),
       'line_items[0][quantity]': '1',
       'mode': isOneTime ? 'payment' : 'subscription',
-      'success_url': `${c.env.APP_URL}/dashboard?payment=success&plan=${plan[0].id}`,
-      'cancel_url': `${c.env.APP_URL}/pricing?payment=cancelled`,
+      'success_url': `${baseUrl}/dashboard?payment=success&plan=${plan[0].id}`,
+      'cancel_url': `${baseUrl}/pricing?payment=cancelled`,
       'metadata[userId]': user.id,
       'metadata[planId]': plan[0].id,
       'metadata[planType]': plan[0].planType,
@@ -542,6 +546,61 @@ subscriptionRoutes.get('/usage', authMiddleware, async (c) => {
   } catch (error: any) {
     console.error('Get usage error:', error);
     return c.json({ error: 'Failed to retrieve usage' }, 500);
+  }
+});
+
+subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c);
+    const db = createDb(c.env.DB);
+    
+    const subscription = await db
+      .select({
+        subscription: userSubscriptions,
+        plan: subscriptionPlans,
+      })
+      .from(userSubscriptions)
+      .leftJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
+      .where(and(
+        eq(userSubscriptions.userId, user.id),
+        eq(userSubscriptions.status, 'active')
+      ))
+      .limit(1);
+    
+    if (subscription.length === 0) {
+      return c.json({ error: 'No active subscription' }, 400);
+    }
+    
+    const sub = subscription[0].subscription;
+    const plan = subscription[0].plan;
+    
+    if (plan && plan.interval !== 'lifetime' && sub.usageCount >= (plan.monthlyLimit || 0)) {
+      return c.json({ error: 'No credits remaining' }, 402);
+    }
+    
+    const newUsage = (sub.usageCount || 0) + 1;
+    
+    await db
+      .update(userSubscriptions)
+      .set({
+        usageCount: newUsage,
+        updatedAt: new Date(),
+      })
+      .where(eq(userSubscriptions.id, sub.id));
+    
+    const limit = plan ? plan.monthlyLimit || 0 : 0;
+    const remaining = plan && plan.interval === 'lifetime' ? null : Math.max(0, limit - newUsage);
+    
+    return c.json({
+      success: true,
+      usageCount: newUsage,
+      monthlyLimit: limit,
+      remaining,
+      planName: plan?.name,
+    });
+  } catch (error: any) {
+    console.error('Consume credit error:', error);
+    return c.json({ error: error.message || 'Failed to consume credit' }, 500);
   }
 });
 

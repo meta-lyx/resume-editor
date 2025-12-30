@@ -19,6 +19,8 @@ import { OptimizeResumePage } from '@/pages/resume/optimize-resume-page';
 import { MyResumesPage } from '@/pages/resume/my-resumes-page';
 import { PricingPage } from '@/pages/subscription/pricing-page';
 import { TemplatesPage } from '@/pages/templates-page';
+import { ProfilePage } from '@/pages/profile-page';
+import { SubscriptionPage } from '@/pages/subscription/subscription-page';
 
 // 保护路由组件
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -44,6 +46,16 @@ export default function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 
                 {/* 受保护路由 */}
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/subscription" element={
+                  <ProtectedRoute>
+                    <SubscriptionPage />
+                  </ProtectedRoute>
+                } />
                 <Route path="/optimize/:id" element={
                   <ProtectedRoute>
                     <OptimizeResumePage />

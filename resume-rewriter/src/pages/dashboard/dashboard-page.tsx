@@ -198,8 +198,24 @@ export function DashboardPage() {
               if (!resumeTitle && savedData.resumeTitle) {
                 setResumeTitle(savedData.resumeTitle);
               }
-              setTimeout(() => {
+              const consumeThenDownload = async () => {
+                const { data: consumeData, error: consumeError } = await apiClient.consumeCredit();
+                if (consumeError) {
+                  toast.error(consumeError.message || 'Failed to use a credit');
+                  return;
+                }
+                if (consumeData) {
+                  setSubscriptionInfo({
+                    planName: consumeData.planName,
+                    remaining: (consumeData.remaining ?? data.remaining) as number,
+                    monthlyLimit: consumeData.monthlyLimit,
+                    usageCount: consumeData.usageCount,
+                  });
+                }
                 downloadResumeFile();
+              };
+              setTimeout(() => {
+                consumeThenDownload();
               }, 100);
             }
           }
@@ -330,11 +346,38 @@ ${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
     }
 
     if (paymentSuccess) {
+      const { data, error } = await apiClient.consumeCredit();
+      if (error) {
+        toast.error(error.message || 'Failed to use a credit');
+        return;
+      }
+      if (data) {
+        setHasSubscription(true);
+        setSubscriptionInfo({
+          planName: data.planName,
+          remaining: (data.remaining ?? subscriptionInfo?.remaining ?? 0) as number,
+          monthlyLimit: data.monthlyLimit,
+          usageCount: data.usageCount,
+        });
+      }
       downloadResumeFile();
       return;
     }
 
     if (hasSubscription && subscriptionInfo && subscriptionInfo.remaining > 0) {
+      const { data, error } = await apiClient.consumeCredit();
+      if (error) {
+        toast.error(error.message || 'Failed to use a credit');
+        return;
+      }
+      if (data) {
+        setSubscriptionInfo({
+          planName: data.planName,
+          remaining: (data.remaining ?? subscriptionInfo.remaining) as number,
+          monthlyLimit: data.monthlyLimit,
+          usageCount: data.usageCount,
+        });
+      }
       downloadResumeFile();
       return;
     }
@@ -371,6 +414,19 @@ ${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
       }
       
       setHasSubscription(true);
+      const { data: consumeData, error: consumeError } = await apiClient.consumeCredit();
+      if (consumeError) {
+        toast.error(consumeError.message || 'Failed to use a credit');
+        return;
+      }
+      if (consumeData) {
+        setSubscriptionInfo({
+          planName: consumeData.planName,
+          remaining: (consumeData.remaining ?? data.remaining) as number,
+          monthlyLimit: consumeData.monthlyLimit,
+          usageCount: consumeData.usageCount,
+        });
+      }
       downloadResumeFile();
     } catch (error) {
       console.error('Error checking subscription:', error);

@@ -327,6 +327,18 @@ class ApiClient {
       planName?: string;
     }>('/subscriptions/usage');
   }
+
+  async consumeCredit() {
+    return this.request<{
+      success: boolean;
+      usageCount: number;
+      monthlyLimit: number;
+      remaining: number | null;
+      planName?: string;
+    }>('/subscriptions/consume', {
+      method: 'POST',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
