@@ -52,6 +52,15 @@ class ApiClient {
         credentials: 'include',
       });
 
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('text/html')) {
+        return {
+          error: {
+            message: 'Server error: Cloudflare Worker exception',
+          },
+        };
+      }
+
       // Handle empty responses
       const text = await response.text();
       let data: any = null;
@@ -64,7 +73,9 @@ class ApiClient {
           if (!response.ok) {
             return {
               error: {
-                message: text || 'An error occurred',
+                message: /<!DOCTYPE|<html|Cloudflare|cf\.errors/i.test(text)
+                  ? 'Server error: Cloudflare Worker exception'
+                  : (text || 'An error occurred'),
               },
             };
           }
@@ -201,6 +212,15 @@ class ApiClient {
         body: JSON.stringify({ resumeText, jobDescription, options }),
         credentials: 'include',
       });
+
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('text/html')) {
+        return {
+          error: {
+            message: 'Server error: Cloudflare Worker exception',
+          },
+        };
+      }
 
       const data = await response.json();
 
