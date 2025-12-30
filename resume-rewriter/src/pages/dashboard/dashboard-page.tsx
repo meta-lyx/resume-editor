@@ -577,8 +577,8 @@ ${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error('Failed to generate PDF. Downloading as text file instead.');
-      
-      const blob = new Blob([resumeContent], { type: 'text/plain' });
+      const fallbackText = parseMarkdownToPlainText(resumeContent);
+      const blob = new Blob([fallbackText], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
