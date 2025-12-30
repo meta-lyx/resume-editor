@@ -216,6 +216,55 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
     return c.json({ error: 'Please use /checkout endpoint instead' }, 400);
   });
 
+  // Get subscription usage
+  subscriptionRoutes.get('/usage', authMiddleware, async (c) => {
+    try {
+      const user = getCurrentUser(c);
+      if (!c.env.DB) {
+        throw new Error('Database binding missing');
+      }
+      const db = createDb(c.env.DB);
+      
+      const subscription = await db
+        .select({
+          sub: userSubscriptions,
+          plan: subscriptionPlans,
+        })
+        .from(userSubscriptions)
+        .leftJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
+        .where(and(
+          eq(userSubscriptions.userId, user.id),
+          eq(userSubscriptions.status, 'active')
+        ))
+        .limit(1);
+      
+      if (subscription.length === 0 || !subscription[0].plan) {
+        return c.json({
+          hasSubscription: false,
+          remaining: 0,
+          monthlyLimit: 0,
+          usageCount: 0
+        });
+      }
+      
+      const { sub, plan } = subscription[0];
+      const remaining = plan.interval === 'lifetime' 
+        ? 999 
+        : Math.max(0, plan.monthlyLimit - sub.usageCount);
+
+      return c.json({
+        hasSubscription: true,
+        planName: plan.name,
+        remaining,
+        monthlyLimit: plan.monthlyLimit,
+        usageCount: sub.usageCount,
+      });
+    } catch (error: any) {
+      console.error('Get usage error:', error);
+      return c.json({ error: 'Failed to retrieve usage' }, 500);
+    }
+  });
+
   // Consume a credit
   subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
     try {

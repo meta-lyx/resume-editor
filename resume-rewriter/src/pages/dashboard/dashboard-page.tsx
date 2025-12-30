@@ -367,14 +367,22 @@ ${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
   };
 
   const handleDownloadResume = async () => {
-    if (authLoading) return;
+    console.log('handleDownloadResume called');
+    if (authLoading) {
+      console.log('Auth loading, returning');
+      return;
+    }
     
     if (!user) {
+      console.log('No user, showing login modal');
       setShowLoginModal(true);
       return;
     }
 
+    console.log('User present, checking conditions', { paymentSuccess, hasSubscription, subscriptionInfo });
+
     if (paymentSuccess) {
+      console.log('Payment success path');
       const { data, error } = await apiClient.consumeCredit();
       if (error) {
         toast.error(error.message || 'Failed to use a credit');
@@ -394,6 +402,7 @@ ${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
     }
 
     if (hasSubscription && subscriptionInfo && subscriptionInfo.remaining > 0) {
+      console.log('Existing subscription path');
       const { data, error } = await apiClient.consumeCredit();
       if (error) {
         toast.error(error.message || 'Failed to use a credit');
@@ -411,8 +420,10 @@ ${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
       return;
     }
 
+    console.log('Checking subscription usage via API');
     try {
       const { data, error } = await apiClient.getSubscriptionUsage();
+      console.log('Subscription usage result', { data, error });
       
       if (error) {
         toast.error('Failed to verify subscription. Please try again.');
@@ -432,16 +443,19 @@ ${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
       });
       
       if (!data.hasSubscription) {
+        console.log('No subscription, showing payment modal');
         showPaymentModalSafely();
         return;
       }
       
       if (data.remaining <= 0) {
+        console.log('No remaining credits');
         toast.error(`You've used all ${data.monthlyLimit} resume credits. Please upgrade to continue.`);
         showPaymentModalSafely();
         return;
       }
       
+      console.log('Has subscription and credits, consuming credit');
       setHasSubscription(true);
       const { data: consumeData, error: consumeError } = await apiClient.consumeCredit();
       if (consumeError) {
