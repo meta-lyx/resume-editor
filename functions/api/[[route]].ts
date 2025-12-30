@@ -8,11 +8,11 @@ import { prettyJSON } from 'hono/pretty-json';
 import { secureHeaders } from 'hono/secure-headers';
 
 // Import our route handlers
-import { createAuthApp } from '../../src/server/routes/auth';
-import { createResumeApp } from '../../src/server/routes/resume';
-import { createAIApp } from '../../src/server/routes/ai';
-import { createUploadApp } from '../../src/server/routes/upload';
-import { createSubscriptionApp } from '../../src/server/routes/subscription';
+import { authRoutes } from '../../src/server/routes/auth';
+import { resumeRoutes } from '../../src/server/routes/resume';
+import { aiRoutes } from '../../src/server/routes/ai';
+import { uploadRoutes } from '../../src/server/routes/upload';
+import { subscriptionRoutes } from '../../src/server/routes/subscription';
 
 // Define environment type
 export interface Env {
@@ -74,18 +74,12 @@ app.get('/health', (c) => {
   });
 });
 
-// Mount route handlers - create them inline to ensure env is passed
-const authApp = createAuthApp();
-const resumeApp = createResumeApp();
-const aiApp = createAIApp();
-const uploadApp = createUploadApp();
-const subscriptionApp = createSubscriptionApp();
-
-app.route('/auth', authApp);
-app.route('/resumes', resumeApp);
-app.route('/ai', aiApp);
-app.route('/upload', uploadApp);
-app.route('/subscriptions', subscriptionApp);
+// Mount route handlers
+app.route('/auth', authRoutes);
+app.route('/resumes', resumeRoutes);
+app.route('/ai', aiRoutes);
+app.route('/upload', uploadRoutes);
+app.route('/subscriptions', subscriptionRoutes);
 
 // 404 handler
 app.notFound((c) => {
