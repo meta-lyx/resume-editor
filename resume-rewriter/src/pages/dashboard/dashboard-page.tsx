@@ -90,10 +90,18 @@ export function DashboardPage() {
     try {
       const savedData = loadResumeData();
       if (savedData.extractedText || savedData.customizedResume) {
-        setExtractedText(savedData.extractedText);
+        const sanitize = (s: string) => s ? s.replace(/<\/?[^>]+(>|$)/g, '') : '';
+        const looksLikeError = (s: string) => /cloudflare|utm_source=error_100x|worker threw exception/i.test(s);
+        const sanitizedExtracted = sanitize(savedData.extractedText);
+        const sanitizedCustomized = sanitize(savedData.customizedResume);
+        setExtractedText(sanitizedExtracted);
         setResumeTitle(savedData.resumeTitle);
         setJobDescription(savedData.jobDescription);
-        setCustomizedResume(savedData.customizedResume);
+        if (sanitizedCustomized && !looksLikeError(savedData.customizedResume)) {
+          setCustomizedResume(sanitizedCustomized);
+        } else {
+          setCustomizedResume('');
+        }
         setResumeProcessed(savedData.resumeProcessed);
         return true;
       }
