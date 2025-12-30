@@ -3,8 +3,7 @@ import { authMiddleware, getCurrentUser } from '../lib/auth';
 import { uploadToR2, validateFileType, validateFileSize, extractTextFromFile } from '../lib/r2';
 import { createDb, fileUploads } from '../db';
 
-export function createUploadApp() {
-  const uploadRoutes = new Hono();
+export const uploadRoutes = new Hono();
 
   // Apply auth middleware to all upload routes
   uploadRoutes.use('/*', authMiddleware);

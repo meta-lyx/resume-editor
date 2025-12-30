@@ -665,6 +665,5 @@ subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
   }
 });
 
-  return subscriptionRoutes;
-}
+
 

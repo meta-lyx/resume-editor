@@ -3,8 +3,7 @@ import { authMiddleware, getCurrentUser } from '../lib/auth';
 import { createDb, resumes, resumeVersions } from '../db';
 import { eq, and, desc } from 'drizzle-orm';
 
-export function createResumeApp() {
-  const resumeRoutes = new Hono();
+export const resumeRoutes = new Hono();
 
   // Apply auth middleware to all resume routes
   resumeRoutes.use('/*', authMiddleware);
@@ -264,6 +263,5 @@ resumeRoutes.get('/stats/overview', async (c) => {
   }
 });
 
-  return resumeRoutes;
-}
+
 

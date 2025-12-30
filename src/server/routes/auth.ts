@@ -339,6 +339,5 @@ authRoutes.post('/refresh', async (c) => {
   }
 });
 
-  return authRoutes;
-}
+
 

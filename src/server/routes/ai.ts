@@ -264,6 +264,5 @@ aiRoutes.get('/health', async (c) => {
   return c.json(health);
 });
 
-  return aiRoutes;
-}
+
 
