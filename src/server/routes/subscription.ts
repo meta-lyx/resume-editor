@@ -9,6 +9,9 @@ export const subscriptionRoutes = new Hono();
 // Get all subscription plans (public)
 subscriptionRoutes.get('/plans', optionalAuthMiddleware, async (c) => {
   try {
+    if (!c.env.DB) {
+      throw new Error('Database binding missing');
+    }
     const db = createDb(c.env.DB);
     
     const plans = await db
@@ -310,6 +313,9 @@ subscriptionRoutes.post('/webhook', async (c) => {
       return c.json({ error: 'Invalid signature' }, 400);
     }
     
+    if (!c.env.DB) {
+      throw new Error('Database binding missing');
+    }
     const db = createDb(c.env.DB);
     
     // Handle different event types
