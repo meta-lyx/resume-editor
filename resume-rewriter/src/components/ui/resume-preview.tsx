@@ -23,6 +23,9 @@ export function ResumePreview({
 
   const isOptimized = type === 'optimized';
 
+  const sanitizedContent = content.replace(/<\/?[^>]+(>|$)/g, '');
+  const isErrorContent = /cloudflare|utm_source=error_100x|unknown error occurred/i.test(content);
+
   // Parse content into sections for better display
   const formatContent = (text: string) => {
     const lines = text.split('\n');
@@ -93,11 +96,15 @@ export function ResumePreview({
             }}
           >
             {/* Document content */}
-            <div className="h-full overflow-hidden scrollbar-hide">
-              <div className="font-sans">
-                {formatContent(content)}
+              <div className="h-full overflow-hidden scrollbar-hide">
+                <div className="font-sans">
+                {isErrorContent ? (
+                  <p className="text-xs text-red-500">Content unavailable due to server error. Please retry optimization.</p>
+                ) : (
+                  formatContent(sanitizedContent)
+                )}
+                </div>
               </div>
-            </div>
 
             {/* Overlay for locked content */}
             {isOptimized && !isUnlocked && (

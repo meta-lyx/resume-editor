@@ -457,6 +457,7 @@ ${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
 
   const parseMarkdownToPlainText = (markdown: string): string => {
     let text = markdown;
+    text = text.replace(/<\/?[^>]+(>|$)/g, '');
     text = text.replace(/^#{1,6}\s+(.+)$/gm, '$1');
     text = text.replace(/\*\*(.+?)\*\*/g, '$1');
     text = text.replace(/__(.+?)__/g, '$1');

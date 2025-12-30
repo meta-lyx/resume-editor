@@ -80,13 +80,21 @@ export function OptimizeResumePage() {
 
     setOptimizing(true);
 
-    try {
+  try {
       const result = await optimizeResume({
         resumeId: id,
         jobDescription: selectedType === 'job-match' ? jobDescription : '',
       });
 
-      setOptimizedContent(result.optimized_content || '');
+      const raw = (result.optimized_content || '') as string;
+      const sanitized = raw.replace(/<\/?[^>]+(>|$)/g, '');
+      const looksLikeError = /cloudflare|utm_source=error_100x|unknown error occurred/i.test(raw);
+      if (looksLikeError) {
+        toast.error('Server returned an error page. Please try again.');
+        setOptimizedContent('');
+      } else {
+        setOptimizedContent(sanitized);
+      }
       toast.success('Resume optimization successful');
     } catch (error: any) {
       toast.error(error.message || 'Resume optimization failed');
