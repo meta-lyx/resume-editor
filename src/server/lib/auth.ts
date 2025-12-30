@@ -68,7 +68,11 @@ export async function authMiddleware(c: any, next: any) {
   }
   
   try {
-    const now = Math.floor(Date.now() / 1000);
+      if (!c.env.DB) {
+        console.error('Auth middleware: DB binding is missing');
+        return c.json({ error: 'Server configuration error: Database not connected' }, 500);
+      }
+      const now = Math.floor(Date.now() / 1000);
     const sessionResult = await c.env.DB.prepare(
       'SELECT s.user_id as userId, u.email as email, u.name as name FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ? AND s.expires_at > ?'
     ).bind(token, now).all();

@@ -217,6 +217,9 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
   subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
     try {
       const user = getCurrentUser(c);
+      if (!c.env.DB) {
+        throw new Error('Database binding missing');
+      }
       const db = createDb(c.env.DB);
       
       // Get user's subscription and plan
@@ -233,14 +236,19 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
         ))
         .limit(1);
       
-      if (subscription.length === 0 || !subscription[0].plan) {
+      if (subscription.length === 0) {
         return c.json({ error: 'No active subscription found' }, 403);
       }
       
       const { sub, plan } = subscription[0];
       
+      if (!plan) {
+         return c.json({ error: 'Subscription plan not found' }, 403);
+      }
+
       // Check if user has credits remaining
-      if (sub.usageCount >= plan.monthlyLimit) {
+      // For lifetime plans, we might want to skip this check or have a different limit
+      if (plan.interval !== 'lifetime' && sub.usageCount >= plan.monthlyLimit) {
         return c.json({ 
           error: 'No credits remaining',
           usageCount: sub.usageCount,
@@ -264,7 +272,7 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
         success: true,
         usageCount: newUsageCount,
         monthlyLimit: plan.monthlyLimit,
-        remaining: plan.monthlyLimit - newUsageCount,
+        remaining: plan.interval === 'lifetime' ? null : Math.max(0, plan.monthlyLimit - newUsageCount),
         planName: plan.name
       });
       
@@ -554,6 +562,9 @@ subscriptionRoutes.post('/confirm-payment', authMiddleware, async (c) => {
 subscriptionRoutes.get('/usage', authMiddleware, async (c) => {
   try {
     const user = getCurrentUser(c);
+    if (!c.env.DB) {
+        throw new Error('Database binding missing');
+    }
     const db = createDb(c.env.DB);
     
     const subscription = await db
@@ -609,60 +620,7 @@ subscriptionRoutes.get('/usage', authMiddleware, async (c) => {
   }
 });
 
-subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
-  try {
-    const user = getCurrentUser(c);
-    const db = createDb(c.env.DB);
-    
-    const subscription = await db
-      .select({
-        subscription: userSubscriptions,
-        plan: subscriptionPlans,
-      })
-      .from(userSubscriptions)
-      .leftJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
-      .where(and(
-        eq(userSubscriptions.userId, user.id),
-        eq(userSubscriptions.status, 'active')
-      ))
-      .limit(1);
-    
-    if (subscription.length === 0) {
-      return c.json({ error: 'No active subscription' }, 400);
-    }
-    
-    const sub = subscription[0].subscription;
-    const plan = subscription[0].plan;
-    
-    if (plan && plan.interval !== 'lifetime' && sub.usageCount >= (plan.monthlyLimit || 0)) {
-      return c.json({ error: 'No credits remaining' }, 402);
-    }
-    
-    const newUsage = (sub.usageCount || 0) + 1;
-    
-    await db
-      .update(userSubscriptions)
-      .set({
-        usageCount: newUsage,
-        updatedAt: new Date(),
-      })
-      .where(eq(userSubscriptions.id, sub.id));
-    
-    const limit = plan ? plan.monthlyLimit || 0 : 0;
-    const remaining = plan && plan.interval === 'lifetime' ? null : Math.max(0, limit - newUsage);
-    
-    return c.json({
-      success: true,
-      usageCount: newUsage,
-      monthlyLimit: limit,
-      remaining,
-      planName: plan?.name,
-    });
-  } catch (error: any) {
-    console.error('Consume credit error:', error);
-    return c.json({ error: error.message || 'Failed to consume credit' }, 500);
-  }
-});
+
 
 
 
