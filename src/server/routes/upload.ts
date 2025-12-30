@@ -163,6 +163,5 @@ uploadRoutes.get('/:id/download', async (c) => {
   }
 });
 
-  return uploadRoutes;
-}
+
 
