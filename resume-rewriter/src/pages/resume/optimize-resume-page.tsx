@@ -87,7 +87,10 @@ export function OptimizeResumePage() {
       });
 
       const raw = (result.optimized_content || '') as string;
-      const sanitized = raw.replace(/<\/?[^>]+(>|$)/g, '');
+      const sanitized = raw
+        .replace(/<!DOCTYPE[^>]*>/gi, '')
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<\/?[^>]+(>|$)/g, '');
       const looksLikeError = /cloudflare|utm_source=error_100x|unknown error occurred/i.test(raw);
       if (looksLikeError) {
         toast.error('Server returned an error page. Please try again.');

@@ -23,7 +23,10 @@ export function ResumePreview({
 
   const isOptimized = type === 'optimized';
 
-  const sanitizedContent = content.replace(/<\/?[^>]+(>|$)/g, '');
+  const sanitizedContent = content
+    .replace(/<!DOCTYPE[^>]*>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<\/?[^>]+(>|$)/g, '');
   const isErrorContent = /cloudflare|utm_source=error_100x|unknown error occurred/i.test(content);
 
   // Parse content into sections for better display
