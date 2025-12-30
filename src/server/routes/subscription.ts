@@ -211,10 +211,71 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
   });
   
   // Forward to main checkout
-  return c.json({ error: 'Please use /checkout endpoint instead' }, 400);
-});
+    return c.json({ error: 'Please use /checkout endpoint instead' }, 400);
+  });
 
-// Stripe webhook handler
+  // Consume a credit
+  subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
+    try {
+      const user = getCurrentUser(c);
+      const db = createDb(c.env.DB);
+      
+      // Get user's subscription and plan
+      const subscription = await db
+        .select({
+          sub: userSubscriptions,
+          plan: subscriptionPlans,
+        })
+        .from(userSubscriptions)
+        .leftJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
+        .where(and(
+          eq(userSubscriptions.userId, user.id),
+          eq(userSubscriptions.status, 'active')
+        ))
+        .limit(1);
+      
+      if (subscription.length === 0 || !subscription[0].plan) {
+        return c.json({ error: 'No active subscription found' }, 403);
+      }
+      
+      const { sub, plan } = subscription[0];
+      
+      // Check if user has credits remaining
+      if (sub.usageCount >= plan.monthlyLimit) {
+        return c.json({ 
+          error: 'No credits remaining',
+          usageCount: sub.usageCount,
+          monthlyLimit: plan.monthlyLimit,
+          remaining: 0
+        }, 403);
+      }
+      
+      // Increment usage count
+      const newUsageCount = sub.usageCount + 1;
+      
+      await db
+        .update(userSubscriptions)
+        .set({ 
+          usageCount: newUsageCount,
+          updatedAt: new Date()
+        })
+        .where(eq(userSubscriptions.id, sub.id));
+      
+      return c.json({
+        success: true,
+        usageCount: newUsageCount,
+        monthlyLimit: plan.monthlyLimit,
+        remaining: plan.monthlyLimit - newUsageCount,
+        planName: plan.name
+      });
+      
+    } catch (error: any) {
+      console.error('Consume credit error:', error);
+      return c.json({ error: 'Failed to consume credit' }, 500);
+    }
+  });
+
+  // Stripe webhook handler
 subscriptionRoutes.post('/webhook', async (c) => {
   try {
     const signature = c.req.header('stripe-signature');
