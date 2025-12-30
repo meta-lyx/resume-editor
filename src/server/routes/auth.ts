@@ -20,8 +20,7 @@ export interface Env {
   APP_URL: string;
 }
 
-export function createAuthApp() {
-  const authRoutes = new Hono<{ Bindings: Env }>();
+export const authRoutes = new Hono<{ Bindings: Env }>();
 
 // Register endpoint
 authRoutes.post('/register', async (c) => {
@@ -338,6 +337,8 @@ authRoutes.post('/refresh', async (c) => {
     return c.json({ error: 'Session refresh failed' }, 401);
   }
 });
+
+
 
 
 

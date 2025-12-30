@@ -4,8 +4,7 @@ import { createDb, subscriptionPlans, userSubscriptions } from '../db';
 import { eq, and } from 'drizzle-orm';
 import Stripe from 'stripe';
 
-export function createSubscriptionApp() {
-  const subscriptionRoutes = new Hono();
+export const subscriptionRoutes = new Hono();
 
 // Get all subscription plans (public)
 subscriptionRoutes.get('/plans', optionalAuthMiddleware, async (c) => {
@@ -664,6 +663,8 @@ subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
     return c.json({ error: error.message || 'Failed to consume credit' }, 500);
   }
 });
+
+
 
 
 

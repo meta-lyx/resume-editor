@@ -4,8 +4,7 @@ import { optimizeResume, generateSuggestions, type OptimizationType } from '../l
 import { createDb, resumes, optimizationHistory, resumeVersions } from '../db';
 import { eq, and } from 'drizzle-orm';
 
-export function createAIApp() {
-  const aiRoutes = new Hono();
+export const aiRoutes = new Hono();
 
   // Apply auth middleware to all AI routes
   aiRoutes.use('/*', authMiddleware);
@@ -263,6 +262,8 @@ aiRoutes.get('/health', async (c) => {
   
   return c.json(health);
 });
+
+
 
 
 
