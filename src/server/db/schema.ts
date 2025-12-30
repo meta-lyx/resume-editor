@@ -79,7 +79,7 @@ export const subscriptionPlans = sqliteTable('subscription_plans', {
   price: real('price').notNull().default(0),
   currency: text('currency').notNull().default('USD'),
   interval: text('interval').notNull().default('month'), // 'month', 'year'
-  monthlyLimit: integer('monthly_limit').notNull().default(0), // Number of optimizations
+  monthlyLimit: integer('monthly_limit', { mode: 'number' }).notNull().default(0), // Number of optimizations
   features: text('features'), // JSON string of features
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
@@ -97,7 +97,7 @@ export const userSubscriptions = sqliteTable('user_subscriptions', {
   currentPeriodStart: integer('current_period_start', { mode: 'timestamp' }),
   currentPeriodEnd: integer('current_period_end', { mode: 'timestamp' }),
   cancelAtPeriodEnd: integer('cancel_at_period_end', { mode: 'boolean' }).default(false),
-  usageCount: integer('usage_count').notNull().default(0), // Monthly usage counter
+  usageCount: integer('usage_count', { mode: 'number' }).notNull().default(0), // Monthly usage counter
   usageResetAt: integer('usage_reset_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),

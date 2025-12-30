@@ -248,16 +248,19 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
       }
       
       const { sub, plan } = subscription[0];
+      const limit = Number(plan.monthlyLimit || 0);
+      const currentUsage = Number(sub.usageCount || 0);
+
       const remaining = plan.interval === 'lifetime' 
         ? 999 
-        : Math.max(0, plan.monthlyLimit - sub.usageCount);
+        : Math.max(0, limit - currentUsage);
 
       return c.json({
         hasSubscription: true,
         planName: plan.name,
         remaining,
-        monthlyLimit: plan.monthlyLimit,
-        usageCount: sub.usageCount,
+        monthlyLimit: limit,
+        usageCount: currentUsage,
       });
     } catch (error: any) {
       console.error('Get usage error:', error);
