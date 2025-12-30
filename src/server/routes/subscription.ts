@@ -3,6 +3,7 @@ import { authMiddleware, getCurrentUser, optionalAuthMiddleware } from '../lib/a
 import { createDb, subscriptionPlans, userSubscriptions } from '../db';
 import { eq, and } from 'drizzle-orm';
 import Stripe from 'stripe';
+import { safeJson } from '../lib/json';
 
 export const subscriptionRoutes = new Hono();
 
@@ -216,14 +217,14 @@ subscriptionRoutes.post('/create-checkout', authMiddleware, async (c) => {
     return c.json({ error: 'Please use /checkout endpoint instead' }, 400);
   });
 
-// Helper for BigInt-safe JSON response
-const safeJson = (c: any, data: any, status: number = 200) => {
-  return c.body(JSON.stringify(data, (key, value) =>
-    typeof value === 'bigint' ? Number(value) : value
-  ), status, {
-    'Content-Type': 'application/json'
-  });
-};
+// Helper for BigInt-safe JSON response - Imported from ../lib/json
+// const safeJson = (c: any, data: any, status: number = 200) => {
+//   return c.body(JSON.stringify(data, (key, value) =>
+//     typeof value === 'bigint' ? Number(value) : value
+//   ), status, {
+//     'Content-Type': 'application/json'
+//   });
+// };
 
 // Get subscription usage
 subscriptionRoutes.get('/usage', authMiddleware, async (c) => {
@@ -290,7 +291,7 @@ subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
     const db = createDb(c.env.DB);
     
     // Get user's subscription and plan
-    // console.log('[Consume] Querying subscription...');
+    console.log('[Consume] Querying subscription...');
     const subscription = await db
       .select({
         sub: userSubscriptions,
@@ -304,10 +305,10 @@ subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
       ))
       .limit(1);
     
-    // console.log('[Consume] Subscription query result count:', subscription.length);
+    console.log('[Consume] Subscription query result count:', subscription.length);
 
     if (subscription.length === 0) {
-      // console.warn('[Consume] No active subscription found');
+      console.warn('[Consume] No active subscription found');
       return safeJson(c, { error: 'No active subscription found' }, 403);
     }
     
@@ -335,7 +336,7 @@ subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
     const limit = Number(plan.monthlyLimit || 0);
     const newUsageCount = currentUsage + 1;
     
-    // console.log('[Consume] Incrementing usage count to:', newUsageCount);
+    console.log('[Consume] Incrementing usage count to:', newUsageCount);
     
     await db
       .update(userSubscriptions)
@@ -345,7 +346,7 @@ subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
       })
       .where(eq(userSubscriptions.id, sub.id));
     
-    // console.log('[Consume] Credit consumed successfully');
+    console.log('[Consume] Credit consumed successfully');
     
     const remaining = plan.interval === 'lifetime' 
       ? null 

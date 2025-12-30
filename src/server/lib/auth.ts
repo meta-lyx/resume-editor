@@ -3,6 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import type { Database } from '../db';
 import { createDb } from '../db';
 import * as schema from '../db/schema';
+import { safeJson } from './json';
 
 export function createAuth(db: Database, env: any) {
   return betterAuth({
@@ -92,9 +93,9 @@ export async function authMiddleware(c: any, next: any) {
     console.error('Auth middleware error:', error);
     // Return 500 if it looks like a DB error, otherwise 401
     if (error.message && (error.message.includes('D1') || error.message.includes('database'))) {
-       return c.json({ error: 'Authentication service error' }, 500);
+       return safeJson(c, { error: 'Authentication service error' }, 500);
     }
-    return c.json({ error: 'Authentication failed' }, 401);
+    return safeJson(c, { error: 'Authentication failed' }, 401);
   }
 }
 

@@ -84,7 +84,7 @@ app.notFound((c) => {
 app.onError((err, c) => {
   console.error(`Error: ${err.message}`, err);
   
-  return c.json({
+  return safeJson(c, {
     error: c.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message,
     ...(c.env.NODE_ENV !== 'production' && { stack: err.stack }),
   }, 500);
