@@ -301,10 +301,8 @@ export function DashboardPage() {
   const handleProcessResume = async () => {
     if (authLoading) return;
     
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
+    // Allow processing without login - AI preview is free
+    // Users only need to pay when downloading
 
     if (!extractedText || !resumeTitle) {
       toast.error('Please upload resume file first');
@@ -316,52 +314,8 @@ export function DashboardPage() {
       return;
     }
 
-    // Check subscription before processing
-    try {
-      const { data: usageData, error: usageError } = await apiClient.getSubscriptionUsage();
-      
-      if (usageError) {
-        toast.error('Failed to verify subscription');
-        return;
-      }
-      
-      if (!usageData?.hasSubscription) {
-        showPaymentModalSafely();
-        return;
-      }
-      
-      if (usageData.remaining <= 0) {
-        toast.error(`You've used all ${usageData.monthlyLimit} resume credits. Please upgrade to continue.`);
-        showPaymentModalSafely();
-        return;
-      }
-    } catch (err) {
-      console.error('Error checking subscription:', err);
-      showPaymentModalSafely();
-      return;
-    }
-
     setLoading(true);
     try {
-      // Consume credit BEFORE processing with AI
-      const { data: consumeData, error: consumeError } = await apiClient.consumeCredit();
-      if (consumeError) {
-        toast.error(consumeError.message || 'Failed to use a credit');
-        setLoading(false);
-        return;
-      }
-      
-      // Update subscription info immediately after consuming
-      if (consumeData) {
-        setHasSubscription(true);
-        setSubscriptionInfo({
-          planName: consumeData.planName,
-          remaining: consumeData.remaining ?? 0,
-          monthlyLimit: consumeData.monthlyLimit,
-          usageCount: consumeData.usageCount,
-        });
-      }
-
       const { data, error } = await apiClient.processResume(extractedText, jobDescription);
       
       if (error) {
@@ -415,14 +369,56 @@ ${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
       return;
     }
 
-    // Credits are consumed during AI processing, not during download
-    // Just verify user has processed a resume and download it
+    // Verify there's a processed resume to download
     if (!customizedResume && !loadResumeData().customizedResume) {
       toast.error('Please process your resume first');
       return;
     }
 
-    downloadResumeFile();
+    // Check subscription before allowing download
+    try {
+      const { data: usageData, error: usageError } = await apiClient.getSubscriptionUsage();
+      
+      if (usageError) {
+        toast.error('Failed to verify subscription');
+        return;
+      }
+      
+      if (!usageData?.hasSubscription) {
+        console.log('No subscription, showing payment modal');
+        showPaymentModalSafely();
+        return;
+      }
+      
+      if (usageData.remaining <= 0) {
+        toast.error(`You've used all ${usageData.monthlyLimit} resume credits. Please upgrade to continue.`);
+        showPaymentModalSafely();
+        return;
+      }
+      
+      // Consume credit when downloading
+      const { data: consumeData, error: consumeError } = await apiClient.consumeCredit();
+      if (consumeError) {
+        toast.error(consumeError.message || 'Failed to use a credit');
+        return;
+      }
+      
+      // Update subscription info
+      if (consumeData) {
+        setHasSubscription(true);
+        setSubscriptionInfo({
+          planName: consumeData.planName,
+          remaining: consumeData.remaining ?? 0,
+          monthlyLimit: consumeData.monthlyLimit,
+          usageCount: consumeData.usageCount,
+        });
+      }
+      
+      downloadResumeFile();
+    } catch (err) {
+      console.error('Error checking subscription:', err);
+      toast.error('Failed to verify subscription. Please try again.');
+    }
   };
 
   const parseMarkdownToPlainText = (markdown: string): string => {
