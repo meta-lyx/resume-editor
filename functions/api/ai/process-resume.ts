@@ -34,27 +34,22 @@ export async function onRequest(context: { request: Request; env: Env }) {
   }
 
   try {
-    // Verify authentication
+    // Authentication is optional for AI processing (freemium model)
+    // Users can preview AI results without logging in
+    // Credits are only consumed when downloading
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.replace('Bearer ', '');
+    let userId: string | null = null;
 
-    if (!token) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    }
+    if (token) {
+      // Verify session if token provided (for tracking/analytics)
+      const sessionResult = await env.DB.prepare(
+        'SELECT user_id FROM sessions WHERE token = ? AND expires_at > ?'
+      ).bind(token, Math.floor(Date.now() / 1000)).all();
 
-    // Verify session
-    const sessionResult = await env.DB.prepare(
-      'SELECT user_id FROM sessions WHERE token = ? AND expires_at > ?'
-    ).bind(token, Math.floor(Date.now() / 1000)).all();
-
-    if (!sessionResult.results || sessionResult.results.length === 0) {
-      return new Response(JSON.stringify({ error: 'Invalid or expired session' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
+      if (sessionResult.results && sessionResult.results.length > 0) {
+        userId = sessionResult.results[0].user_id as string;
+      }
     }
 
     // Parse request body
