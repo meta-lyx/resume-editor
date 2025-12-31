@@ -19,7 +19,7 @@ bucket_name = "ai-resume-bucket"
 [vars]
 NODE_ENV = "production"
 APP_URL = "https://ai-resume-editor.pages.dev"
-AI_PROVIDER = "anthropic"  # Using Anthropic Claude (ANTHROPIC_API_KEY is configured)
+AI_PROVIDER = "openai"  # Using OpenAI GPT (OPENAI_API_KEY configured as secret)
 
 # Secrets are managed via: wrangler pages secret put <NAME>
 # Required secrets for AI:
