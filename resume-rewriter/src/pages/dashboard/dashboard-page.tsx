@@ -274,10 +274,16 @@ export function DashboardPage() {
         const text = result.extractedText || result.text || '';
         setExtractedText(text);
         
+        // Clear old customized resume when new resume is uploaded
+        setCustomizedResume('');
+        setResumeProcessed(false);
+        
         saveResumeData({
           extractedText: text,
           resumeTitle: title,
           resumeFileName: file.name,
+          customizedResume: '', // Clear cached customized resume
+          resumeProcessed: false,
         });
         
         toast.success('Resume uploaded and text extracted successfully');

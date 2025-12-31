@@ -227,7 +227,7 @@ class ApiClient {
       if (!response.ok) {
         return {
           error: {
-            message: data.message || 'An error occurred',
+            message: data.error || data.message || 'An error occurred',
             code: data.code,
           },
         };
