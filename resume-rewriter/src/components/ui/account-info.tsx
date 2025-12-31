@@ -2,21 +2,47 @@ import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { User, CreditCard, Zap } from 'lucide-react';
 
-interface AccountInfoProps {
-  className?: string;
+interface SubscriptionData {
+  hasSubscription: boolean;
+  usageCount: number;
+  monthlyLimit: number;
+  remaining: number;
+  planName?: string;
 }
 
-export function AccountInfo({ className = '' }: AccountInfoProps) {
-  const [subscription, setSubscription] = useState<{
-    hasSubscription: boolean;
-    usageCount: number;
-    monthlyLimit: number;
-    remaining: number;
+interface AccountInfoProps {
+  className?: string;
+  // External subscription data for dynamic updates
+  externalSubscription?: {
     planName?: string;
-  } | null>(null);
+    remaining: number;
+    monthlyLimit: number;
+    usageCount: number;
+  } | null;
+}
+
+export function AccountInfo({ className = '', externalSubscription }: AccountInfoProps) {
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Update subscription when external data changes
   useEffect(() => {
+    if (externalSubscription) {
+      setSubscription({
+        hasSubscription: externalSubscription.remaining > 0 || externalSubscription.usageCount > 0,
+        usageCount: externalSubscription.usageCount,
+        monthlyLimit: externalSubscription.monthlyLimit,
+        remaining: externalSubscription.remaining,
+        planName: externalSubscription.planName,
+      });
+      setLoading(false);
+    }
+  }, [externalSubscription]);
+
+  useEffect(() => {
+    // Skip fetching if external data is provided
+    if (externalSubscription) return;
+    
     async function loadSubscription() {
       try {
         const token = apiClient.getToken();
@@ -34,7 +60,7 @@ export function AccountInfo({ className = '' }: AccountInfoProps) {
 
         if (data) {
           const { data: subData } = await apiClient.getCurrentSubscription();
-          const planName = subData?.subscription?.plan?.name || 'Free';
+          const planName = subData?.subscription?.plan?.name || data.planName || 'Free';
 
           setSubscription({
             hasSubscription: data.hasSubscription,
@@ -52,7 +78,7 @@ export function AccountInfo({ className = '' }: AccountInfoProps) {
     }
 
     loadSubscription();
-  }, []);
+  }, [externalSubscription]);
 
   if (loading) {
     return (
