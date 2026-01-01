@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
-import { ResumePreview } from '@/components/ui/resume-preview';
+import { ResumeComparison } from '@/components/ui/resume-comparison';
 import { LoginModal } from '@/components/auth/login-modal';
 import { AccountInfo } from '@/components/ui/account-info';
 import { Plus, Upload, FileText, AlertCircle, Check, Sparkles, ArrowRight, CreditCard, Loader2, Download, Zap, ChevronRight, X, Crown, Rocket, Star } from 'lucide-react';
@@ -36,6 +36,12 @@ export function DashboardPage() {
     monthlyLimit: number;
     usageCount: number;
   } | null>(null);
+  
+  // AI processing results
+  const [aiProcessingTime, setAiProcessingTime] = useState<number>(0);
+  const [aiAtsScore, setAiAtsScore] = useState<number>(0);
+  const [aiKeywordsMatched, setAiKeywordsMatched] = useState<string[]>([]);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
   const showPaymentModalSafely = () => {
     if (authLoading) return;
@@ -103,6 +109,13 @@ export function DashboardPage() {
           setCustomizedResume('');
         }
         setResumeProcessed(savedData.resumeProcessed);
+        
+        // Load AI processing metadata
+        if (savedData.aiProcessingTime) setAiProcessingTime(savedData.aiProcessingTime);
+        if (savedData.aiAtsScore) setAiAtsScore(savedData.aiAtsScore);
+        if (savedData.aiKeywordsMatched) setAiKeywordsMatched(savedData.aiKeywordsMatched);
+        if (savedData.aiSuggestions) setAiSuggestions(savedData.aiSuggestions);
+        
         return true;
       }
       return false;
@@ -326,25 +339,25 @@ export function DashboardPage() {
         throw new Error('No result returned from AI service');
       }
 
-      const formattedResume = `${data.result.customizedResume}
-
----
-📊 Processing Details:
-• Provider: ${data.provider}
-• ATS Score: ${data.result.atsScore || 'N/A'}/100
-• Processing Time: ${(data.result.processingTime / 1000).toFixed(1)}s
-• Keywords Matched: ${data.result.keywordsMatched.length > 0 ? data.result.keywordsMatched.join(', ') : 'See above'}
-
-💡 Suggestions:
-${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
-`;
+      // Store the clean resume content (without the notes section)
+      const cleanResume = data.result.customizedResume.split(/##\s*AI Optimization Notes/i)[0].trim();
       
-      setCustomizedResume(formattedResume);
+      setCustomizedResume(cleanResume);
       setResumeProcessed(true);
       
+      // Store AI processing metadata
+      setAiProcessingTime(data.result.processingTime || 0);
+      setAiAtsScore(data.result.atsScore || 0);
+      setAiKeywordsMatched(data.result.keywordsMatched || []);
+      setAiSuggestions(data.result.suggestions || []);
+      
       saveResumeData({
-        customizedResume: formattedResume,
+        customizedResume: cleanResume,
         resumeProcessed: true,
+        aiProcessingTime: data.result.processingTime,
+        aiAtsScore: data.result.atsScore,
+        aiKeywordsMatched: data.result.keywordsMatched,
+        aiSuggestions: data.result.suggestions,
       });
       
       toast.success(`Resume optimized by ${data.provider}!`);
@@ -720,45 +733,21 @@ ${data.result.suggestions.map((s: string) => `• ${s}`).join('\n')}
                     </div>
                   )}
 
-                  {/* Resume Comparison */}
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-display text-lg font-semibold">Resume Comparison</h3>
-                      <div className="flex gap-2">
-                        <span className="px-3 py-1 bg-white/5 text-muted-foreground text-xs rounded-full border border-white/10">Original</span>
-                        <span className="px-3 py-1 bg-pear-400/10 text-pear-400 text-xs rounded-full border border-pear-400/20">Optimized</span>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <ResumePreview
-                        content={extractedText}
-                        title="📄 Original Resume"
-                        type="original"
-                        isUnlocked={true}
-                      />
-                      
-                      <ResumePreview
-                        content={customizedResume}
-                        title="✨ AI-Optimized Resume"
-                        type="optimized"
-                        isUnlocked={hasSubscription || paymentSuccess}
-                        onUnlock={handleDownloadResume}
-                      />
-                    </div>
-                  </div>
+                  {/* Resume Comparison - Value Reveal & Side-by-Side */}
+                  <ResumeComparison
+                    originalContent={extractedText}
+                    optimizedContent={customizedResume}
+                    jobDescription={jobDescription}
+                    isUnlocked={hasSubscription || paymentSuccess}
+                    onUnlock={handleDownloadResume}
+                    processingTime={aiProcessingTime}
+                    atsScore={aiAtsScore}
+                    keywordsMatched={aiKeywordsMatched}
+                    suggestions={aiSuggestions}
+                  />
 
                   {/* Action buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 border-t border-white/5">
-                    <Button
-                      onClick={handleDownloadResume}
-                      type="button"
-                      size="lg"
-                      className="px-8"
-                    >
-                      <Download className="mr-2 h-5 w-5" />
-                      Download My Resume
-                    </Button>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
                     <Button
                       onClick={handleStartOver}
                       variant="outline"
