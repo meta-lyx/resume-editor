@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LoginModal } from '@/components/auth/login-modal';
-import { Upload, FileText, Sparkles, ArrowRight, Zap, Shield, Target, Check, ChevronRight } from 'lucide-react';
+import { Upload, FileText, Sparkles, ArrowRight, Zap, Shield, Target, Check, ChevronRight, Loader2 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/auth-context';
+import { extractResumeText } from '@/services/resume-service';
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -31,15 +32,24 @@ export function OnboardingPage() {
       
       setLoading(true);
       try {
-        const reader = new FileReader();
-        reader.onload = () => {
-          setExtractedText(`Resume file uploaded: ${file.name}\n\nContent will be extracted when you proceed to payment.`);
-          setLoading(false);
-        };
-        reader.readAsText(file);
-        toast.success('Resume uploaded successfully!');
-      } catch {
-        toast.error('Failed to read file');
+        // Actually extract text from the resume file
+        const result = await extractResumeText(file);
+        
+        if (result?.extractedText || result?.text) {
+          const text = result.extractedText || result.text;
+          setExtractedText(text);
+          toast.success('Resume uploaded and text extracted successfully!');
+        } else {
+          // Fallback if extraction fails but file is uploaded
+          setExtractedText(`Resume file uploaded: ${file.name}\n\nText extraction pending...`);
+          toast.success('Resume uploaded! Text will be extracted when processing.');
+        }
+      } catch (error: any) {
+        console.error('Text extraction error:', error);
+        // Still keep the file, just note extraction failed
+        setExtractedText(`Resume file uploaded: ${file.name}\n\nText extraction pending...`);
+        toast.success('Resume uploaded!');
+      } finally {
         setLoading(false);
       }
     },
@@ -129,16 +139,25 @@ export function OnboardingPage() {
                 {...getRootProps()}
                 className={`upload-zone p-10 text-center cursor-pointer ${
                   isDragActive ? 'active border-pear-400' : ''
-                } ${resumeFile ? 'success-glow border-green-500/50' : ''} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${resumeFile && !loading ? 'success-glow border-green-500/50' : ''} ${loading ? 'opacity-70 cursor-wait' : ''}`}
               >
                 <input {...getInputProps()} />
                 <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
-                  resumeFile ? 'bg-green-500/20' : 'bg-pear-400/10'
+                  loading ? 'bg-pear-400/20' : resumeFile ? 'bg-green-500/20' : 'bg-pear-400/10'
                 }`}>
-                  <Upload className={`h-8 w-8 ${resumeFile ? 'text-green-400' : 'text-pear-400'}`} />
+                  {loading ? (
+                    <Loader2 className="h-8 w-8 text-pear-400 animate-spin" />
+                  ) : (
+                    <Upload className={`h-8 w-8 ${resumeFile ? 'text-green-400' : 'text-pear-400'}`} />
+                  )}
                 </div>
                 
-                {resumeFile ? (
+                {loading ? (
+                  <div>
+                    <p className="text-pear-400 font-medium mb-2">Extracting text from resume...</p>
+                    <p className="text-muted-foreground text-sm">This may take a few seconds</p>
+                  </div>
+                ) : resumeFile ? (
                   <div>
                     <p className="text-green-400 font-medium mb-2 flex items-center justify-center gap-2">
                       <Check className="w-5 h-5" />
