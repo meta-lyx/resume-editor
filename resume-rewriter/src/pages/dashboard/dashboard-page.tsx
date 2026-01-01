@@ -11,7 +11,9 @@ import { toast } from 'react-hot-toast';
 import { extractResumeText } from '@/services/resume-service';
 import { apiClient } from '@/lib/api-client';
 import { saveResumeData, loadResumeData, clearResumeData } from '@/lib/resume-storage';
-import { jsPDF } from 'jspdf';
+import { pdf } from '@react-pdf/renderer';
+import { ResumePDF } from '@/components/pdf/resume-pdf-template';
+import { parseResumeContent } from '@/lib/resume-parser';
 
 export function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -457,7 +459,7 @@ export function DashboardPage() {
     return text.trim();
   };
 
-  const downloadResumeFile = () => {
+  const downloadResumeFile = async () => {
     let resumeContent = customizedResume;
     let resumeTitleToUse = resumeTitle;
     
@@ -473,85 +475,31 @@ export function DashboardPage() {
     }
 
     try {
-      const parsedContent = parseMarkdownToPlainText(resumeContent);
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-      const margin = 20;
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const maxWidth = pageWidth - (margin * 2);
-      let yPosition = margin;
-      const lineHeight = 7;
-      const fontSize = 11;
-
-      const addWrappedText = (text: string, fs: number, isBold: boolean = false, indent: number = 0) => {
-        pdf.setFontSize(fs);
-        pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-        const lines = pdf.splitTextToSize(text, maxWidth - indent);
-        
-        if (yPosition + (lines.length * lineHeight) > pageHeight - margin) {
-          pdf.addPage();
-          yPosition = margin;
-        }
-        
-        lines.forEach((line: string) => {
-          pdf.text(line, margin + indent, yPosition);
-          yPosition += lineHeight;
-        });
-      };
-
-      const lines = parsedContent.split('\n');
+      // Parse the resume content into structured data
+      const cleanContent = parseMarkdownToPlainText(resumeContent);
+      const resumeData = parseResumeContent(cleanContent, aiKeywordsMatched);
       
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        
-        if (!line) {
-          yPosition += lineHeight * 0.5;
-          continue;
-        }
-
-        if (yPosition > pageHeight - margin - lineHeight) {
-          pdf.addPage();
-          yPosition = margin;
-        }
-
-        const isHeader = /^(EXPERIENCE|EDUCATION|SKILLS|SUMMARY|OBJECTIVE|WORK EXPERIENCE|PROFESSIONAL|PROJECTS|CERTIFICATIONS|AWARDS|PROCESSING DETAILS|SUGGESTIONS)/i.test(line) ||
-                         /^---/.test(line) ||
-                         (line.length < 50 && line === line.toUpperCase() && !line.includes('•'));
-
-        if (/^---+/.test(line)) {
-          yPosition += lineHeight;
-          continue;
-        }
-
-        if (isHeader && !line.startsWith('•') && !line.startsWith('-') && !line.startsWith('*')) {
-          yPosition += lineHeight * 0.5;
-          addWrappedText(line, fontSize + 2, true);
-          yPosition += lineHeight * 0.3;
-          continue;
-        }
-
-        if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
-          const bulletText = line.replace(/^[•\-\*]\s*/, '');
-          addWrappedText(`• ${bulletText}`, fontSize, false, 5);
-          continue;
-        }
-
-        if (/^[📊💡🎯✅]/.test(line)) {
-          yPosition += lineHeight * 0.5;
-          addWrappedText(line, fontSize, true);
-          continue;
-        }
-
-        addWrappedText(line, fontSize);
-      }
-
-      const fileName = `${resumeTitleToUse || 'resume'}_optimized.pdf`;
-      pdf.save(fileName);
-      toast.success('Resume downloaded as PDF!');
+      // Generate professional PDF using react-pdf
+      toast.loading('Generating professional PDF...', { id: 'pdf-gen' });
+      
+      const pdfBlob = await pdf(<ResumePDF data={resumeData} showBranding={true} />).toBlob();
+      
+      // Download the PDF
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${resumeTitleToUse || 'resume'}_optimized.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Professional resume downloaded!', { id: 'pdf-gen' });
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF. Downloading as text file instead.');
+      toast.error('Failed to generate PDF. Downloading as text file instead.', { id: 'pdf-gen' });
+      
+      // Fallback to text file
       const fallbackText = parseMarkdownToPlainText(resumeContent);
       const blob = new Blob([fallbackText], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
