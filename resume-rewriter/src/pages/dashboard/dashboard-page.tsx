@@ -643,7 +643,49 @@ export function DashboardPage() {
       toast.error(`PDF generation failed: ${errorMessage}. Downloading as text file.`, { id: toastId });
       
       // Fallback to text file with formatted content
-      const fallbackText = parseMarkdownToPlainText(resumeContent);
+      // Convert structured resume back to text for fallback
+      let fallbackText = '';
+      if (resumeDataForPDF) {
+        const lines: string[] = [];
+        lines.push(resumeDataForPDF.name);
+        if (resumeDataForPDF.title) lines.push(resumeDataForPDF.title);
+        if (resumeDataForPDF.contact.email) lines.push(resumeDataForPDF.contact.email);
+        lines.push('');
+        if (resumeDataForPDF.summary) {
+          lines.push('PROFESSIONAL SUMMARY');
+          lines.push(resumeDataForPDF.summary);
+          lines.push('');
+        }
+        lines.push('EXPERIENCE');
+        for (const exp of resumeDataForPDF.experience || []) {
+          lines.push(`${exp.title} at ${exp.company}`);
+          lines.push(`${exp.startDate} - ${exp.endDate}`);
+          for (const bullet of exp.bullets || []) {
+            lines.push(`• ${bullet}`);
+          }
+          lines.push('');
+        }
+        lines.push('EDUCATION');
+        for (const edu of resumeDataForPDF.education || []) {
+          lines.push(`${edu.degree} - ${edu.school}`);
+          if (edu.graduationDate) lines.push(edu.graduationDate);
+          lines.push('');
+        }
+        if (resumeDataForPDF.skills && resumeDataForPDF.skills.length > 0) {
+          lines.push('SKILLS');
+          for (const skillGroup of resumeDataForPDF.skills) {
+            if (skillGroup.category) {
+              lines.push(`${skillGroup.category}: ${skillGroup.items.join(', ')}`);
+            } else {
+              lines.push(skillGroup.items.join(', '));
+            }
+          }
+        }
+        fallbackText = lines.join('\n');
+      } else {
+        fallbackText = customizedResume || 'Resume content unavailable';
+      }
+      
       const blob = new Blob([fallbackText], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
