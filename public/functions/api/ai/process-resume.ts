@@ -91,6 +91,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       provider: aiService.getProviderName(),
       result: {
         customizedResume: result.customizedResume,
+        structuredResume: result.structuredResume,  // Include structured data for PDF
         suggestions: result.suggestions,
         keywordsMatched: result.keywordsMatched,
         atsScore: result.atsScore,
