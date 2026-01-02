@@ -495,15 +495,40 @@ export function DashboardPage() {
       return;
     }
 
+    const toastId = 'pdf-gen';
+    
     try {
       // Parse the resume content into structured data
       const cleanContent = parseMarkdownToPlainText(resumeContent);
+      console.log('Clean content length:', cleanContent.length);
+      
       const resumeData = parseResumeContent(cleanContent, aiKeywordsMatched);
+      console.log('Parsed resume data:', { 
+        name: resumeData.name, 
+        experienceCount: resumeData.experience.length,
+        educationCount: resumeData.education.length,
+        skillsCount: resumeData.skills.length 
+      });
       
       // Generate professional PDF using react-pdf
-      toast.loading('Generating professional PDF...', { id: 'pdf-gen' });
+      toast.loading('Generating professional PDF...', { id: toastId });
       
-      const pdfBlob = await pdf(<ResumePDF data={resumeData} showBranding={true} />).toBlob();
+      // Create the PDF document element
+      const pdfDocument = <ResumePDF data={resumeData} showBranding={true} />;
+      
+      // Generate blob with timeout to prevent hanging
+      const pdfBlob = await Promise.race([
+        pdf(pdfDocument).toBlob(),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('PDF generation timed out')), 30000)
+        )
+      ]);
+      
+      console.log('PDF blob generated, size:', pdfBlob.size);
+      
+      if (pdfBlob.size < 1000) {
+        throw new Error('Generated PDF is too small, likely empty');
+      }
       
       // Download the PDF
       const url = URL.createObjectURL(pdfBlob);
@@ -515,12 +540,13 @@ export function DashboardPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      toast.success('Professional resume downloaded!', { id: 'pdf-gen' });
+      toast.success('Professional resume downloaded!', { id: toastId });
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF. Downloading as text file instead.', { id: 'pdf-gen' });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`PDF generation failed: ${errorMessage}. Downloading as text file.`, { id: toastId });
       
-      // Fallback to text file
+      // Fallback to text file with formatted content
       const fallbackText = parseMarkdownToPlainText(resumeContent);
       const blob = new Blob([fallbackText], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);

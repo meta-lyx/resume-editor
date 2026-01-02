@@ -8,16 +8,18 @@ import {
   Link,
 } from '@react-pdf/renderer';
 
-// Register fonts - using web-safe fonts that work well
+// Register Helvetica as fallback - it's built into react-pdf
+// We'll use system fonts that are guaranteed to work
 Font.register({
-  family: 'Inter',
+  family: 'Helvetica',
   fonts: [
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuI6fAZ9hiJ-Ek-_EeA.woff2', fontWeight: 500 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYAZ9hiJ-Ek-_EeA.woff2', fontWeight: 600 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hiJ-Ek-_EeA.woff2', fontWeight: 700 },
+    { src: 'Helvetica', fontWeight: 400 },
+    { src: 'Helvetica-Bold', fontWeight: 700 },
   ],
 });
+
+// Disable hyphenation to prevent layout issues
+Font.registerHyphenationCallback((word: string) => [word]);
 
 // Color palette
 const colors = {
@@ -30,13 +32,13 @@ const colors = {
   accent: '#059669',
 };
 
-// Styles
+// Styles - using Helvetica (built-in, guaranteed to work)
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: colors.background,
     padding: 40,
-    fontFamily: 'Inter',
+    fontFamily: 'Helvetica',
   },
   // Header section
   header: {
@@ -46,16 +48,15 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
   },
   name: {
-    fontSize: 28,
-    fontWeight: 700,
+    fontSize: 26,
+    fontFamily: 'Helvetica-Bold',
     color: colors.dark,
     marginBottom: 4,
-    letterSpacing: -0.5,
   },
   title: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.primary,
-    fontWeight: 600,
+    fontFamily: 'Helvetica-Bold',
     marginBottom: 8,
   },
   contactRow: {
@@ -85,11 +86,11 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: 700,
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
     color: colors.dark,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   sectionAccent: {
     width: 4,
@@ -110,13 +111,13 @@ const styles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 11,
-    fontWeight: 600,
+    fontFamily: 'Helvetica-Bold',
     color: colors.dark,
   },
   entryCompany: {
     fontSize: 10,
     color: colors.primary,
-    fontWeight: 500,
+    fontFamily: 'Helvetica-Bold',
   },
   entryDate: {
     fontSize: 9,
@@ -159,7 +160,7 @@ const styles = StyleSheet.create({
   },
   skillCategoryTitle: {
     fontSize: 10,
-    fontWeight: 600,
+    fontFamily: 'Helvetica-Bold',
     color: colors.dark,
     marginBottom: 4,
   },
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
   },
   degree: {
     fontSize: 11,
-    fontWeight: 600,
+    fontFamily: 'Helvetica-Bold',
     color: colors.dark,
   },
   school: {
