@@ -2,7 +2,7 @@
 import type { ResumeData, ResumeExperience, ResumeEducation, ResumeContact } from '@/components/pdf/resume-pdf-template';
 
 // Debug mode - set to true to see parsing logs
-const DEBUG = false;
+const DEBUG = true;
 
 function log(...args: unknown[]) {
   if (DEBUG) console.log('[ResumeParser]', ...args);
@@ -23,6 +23,21 @@ function cleanText(text: string): string {
 // Check if a line is a section header
 function isSectionHeader(line: string): string | null {
   const cleanLine = cleanText(line).toUpperCase();
+  
+  // Ignore these - they're not real section headers
+  const ignorePatterns = [
+    /^(AI[-\s]?)?(OPTIMIZED\s+)?RESUME$/i,
+    /^RESUME$/i,
+    /^CURRICULUM VITAE$/i,
+    /^CV$/i,
+  ];
+  
+  for (const pattern of ignorePatterns) {
+    if (pattern.test(cleanLine)) {
+      log('Ignoring fake header:', cleanLine);
+      return null;
+    }
+  }
   
   // Common section headers
   const sectionMap: Record<string, string> = {
@@ -102,6 +117,7 @@ function parseExperienceSection(lines: string[]): ResumeExperience[] {
   let currentExp: Partial<ResumeExperience> | null = null;
   
   log('Parsing experience from', lines.length, 'lines');
+  log('Lines:', lines.slice(0, 20)); // Log first 20 lines
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -109,28 +125,42 @@ function parseExperienceSection(lines: string[]): ResumeExperience[] {
     
     if (!cleanLine) continue;
     
-    // Check if this is a bullet point
-    if (isBullet(line)) {
+    log('Processing line:', cleanLine.substring(0, 80));
+    
+    // Check if this is a bullet point FIRST (priority over other checks)
+    if (isBullet(line) || isBullet(cleanLine)) {
       const bulletText = extractBulletText(cleanLine);
+      log('  -> Is bullet:', bulletText.substring(0, 50));
       if (bulletText && currentExp) {
         if (!currentExp.bullets) currentExp.bullets = [];
         currentExp.bullets.push(bulletText);
-        log('  Added bullet:', bulletText.substring(0, 50) + '...');
+      } else if (bulletText && !currentExp) {
+        // First bullet before any entry - create a default entry
+        currentExp = { title: 'Experience', company: '', bullets: [bulletText] };
       }
       continue;
     }
     
-    // Check for date range - indicates a new experience entry
+    // Check for date range - strong indicator of new entry
     const dateRange = parseDateRange(cleanLine);
     
-    // New entry detection: has dates, or starts with capital and looks like a title
-    const looksLikeNewEntry = dateRange || 
-      (/^[A-Z]/.test(cleanLine) && cleanLine.length < 120 && !isBullet(line));
+    // Check if this looks like a job title line
+    // Must have: job title keywords OR company indicators OR date range
+    const jobTitleKeywords = /\b(engineer|developer|manager|designer|analyst|consultant|specialist|director|lead|senior|junior|architect|coordinator|intern|associate|executive|administrator|officer|president|vp|ceo|cto|cfo)\b/i;
+    const companyIndicators = /\b(at|@|inc\.|corp\.|llc|ltd|company|co\.|corporation)\b/i;
+    const hasJobIndicators = jobTitleKeywords.test(cleanLine) || companyIndicators.test(cleanLine);
     
-    if (looksLikeNewEntry) {
+    // Only treat as new entry if:
+    // 1. Has a date range, OR
+    // 2. Has job title/company keywords AND is reasonably short (not a bullet point description)
+    const isNewEntry = dateRange || (hasJobIndicators && cleanLine.length < 100);
+    
+    if (isNewEntry) {
+      log('  -> New entry detected');
+      
       // Save previous experience if exists
       if (currentExp && (currentExp.title || currentExp.company)) {
-        log('  Saving experience:', currentExp.title, 'at', currentExp.company);
+        log('  Saving experience:', currentExp.title, 'at', currentExp.company, 'with', currentExp.bullets?.length, 'bullets');
         experiences.push({
           title: currentExp.title || 'Position',
           company: currentExp.company || '',
@@ -180,8 +210,8 @@ function parseExperienceSection(lines: string[]): ResumeExperience[] {
           const nextLine = cleanText(lines[i + 1]);
           if (nextLine && !isBullet(lines[i + 1]) && !parseDateRange(nextLine)) {
             // Check if next line looks like a company name (not too long, doesn't start with action verb)
-            const actionVerbs = /^(Led|Managed|Developed|Created|Designed|Built|Implemented|Achieved|Increased|Reduced|Delivered|Spearheaded|Drove|Improved)/i;
-            if (nextLine.length < 80 && !actionVerbs.test(nextLine)) {
+            const actionVerbs = /^(Led|Managed|Developed|Created|Designed|Built|Implemented|Achieved|Increased|Reduced|Delivered|Spearheaded|Drove|Improved|Collaborated|Coordinated|Analyzed|Optimized|Streamlined)/i;
+            if (nextLine.length < 80 && !actionVerbs.test(nextLine) && !isBullet(nextLine)) {
               currentExp.company = nextLine;
               i++; // Skip the company line
             }
@@ -189,13 +219,17 @@ function parseExperienceSection(lines: string[]): ResumeExperience[] {
         }
       }
       
-      log('  New experience entry:', currentExp.title, 'at', currentExp.company);
+      log('  Entry details:', currentExp.title, 'at', currentExp.company);
+    } else {
+      // This line is neither a bullet nor a new entry header
+      // It might be additional context for current entry (e.g., company name on separate line)
+      log('  -> Skipping line (not bullet or entry header)');
     }
   }
   
   // Don't forget the last experience
-  if (currentExp && (currentExp.title || currentExp.company)) {
-    log('  Saving final experience:', currentExp.title);
+  if (currentExp && (currentExp.title || currentExp.company || (currentExp.bullets && currentExp.bullets.length > 0))) {
+    log('  Saving final experience:', currentExp.title, 'with', currentExp.bullets?.length, 'bullets');
     experiences.push({
       title: currentExp.title || 'Position',
       company: currentExp.company || '',
@@ -206,7 +240,11 @@ function parseExperienceSection(lines: string[]): ResumeExperience[] {
     });
   }
   
-  log('Parsed', experiences.length, 'experiences');
+  log('Parsed', experiences.length, 'experiences total');
+  experiences.forEach((exp, i) => {
+    log(`  Experience ${i + 1}: ${exp.title} at ${exp.company} - ${exp.bullets.length} bullets`);
+  });
+  
   return experiences;
 }
 
@@ -333,14 +371,32 @@ function parseContactInfo(lines: string[]): { name: string; title?: string; cont
   let title = '';
   const contact: ResumeContact = {};
   
+  log('Parsing contact from header lines:', lines.slice(0, 10));
+  
   for (const line of lines) {
     const cleanLine = cleanText(line);
     if (!cleanLine) continue;
     
-    // Skip lines that are clearly headers
-    if (/^(optimized|ai[-\s]?optimized|resume|curriculum vitae|cv)$/i.test(cleanLine)) {
-      continue;
+    // Skip lines that are clearly NOT names (headers, labels, etc.)
+    const skipPatterns = [
+      /^(ai[-\s]?)?(optimized\s+)?resume$/i,
+      /^resume$/i,
+      /^curriculum vitae$/i,
+      /^cv$/i,
+      /^contact(\s+info(rmation)?)?$/i,
+      /^personal(\s+info(rmation)?)?$/i,
+      /^#/,  // Markdown headers
+    ];
+    
+    let shouldSkip = false;
+    for (const pattern of skipPatterns) {
+      if (pattern.test(cleanLine)) {
+        log('Skipping header line:', cleanLine);
+        shouldSkip = true;
+        break;
+      }
     }
+    if (shouldSkip) continue;
     
     // Email
     const emailMatch = cleanLine.match(/[\w.-]+@[\w.-]+\.\w+/);

@@ -467,8 +467,13 @@ export function DashboardPage() {
     text = text.replace(/^.*Worker threw exception.*$/gmi, '');
     
     // Remove "Optimized Resume" or similar headers that AI might add
-    text = text.replace(/^#*\s*(AI[-\s]?)?Optimized Resume\s*$/gmi, '');
-    text = text.replace(/^#*\s*Resume\s*$/gmi, '');
+    // Handle with or without markdown headers, at start of document or as standalone line
+    text = text.replace(/^#*\s*(AI[-\s]?)?(Optimized\s+)?Resume\s*\n*/gmi, '');
+    text = text.replace(/\n#*\s*(AI[-\s]?)?(Optimized\s+)?Resume\s*\n/gmi, '\n');
+    // Also remove if it's the first line with just "Optimized Resume"
+    text = text.replace(/^Optimized Resume\s*\n+/i, '');
+    text = text.replace(/^AI Optimized Resume\s*\n+/i, '');
+    text = text.replace(/^AI-Optimized Resume\s*\n+/i, '');
     
     // Convert markdown headers to plain text
     text = text.replace(/^#{1,6}\s+(.+)$/gm, '$1');
