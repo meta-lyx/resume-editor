@@ -1,10 +1,12 @@
 // Utility for persisting resume data in localStorage
+import type { ResumeData as PDFResumeData } from '@/components/pdf/resume-pdf-template';
 
 const STORAGE_KEYS = {
   EXTRACTED_TEXT: 'resume_extracted_text',
   RESUME_TITLE: 'resume_title',
   JOB_DESCRIPTION: 'resume_job_description',
   CUSTOMIZED_RESUME: 'resume_customized',
+  STRUCTURED_RESUME: 'resume_structured', // NEW: Structured JSON data from AI
   RESUME_PROCESSED: 'resume_processed',
   RESUME_FILE_NAME: 'resume_file_name',
   AI_PROCESSING_TIME: 'ai_processing_time',
@@ -13,11 +15,12 @@ const STORAGE_KEYS = {
   AI_SUGGESTIONS: 'ai_suggestions',
 } as const;
 
-export interface ResumeData {
+export interface ResumeStorageData {
   extractedText: string;
   resumeTitle: string;
   jobDescription: string;
   customizedResume: string;
+  structuredResume?: PDFResumeData; // Structured data for PDF generation
   resumeProcessed: boolean;
   resumeFileName?: string;
   aiProcessingTime?: number;
@@ -26,7 +29,7 @@ export interface ResumeData {
   aiSuggestions?: string[];
 }
 
-export function saveResumeData(data: Partial<ResumeData>) {
+export function saveResumeData(data: Partial<ResumeStorageData>) {
   if (data.extractedText !== undefined) {
     localStorage.setItem(STORAGE_KEYS.EXTRACTED_TEXT, data.extractedText);
   }
@@ -38,6 +41,9 @@ export function saveResumeData(data: Partial<ResumeData>) {
   }
   if (data.customizedResume !== undefined) {
     localStorage.setItem(STORAGE_KEYS.CUSTOMIZED_RESUME, data.customizedResume);
+  }
+  if (data.structuredResume !== undefined) {
+    localStorage.setItem(STORAGE_KEYS.STRUCTURED_RESUME, JSON.stringify(data.structuredResume));
   }
   if (data.resumeProcessed !== undefined) {
     localStorage.setItem(STORAGE_KEYS.RESUME_PROCESSED, String(data.resumeProcessed));
@@ -59,9 +65,10 @@ export function saveResumeData(data: Partial<ResumeData>) {
   }
 }
 
-export function loadResumeData(): ResumeData {
+export function loadResumeData(): ResumeStorageData {
   let aiKeywordsMatched: string[] = [];
   let aiSuggestions: string[] = [];
+  let structuredResume: PDFResumeData | undefined;
   
   try {
     const keywordsStr = localStorage.getItem(STORAGE_KEYS.AI_KEYWORDS_MATCHED);
@@ -73,11 +80,23 @@ export function loadResumeData(): ResumeData {
     if (suggestionsStr) aiSuggestions = JSON.parse(suggestionsStr);
   } catch {}
   
+  try {
+    const structuredStr = localStorage.getItem(STORAGE_KEYS.STRUCTURED_RESUME);
+    if (structuredStr) {
+      const parsed = JSON.parse(structuredStr);
+      // Convert from AI format to PDF format if needed
+      structuredResume = convertToResumeData(parsed);
+    }
+  } catch (e) {
+    console.error('Error loading structured resume:', e);
+  }
+  
   return {
     extractedText: localStorage.getItem(STORAGE_KEYS.EXTRACTED_TEXT) || '',
     resumeTitle: localStorage.getItem(STORAGE_KEYS.RESUME_TITLE) || '',
     jobDescription: localStorage.getItem(STORAGE_KEYS.JOB_DESCRIPTION) || '',
     customizedResume: localStorage.getItem(STORAGE_KEYS.CUSTOMIZED_RESUME) || '',
+    structuredResume,
     resumeProcessed: localStorage.getItem(STORAGE_KEYS.RESUME_PROCESSED) === 'true',
     resumeFileName: localStorage.getItem(STORAGE_KEYS.RESUME_FILE_NAME) || undefined,
     aiProcessingTime: parseInt(localStorage.getItem(STORAGE_KEYS.AI_PROCESSING_TIME) || '0', 10) || undefined,
@@ -87,9 +106,56 @@ export function loadResumeData(): ResumeData {
   };
 }
 
+// Convert AI structured resume to PDF template format
+function convertToResumeData(aiResume: any): PDFResumeData {
+  const personalInfo = aiResume.personalInfo || {};
+  
+  return {
+    name: personalInfo.name || 'Your Name',
+    title: personalInfo.title,
+    contact: {
+      email: personalInfo.email,
+      phone: personalInfo.phone,
+      location: personalInfo.location,
+      linkedin: personalInfo.linkedin,
+      github: personalInfo.github,
+      website: personalInfo.website,
+    },
+    summary: aiResume.summary || '',
+    experience: (aiResume.experience || []).map((exp: any) => ({
+      title: exp.title || '',
+      company: exp.company || '',
+      location: exp.location,
+      startDate: exp.startDate || '',
+      endDate: exp.endDate || '',
+      bullets: exp.bullets || [],
+    })),
+    education: (aiResume.education || []).map((edu: any) => ({
+      degree: edu.degree || '',
+      school: edu.school || '',
+      location: edu.location,
+      graduationDate: edu.graduationDate || '',
+      gpa: edu.gpa,
+      highlights: edu.highlights,
+    })),
+    skills: (aiResume.skills || []).map((skill: any) => ({
+      category: skill.category,
+      items: skill.items || [],
+    })),
+    certifications: aiResume.certifications,
+    projects: aiResume.projects?.map((proj: any) => ({
+      name: proj.name || '',
+      description: proj.description || '',
+      bullets: proj.bullets,
+    })),
+  };
+}
+
 export function clearResumeData() {
   Object.values(STORAGE_KEYS).forEach(key => {
     localStorage.removeItem(key);
   });
 }
 
+// Export the old type name for backwards compatibility
+export type ResumeData = ResumeStorageData;

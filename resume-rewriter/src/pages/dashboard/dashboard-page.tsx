@@ -13,8 +13,7 @@ import { extractResumeText } from '@/services/resume-service';
 import { apiClient } from '@/lib/api-client';
 import { saveResumeData, loadResumeData, clearResumeData } from '@/lib/resume-storage';
 import { pdf } from '@react-pdf/renderer';
-import { ResumePDF } from '@/components/pdf/resume-pdf-template';
-import { parseResumeContent } from '@/lib/resume-parser';
+import { ResumePDF, type ResumeData as PDFResumeData } from '@/components/pdf/resume-pdf-template';
 
 export function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -48,6 +47,9 @@ export function DashboardPage() {
   const [aiAtsScore, setAiAtsScore] = useState<number>(0);
   const [aiKeywordsMatched, setAiKeywordsMatched] = useState<string[]>([]);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  
+  // Structured resume data from AI (for PDF generation)
+  const [structuredResume, setStructuredResume] = useState<PDFResumeData | null>(null);
 
   const showPaymentModalSafely = () => {
     if (authLoading) return;
@@ -121,6 +123,11 @@ export function DashboardPage() {
         if (savedData.aiAtsScore) setAiAtsScore(savedData.aiAtsScore);
         if (savedData.aiKeywordsMatched) setAiKeywordsMatched(savedData.aiKeywordsMatched);
         if (savedData.aiSuggestions) setAiSuggestions(savedData.aiSuggestions);
+        
+        // Load structured resume for PDF generation
+        if (savedData.structuredResume) {
+          setStructuredResume(savedData.structuredResume);
+        }
         
         return true;
       }
@@ -362,8 +369,57 @@ export function DashboardPage() {
       setAiKeywordsMatched(data.result.keywordsMatched || []);
       setAiSuggestions(data.result.suggestions || []);
       
+      // Store structured resume if available (for proper PDF generation)
+      let pdfResumeData: PDFResumeData | null = null;
+      if (data.result.structuredResume) {
+        // Convert AI structured format to PDF format
+        const sr = data.result.structuredResume;
+        pdfResumeData = {
+          name: sr.personalInfo?.name || 'Your Name',
+          title: sr.personalInfo?.title,
+          contact: {
+            email: sr.personalInfo?.email,
+            phone: sr.personalInfo?.phone,
+            location: sr.personalInfo?.location,
+            linkedin: sr.personalInfo?.linkedin,
+            github: sr.personalInfo?.github,
+            website: sr.personalInfo?.website,
+          },
+          summary: sr.summary || '',
+          experience: (sr.experience || []).map((exp: any) => ({
+            title: exp.title || '',
+            company: exp.company || '',
+            location: exp.location,
+            startDate: exp.startDate || '',
+            endDate: exp.endDate || '',
+            bullets: exp.bullets || [],
+          })),
+          education: (sr.education || []).map((edu: any) => ({
+            degree: edu.degree || '',
+            school: edu.school || '',
+            location: edu.location,
+            graduationDate: edu.graduationDate || '',
+            gpa: edu.gpa,
+            highlights: edu.highlights,
+          })),
+          skills: (sr.skills || []).map((skill: any) => ({
+            category: skill.category,
+            items: skill.items || [],
+          })),
+          certifications: sr.certifications,
+          projects: sr.projects,
+        };
+        setStructuredResume(pdfResumeData);
+        console.log('Structured resume received:', {
+          name: pdfResumeData.name,
+          experienceCount: pdfResumeData.experience.length,
+          totalBullets: pdfResumeData.experience.reduce((acc, e) => acc + e.bullets.length, 0),
+        });
+      }
+      
       saveResumeData({
         customizedResume: cleanResume,
+        structuredResume: pdfResumeData || undefined,
         resumeProcessed: true,
         aiProcessingTime: data.result.processingTime,
         aiAtsScore: data.result.atsScore,
@@ -510,55 +566,51 @@ export function DashboardPage() {
   };
 
   const downloadResumeFile = async () => {
-    let resumeContent = customizedResume;
     let resumeTitleToUse = resumeTitle;
+    let resumeDataForPDF: PDFResumeData | null = structuredResume;
     
-    if (!resumeContent) {
+    // Try to load from storage if not in state
+    if (!resumeDataForPDF) {
       const savedData = loadResumeData();
-      resumeContent = savedData.customizedResume;
-      resumeTitleToUse = savedData.resumeTitle;
+      resumeDataForPDF = savedData.structuredResume || null;
+      resumeTitleToUse = savedData.resumeTitle || resumeTitle;
     }
     
-    if (!resumeContent) {
-      toast.error('No resume to download');
+    // If we still don't have structured data, the AI didn't provide it
+    if (!resumeDataForPDF) {
+      toast.error('Resume data not available. Please process your resume again.');
+      console.error('No structured resume data available');
       return;
     }
 
     const toastId = 'pdf-gen';
     
     try {
-      // Parse the resume content into structured data
-      const cleanContent = parseMarkdownToPlainText(resumeContent);
       console.log('=== PDF Generation Debug ===');
-      console.log('Original content length:', resumeContent.length);
-      console.log('Clean content length:', cleanContent.length);
-      console.log('First 500 chars of clean content:', cleanContent.substring(0, 500));
-      
-      const resumeData = parseResumeContent(cleanContent, aiKeywordsMatched);
-      console.log('Parsed resume data:', { 
-        name: resumeData.name, 
-        title: resumeData.title,
-        hasContact: Object.keys(resumeData.contact).length > 0,
-        summaryLength: resumeData.summary?.length || 0,
-        experienceCount: resumeData.experience.length,
-        experienceBullets: resumeData.experience.map(e => ({ title: e.title, company: e.company, bulletCount: e.bullets?.length || 0 })),
-        educationCount: resumeData.education.length,
-        skillsCount: resumeData.skills.length 
+      console.log('Using structured resume data:', {
+        name: resumeDataForPDF.name,
+        title: resumeDataForPDF.title,
+        hasContact: Object.keys(resumeDataForPDF.contact || {}).length > 0,
+        summaryLength: resumeDataForPDF.summary?.length || 0,
+        experienceCount: resumeDataForPDF.experience?.length || 0,
+        experienceBullets: resumeDataForPDF.experience?.map(e => ({ 
+          title: e.title, 
+          company: e.company, 
+          bulletCount: e.bullets?.length || 0 
+        })),
+        educationCount: resumeDataForPDF.education?.length || 0,
+        skillsCount: resumeDataForPDF.skills?.length || 0,
       });
       
-      // Validate that we have actual content
-      const totalBullets = resumeData.experience.reduce((acc, e) => acc + (e.bullets?.length || 0), 0);
+      // Validate content
+      const totalBullets = resumeDataForPDF.experience?.reduce((acc, e) => acc + (e.bullets?.length || 0), 0) || 0;
       console.log('Total experience bullets:', totalBullets);
-      
-      if (resumeData.experience.length === 0 && resumeData.education.length === 0) {
-        console.warn('Warning: No experience or education parsed. Raw content sample:', cleanContent.substring(0, 1000));
-      }
       
       // Generate professional PDF using react-pdf
       toast.loading('Generating professional PDF...', { id: toastId });
       
       // Create the PDF document element
-      const pdfDocument = <ResumePDF data={resumeData} showBranding={true} />;
+      const pdfDocument = <ResumePDF data={resumeDataForPDF} showBranding={true} />;
       
       // Generate blob with timeout to prevent hanging
       const pdfBlob = await Promise.race([
@@ -665,9 +717,14 @@ export function DashboardPage() {
     setJobDescription('');
     setResumeProcessed(false);
     setCustomizedResume('');
+    setStructuredResume(null);
     setShowInitialReport(false);
     setIsAnalyzing(false);
     setShowOptimizedComparison(false);
+    setAiProcessingTime(0);
+    setAiAtsScore(0);
+    setAiKeywordsMatched([]);
+    setAiSuggestions([]);
     clearResumeData();
   };
 
