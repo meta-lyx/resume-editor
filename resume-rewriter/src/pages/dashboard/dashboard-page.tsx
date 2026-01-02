@@ -459,24 +459,48 @@ export function DashboardPage() {
 
   const parseMarkdownToPlainText = (markdown: string): string => {
     let text = markdown;
+    // Remove HTML and error content
     text = text.replace(/<!DOCTYPE[^>]*>/gi, '');
     text = text.replace(/<!--[\s\S]*?-->/g, '');
     text = text.replace(/<\/?[^>]+(>|$)/g, '');
     text = text.replace(/^.*cdn-cgi\/styles\/cf\.errors\.css.*$/gmi, '');
     text = text.replace(/^.*Worker threw exception.*$/gmi, '');
+    
+    // Remove "Optimized Resume" or similar headers that AI might add
+    text = text.replace(/^#*\s*(AI[-\s]?)?Optimized Resume\s*$/gmi, '');
+    text = text.replace(/^#*\s*Resume\s*$/gmi, '');
+    
+    // Convert markdown headers to plain text
     text = text.replace(/^#{1,6}\s+(.+)$/gm, '$1');
+    
+    // Remove bold/italic formatting but keep the text
     text = text.replace(/\*\*(.+?)\*\*/g, '$1');
     text = text.replace(/__(.+?)__/g, '$1');
     text = text.replace(/\*(.+?)\*/g, '$1');
     text = text.replace(/_(.+?)_/g, '$1');
     text = text.replace(/`(.+?)`/g, '$1');
+    
+    // Convert markdown links to just the text
     text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+    
+    // Remove horizontal rules
     text = text.replace(/^[-*]{3,}$/gm, '');
+    
+    // Normalize bullet points to • character
     text = text.replace(/^[\s]*[-*+]\s+/gm, '• ');
-    text = text.replace(/^\d+\.\s+/gm, '');
+    
+    // Keep numbered lists but remove the number formatting
+    text = text.replace(/^\d+\.\s+/gm, '• ');
+    
+    // Remove code blocks
     text = text.replace(/```[\s\S]*?```/g, '');
+    
+    // Remove blockquotes
     text = text.replace(/^>\s+(.+)$/gm, '$1');
+    
+    // Reduce excessive newlines
     text = text.replace(/\n{3,}/g, '\n\n');
+    
     return text.trim();
   };
 
@@ -500,15 +524,30 @@ export function DashboardPage() {
     try {
       // Parse the resume content into structured data
       const cleanContent = parseMarkdownToPlainText(resumeContent);
+      console.log('=== PDF Generation Debug ===');
+      console.log('Original content length:', resumeContent.length);
       console.log('Clean content length:', cleanContent.length);
+      console.log('First 500 chars of clean content:', cleanContent.substring(0, 500));
       
       const resumeData = parseResumeContent(cleanContent, aiKeywordsMatched);
       console.log('Parsed resume data:', { 
         name: resumeData.name, 
+        title: resumeData.title,
+        hasContact: Object.keys(resumeData.contact).length > 0,
+        summaryLength: resumeData.summary?.length || 0,
         experienceCount: resumeData.experience.length,
+        experienceBullets: resumeData.experience.map(e => ({ title: e.title, company: e.company, bulletCount: e.bullets?.length || 0 })),
         educationCount: resumeData.education.length,
         skillsCount: resumeData.skills.length 
       });
+      
+      // Validate that we have actual content
+      const totalBullets = resumeData.experience.reduce((acc, e) => acc + (e.bullets?.length || 0), 0);
+      console.log('Total experience bullets:', totalBullets);
+      
+      if (resumeData.experience.length === 0 && resumeData.education.length === 0) {
+        console.warn('Warning: No experience or education parsed. Raw content sample:', cleanContent.substring(0, 1000));
+      }
       
       // Generate professional PDF using react-pdf
       toast.loading('Generating professional PDF...', { id: toastId });
