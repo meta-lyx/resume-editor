@@ -494,3 +494,4 @@ export function ResumePDF({ data, showBranding = true }: ResumePDFProps) {
 
 export default ResumePDF;
 
+

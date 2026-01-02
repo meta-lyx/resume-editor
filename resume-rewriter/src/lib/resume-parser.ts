@@ -386,3 +386,4 @@ export function parseResumeContent(
 
 export default parseResumeContent;
 
+

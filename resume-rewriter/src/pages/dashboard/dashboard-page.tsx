@@ -3,9 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { ResumeComparison } from '@/components/ui/resume-comparison';
+import { InitialATSReport } from '@/components/ui/initial-ats-report';
 import { LoginModal } from '@/components/auth/login-modal';
 import { AccountInfo } from '@/components/ui/account-info';
-import { Plus, Upload, FileText, AlertCircle, Check, Sparkles, ArrowRight, CreditCard, Loader2, Download, Zap, ChevronRight, X, Crown, Rocket, Star } from 'lucide-react';
+import { Upload, FileText, Check, Sparkles, ArrowRight, CreditCard, Loader2, Zap, ChevronRight, X, Crown, Rocket, Star } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
 import { extractResumeText } from '@/services/resume-service';
@@ -25,6 +26,9 @@ export function DashboardPage() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState<string>('');
   const [resumeProcessed, setResumeProcessed] = useState(false);
+  const [showInitialReport, setShowInitialReport] = useState(false);  // Show initial ATS report
+  const [isAnalyzing, setIsAnalyzing] = useState(false);  // Show analyzing animation
+  const [showOptimizedComparison, setShowOptimizedComparison] = useState(false);  // Show full comparison view
   const [customizedResume, setCustomizedResume] = useState<string>('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -329,7 +333,12 @@ export function DashboardPage() {
       return;
     }
 
+    // Start the analysis flow - show the initial report first
+    setShowInitialReport(true);
+    setIsAnalyzing(true);
+    setShowOptimizedComparison(false);
     setLoading(true);
+    
     try {
       const { data, error } = await apiClient.processResume(extractedText, jobDescription);
       
@@ -362,13 +371,25 @@ export function DashboardPage() {
         aiSuggestions: data.result.suggestions,
       });
       
+      // Analysis complete - stop analyzing animation but keep showing report
+      setIsAnalyzing(false);
       toast.success(`Resume optimized by ${data.provider}!`);
     } catch (error: any) {
       toast.error(error.message || 'Processing failed');
       console.error('Processing error:', error);
+      // On error, reset the flow
+      setShowInitialReport(false);
+      setIsAnalyzing(false);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle "View My AI-Optimized Resume" button click
+  const handleViewOptimized = () => {
+    setShowOptimizedComparison(true);
+    // Scroll to top of comparison section
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDownloadResume = async () => {
@@ -574,6 +595,9 @@ export function DashboardPage() {
     setJobDescription('');
     setResumeProcessed(false);
     setCustomizedResume('');
+    setShowInitialReport(false);
+    setIsAnalyzing(false);
+    setShowOptimizedComparison(false);
     clearResumeData();
   };
 
@@ -626,8 +650,16 @@ export function DashboardPage() {
           <div className="lg:col-span-2">
             <div className="glass-card p-6 md:p-8 animate-fade-in-up">
               
-              {/* Show processed result */}
-              {resumeProcessed ? (
+              {/* Show Initial ATS Report (intermediate step) */}
+              {showInitialReport && !showOptimizedComparison ? (
+                <InitialATSReport
+                  originalContent={extractedText}
+                  jobDescription={jobDescription}
+                  isAnalyzing={isAnalyzing}
+                  analysisComplete={resumeProcessed}
+                  onViewOptimized={handleViewOptimized}
+                />
+              ) : showOptimizedComparison && resumeProcessed ? (
                 <div>
                   <div className="rounded-2xl bg-green-500/10 border border-green-500/20 p-6 mb-6">
                     <div className="flex items-start gap-4">
