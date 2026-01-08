@@ -15,6 +15,49 @@ import { saveResumeData, loadResumeData, clearResumeData } from '@/lib/resume-st
 import { pdf } from '@react-pdf/renderer';
 import { ResumePDF, type ResumeData as PDFResumeData } from '@/components/pdf/resume-pdf-template';
 
+// Helper to extract personal info from raw resume text as fallback
+function extractPersonalInfoFromText(text: string): { name?: string; email?: string; phone?: string; location?: string; github?: string; linkedin?: string } {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const result: { name?: string; email?: string; phone?: string; location?: string; github?: string; linkedin?: string } = {};
+  
+  // Email pattern
+  const emailMatch = text.match(/[\w.-]+@[\w.-]+\.\w+/);
+  if (emailMatch) result.email = emailMatch[0];
+  
+  // Phone pattern (various formats)
+  const phoneMatch = text.match(/(\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/);
+  if (phoneMatch) result.phone = phoneMatch[0];
+  
+  // GitHub
+  const githubMatch = text.match(/github\.com\/[\w-]+/i) || text.match(/GitHub/i);
+  if (githubMatch) result.github = githubMatch[0].toLowerCase().includes('github.com') ? `https://${githubMatch[0]}` : undefined;
+  
+  // LinkedIn
+  const linkedinMatch = text.match(/linkedin\.com\/in\/[\w-]+/i);
+  if (linkedinMatch) result.linkedin = `https://${linkedinMatch[0]}`;
+  
+  // Name is usually the first substantial line (not a URL, email, or phone)
+  for (const line of lines.slice(0, 5)) {
+    // Skip if it's an email, phone, URL, or too short
+    if (line.includes('@') || line.includes('github') || line.includes('linkedin') || line.length < 3) continue;
+    // Skip if it looks like a phone number
+    if (/^\+?\d[\d\s.-]+$/.test(line)) continue;
+    // Skip if it looks like a location only (City, State pattern without a name)
+    if (/^[A-Z][a-z]+,\s*[A-Z]{2}$/.test(line)) continue;
+    // This could be the name
+    if (!result.name && line.length > 2 && line.length < 60) {
+      result.name = line;
+      break;
+    }
+  }
+  
+  // Try to find location (City, State/Country pattern)
+  const locationMatch = text.match(/([A-Z][a-z]+(?:\s[A-Z][a-z]+)*),\s*([A-Z][a-z]+|[A-Z]{2}|China|USA|UK)/);
+  if (locationMatch) result.location = locationMatch[0];
+  
+  return result;
+}
+
 export function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -374,16 +417,34 @@ export function DashboardPage() {
       if (data.result.structuredResume) {
         // Convert AI structured format to PDF format
         const sr = data.result.structuredResume;
-        pdfResumeData = {
-          name: sr.personalInfo?.name || 'Your Name',
+        
+        // Extract personal info from original text as fallback
+        const fallbackInfo = extractPersonalInfoFromText(extractedText);
+        
+        // Use AI-extracted info, but fall back to original text extraction if AI missed it
+        const personalInfo = {
+          name: sr.personalInfo?.name && sr.personalInfo.name !== 'Your Name' ? sr.personalInfo.name : fallbackInfo.name || 'Resume',
           title: sr.personalInfo?.title,
+          email: sr.personalInfo?.email || fallbackInfo.email,
+          phone: sr.personalInfo?.phone || fallbackInfo.phone,
+          location: sr.personalInfo?.location || fallbackInfo.location,
+          linkedin: sr.personalInfo?.linkedin || fallbackInfo.linkedin,
+          github: sr.personalInfo?.github || fallbackInfo.github,
+          website: sr.personalInfo?.website,
+        };
+        
+        console.log('Personal info - AI:', sr.personalInfo, 'Fallback:', fallbackInfo, 'Final:', personalInfo);
+        
+        pdfResumeData = {
+          name: personalInfo.name,
+          title: personalInfo.title,
           contact: {
-            email: sr.personalInfo?.email,
-            phone: sr.personalInfo?.phone,
-            location: sr.personalInfo?.location,
-            linkedin: sr.personalInfo?.linkedin,
-            github: sr.personalInfo?.github,
-            website: sr.personalInfo?.website,
+            email: personalInfo.email,
+            phone: personalInfo.phone,
+            location: personalInfo.location,
+            linkedin: personalInfo.linkedin,
+            github: personalInfo.github,
+            website: personalInfo.website,
           },
           summary: sr.summary || '',
           experience: (sr.experience || []).map((exp: any) => ({

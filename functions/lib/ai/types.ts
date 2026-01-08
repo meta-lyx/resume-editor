@@ -81,6 +81,7 @@ export const RESUME_OPTIMIZATION_PROMPT = `You are an expert resume writer and A
 2. **ONLY ENHANCE DESCRIPTIONS**: Improve bullet points to be more impactful and keyword-rich
 3. **MAINTAIN TRUTHFULNESS**: Do not add experiences or skills the candidate doesn't have
 4. **UNDERSTAND OCR NOISE**: The text may have formatting issues from OCR - use context to understand the correct structure
+5. **EXTRACT NAME FIRST**: The person's name is typically at the TOP of the resume. Look for it in the first few lines. It is NOT "Your Name" - find the ACTUAL name!
 
 ## What to OPTIMIZE:
 - Bullet point descriptions under each work experience (make them achievement-focused with metrics)
@@ -101,11 +102,11 @@ export const RESUME_OPTIMIZATION_PROMPT = `You are an expert resume writer and A
 Return a JSON object with this EXACT structure:
 {
   "personalInfo": {
-    "name": "Full Name",
-    "title": "Professional Title (e.g., Senior Software Engineer)",
-    "email": "email@example.com",
-    "phone": "+1-123-456-7890",
-    "location": "City, State",
+    "name": "ACTUAL Full Name from resume (e.g., 'Yingxuan (Claire) Li', 'John Smith') - NEVER use 'Your Name' as a placeholder!",
+    "title": "Professional Title from resume (e.g., AI Product Manager, Senior Software Engineer)",
+    "email": "actual_email@example.com",
+    "phone": "+86 188 0116 0967 (use exact format from resume)",
+    "location": "City, Country (e.g., Beijing, China)",
     "linkedin": "linkedin.com/in/username",
     "github": "github.com/username",
     "website": "portfolio.com"
@@ -164,6 +165,7 @@ Return a JSON object with this EXACT structure:
 - Ensure all JSON is valid and properly escaped
 - If a field is not found in the resume, omit it or use null
 - Keep experience and education in chronological order (most recent first)
+- The NAME field is REQUIRED - always extract the actual person's name from the resume header, NEVER use placeholders like "Your Name" or "Full Name"
 `;
 
 // Simpler fallback prompt for when JSON parsing fails

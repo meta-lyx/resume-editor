@@ -153,7 +153,7 @@ Optimize this resume for the target job. Return a JSON object with the resume st
       
       // Build structured resume
       const structuredResume: StructuredResume = {
-        personalInfo: parsed.personalInfo || { name: 'Your Name' },
+        personalInfo: parsed.personalInfo || { name: 'Resume' },
         summary: parsed.summary || '',
         experience: (parsed.experience || []).map((exp: any) => ({
           title: exp.title || 'Position',
@@ -189,10 +189,11 @@ Optimize this resume for the target job. Return a JSON object with the resume st
       console.error('JSON parse error:', parseError);
       console.log('Raw content that failed to parse:', jsonContent.substring(0, 500));
       
-      // Return a minimal structure
+      // Return a minimal structure - try to extract name from first line
+      const firstLine = content.split('\n').find(l => l.trim().length > 2 && !l.includes('@'))?.trim() || 'Resume';
       return {
         structuredResume: {
-          personalInfo: { name: 'Resume' },
+          personalInfo: { name: firstLine.slice(0, 50) }, // Use first meaningful line as name
           summary: content,
           experience: [],
           education: [],
