@@ -81,8 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signOut() {
-    const { error } = await apiClient.logout();
-    if (error) throw new Error(error.message);
+    // Clear local state regardless of API response
+    // Token-based auth means client-side clearing is sufficient
+    try {
+      await apiClient.logout();
+    } catch (e) {
+      // Ignore API errors - logout should always succeed client-side
+      console.log('Logout API error (ignored):', e);
+    }
     setUser(null);
     setSession(null);
   }
