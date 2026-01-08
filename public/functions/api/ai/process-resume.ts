@@ -43,9 +43,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
     if (token) {
       // Verify session if token provided (for tracking/analytics)
-      const sessionResult = await env.DB.prepare(
-        'SELECT user_id FROM sessions WHERE token = ? AND expires_at > ?'
-      ).bind(token, Math.floor(Date.now() / 1000)).all();
+    const sessionResult = await env.DB.prepare(
+      'SELECT user_id FROM sessions WHERE token = ? AND expires_at > ?'
+    ).bind(token, Math.floor(Date.now() / 1000)).all();
 
       if (sessionResult.results && sessionResult.results.length > 0) {
         userId = sessionResult.results[0].user_id as string;

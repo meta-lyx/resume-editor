@@ -128,24 +128,24 @@ export function FeaturesPage() {
             >
               <div className={`w-14 h-14 rounded-2xl ${getIconBg(feature.color)} border flex items-center justify-center mb-6`}>
                 <feature.icon className={`h-7 w-7 ${getIconColor(feature.color)}`} />
-              </div>
+          </div>
               <h2 className="font-display text-xl font-bold mb-3">{feature.title}</h2>
               <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
                 {feature.description}
-              </p>
+          </p>
               <ul className="space-y-2">
                 {feature.benefits.map((benefit, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
                     <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">{benefit}</span>
-                  </li>
+            </li>
                 ))}
-              </ul>
-            </div>
-          ))}
+          </ul>
         </div>
+          ))}
+      </div>
 
-        {/* Workflow section */}
+      {/* Workflow section */}
         <div className="mb-24">
           <div className="text-center mb-16">
             <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
@@ -184,22 +184,22 @@ export function FeaturesPage() {
               >
                 <div className="step-indicator absolute -top-5 -left-5">
                   {item.step}
-                </div>
+            </div>
                 <div className="text-center pt-4">
                   <div className="w-16 h-16 rounded-2xl bg-pear-400/10 border border-pear-400/20 flex items-center justify-center mx-auto mb-6">
                     <item.icon className="h-8 w-8 text-pear-400" />
-                  </div>
+            </div>
                   <h3 className="font-display text-lg font-semibold mb-3">{item.title}</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">
                     {item.description}
-                  </p>
-                </div>
-              </div>
-            ))}
+            </p>
           </div>
+            </div>
+            ))}
         </div>
+      </div>
 
-        {/* Call to action */}
+      {/* Call to action */}
         <div className="relative glass-card p-12 md:p-16 text-center overflow-hidden animate-fade-in-up">
           {/* Background glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-pear-400/10 via-transparent to-cyan-400/10" />
@@ -213,22 +213,22 @@ export function FeaturesPage() {
             </h2>
             <p className="text-xl text-muted-foreground mb-8 max-w-xl mx-auto">
               Start using our AI-powered tools today and boost your job search success.
-            </p>
-            {user ? (
-              <Link to="/dashboard">
+        </p>
+        {user ? (
+          <Link to="/dashboard">
                 <Button size="xl" className="px-10 group">
                   Start Optimizing 
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-            ) : (
+            </Button>
+          </Link>
+        ) : (
               <Link to="/">
                 <Button size="xl" className="px-10 group">
                   Try for Free 
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-            )}
+            </Button>
+          </Link>
+        )}
           </div>
         </div>
       </div>

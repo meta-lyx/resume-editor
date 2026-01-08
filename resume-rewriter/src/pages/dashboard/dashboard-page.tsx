@@ -84,13 +84,13 @@ export function DashboardPage() {
     monthlyLimit: number;
     usageCount: number;
   } | null>(null);
-  
+
   // AI processing results
   const [aiProcessingTime, setAiProcessingTime] = useState<number>(0);
   const [aiAtsScore, setAiAtsScore] = useState<number>(0);
   const [aiKeywordsMatched, setAiKeywordsMatched] = useState<string[]>([]);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  
+    
   // Structured resume data from AI (for PDF generation)
   const [structuredResume, setStructuredResume] = useState<PDFResumeData | null>(null);
 
@@ -343,16 +343,24 @@ export function DashboardPage() {
         const text = result.extractedText || result.text || '';
         setExtractedText(text);
         
-        // Clear old customized resume when new resume is uploaded
+        // Clear ALL old state when new resume is uploaded - force fresh evaluation
         setCustomizedResume('');
         setResumeProcessed(false);
+        setStructuredResume(null);
+        setShowInitialReport(false);
+        setIsAnalyzing(false);
+        setShowOptimizedComparison(false);
+        setAiProcessingTime(0);
+        setAiAtsScore(0);
+        setAiKeywordsMatched([]);
+        setAiSuggestions([]);
         
+        // Clear everything from localStorage and save only new resume data
+        clearResumeData();
         saveResumeData({
           extractedText: text,
           resumeTitle: title,
           resumeFileName: file.name,
-          customizedResume: '', // Clear cached customized resume
-          resumeProcessed: false,
         });
         
         toast.success('Resume uploaded and text extracted successfully');
@@ -521,7 +529,7 @@ export function DashboardPage() {
       setShowLoginModal(true);
       return;
     }
-
+    
     // Verify there's a processed resume to download
     if (!customizedResume && !loadResumeData().customizedResume) {
       toast.error('Please process your resume first');
@@ -558,7 +566,7 @@ export function DashboardPage() {
       
       // Update subscription info
       if (consumeData) {
-        setHasSubscription(true);
+      setHasSubscription(true);
         setSubscriptionInfo({
           planName: consumeData.planName,
           remaining: consumeData.remaining ?? 0,
@@ -662,7 +670,7 @@ export function DashboardPage() {
         educationCount: resumeDataForPDF.education?.length || 0,
         skillsCount: resumeDataForPDF.skills?.length || 0,
       });
-      
+
       // Validate content
       const totalBullets = resumeDataForPDF.experience?.reduce((acc, e) => acc + (e.bullets?.length || 0), 0) || 0;
       console.log('Total experience bullets:', totalBullets);
@@ -672,7 +680,7 @@ export function DashboardPage() {
       
       // Create the PDF document element
       const pdfDocument = <ResumePDF data={resumeDataForPDF} showBranding={true} />;
-      
+        
       // Generate blob with timeout to prevent hanging
       const pdfBlob = await Promise.race([
         pdf(pdfDocument).toBlob(),
@@ -731,7 +739,7 @@ export function DashboardPage() {
           lines.push(`${edu.degree} - ${edu.school}`);
           if (edu.graduationDate) lines.push(edu.graduationDate);
           lines.push('');
-        }
+      }
         if (resumeDataForPDF.skills && resumeDataForPDF.skills.length > 0) {
           lines.push('SKILLS');
           for (const skillGroup of resumeDataForPDF.skills) {
@@ -948,13 +956,13 @@ export function DashboardPage() {
                     originalContent={extractedText}
                     optimizedContent={customizedResume}
                     jobDescription={jobDescription}
-                    isUnlocked={hasSubscription || paymentSuccess}
-                    onUnlock={handleDownloadResume}
+                        isUnlocked={hasSubscription || paymentSuccess}
+                        onUnlock={handleDownloadResume}
                     processingTime={aiProcessingTime}
                     atsScore={aiAtsScore}
                     keywordsMatched={aiKeywordsMatched}
                     suggestions={aiSuggestions}
-                  />
+                      />
 
                   {/* Action buttons */}
                   <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
@@ -1044,24 +1052,35 @@ export function DashboardPage() {
                     </div>
 
                     <div className="relative">
-                      <textarea
-                        value={jobDescription}
-                        onChange={(e) => {
-                          setJobDescription(e.target.value);
-                          saveResumeData({ jobDescription: e.target.value });
-                        }}
+                    <textarea
+                      value={jobDescription}
+                      onChange={(e) => {
+                        const newJD = e.target.value;
+                        setJobDescription(newJD);
+                        
+                        // If resume was already processed and JD changes significantly, clear old results
+                        if (resumeProcessed && newJD !== jobDescription) {
+                          setResumeProcessed(false);
+                          setCustomizedResume('');
+                          setStructuredResume(null);
+                          setShowInitialReport(false);
+                          setShowOptimizedComparison(false);
+                        }
+                        
+                        saveResumeData({ jobDescription: newJD });
+                      }}
                         placeholder="Paste the full job description here. Include requirements, responsibilities, and qualifications."
                         className="w-full p-5 bg-surface-light border border-border rounded-xl h-48 focus:outline-none focus:ring-2 focus:ring-pear-400/50 focus:border-pear-400/50 resize-none text-foreground placeholder:text-muted-foreground/60 transition-all"
-                      />
+                    />
                       <div className="absolute bottom-4 right-4 flex items-center gap-3">
                         <span className={`text-sm ${jobDescription.length >= 50 ? 'text-green-400' : 'text-muted-foreground'}`}>
                           {jobDescription.length} / 50 min
                         </span>
-                        {jobDescription.length >= 50 && (
+                      {jobDescription.length >= 50 && (
                           <span className="text-green-400 text-sm font-medium flex items-center gap-1">
                             <Check className="w-4 h-4" /> Ready
                           </span>
-                        )}
+                      )}
                       </div>
                     </div>
                   </div>
@@ -1117,14 +1136,14 @@ export function DashboardPage() {
                       )}
                     </Button>
 
-                    {!canProcess && (
+                  {!canProcess && (
                       <p className="text-muted-foreground text-sm mt-4">
-                        {!extractedText 
-                          ? 'Upload your resume to continue' 
+                      {!extractedText 
+                        ? 'Upload your resume to continue' 
                           : `Add ${50 - jobDescription.length} more characters to job description`
-                        }
-                      </p>
-                    )}
+                      }
+                    </p>
+                  )}
                   </div>
                 </>
               )}
@@ -1208,8 +1227,8 @@ export function DashboardPage() {
             <div className="text-center mb-8">
               <h2 className="font-display text-3xl font-bold mb-2">Choose Your Plan</h2>
               <p className="text-muted-foreground">
-                Select a plan to download your customized resume
-              </p>
+              Select a plan to download your customized resume
+            </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1259,7 +1278,7 @@ export function DashboardPage() {
               <div className="glass-card p-6 relative border-pear-400/30 shadow-glow">
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <span className="px-4 py-1 bg-gradient-pear text-background text-xs font-semibold rounded-full">
-                    Most Popular
+                  Most Popular
                   </span>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-pear-400/20 flex items-center justify-center mb-4">

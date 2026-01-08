@@ -59,9 +59,9 @@ export function LoginPage() {
             Don't have an account?{' '}
             <Link to="/register" className="text-pear-400 hover:text-pear-300 font-medium">
               Create one
-            </Link>
-          </p>
-        </div>
+          </Link>
+        </p>
+      </div>
 
         {/* Form Card */}
         <div className="glass-card p-8 animate-fade-in-up">
@@ -128,16 +128,16 @@ export function LoginPage() {
               </div>
 
               <Link to="/forgot-password" className="text-sm text-pear-400 hover:text-pear-300">
-                Forgot password?
-              </Link>
+                  Forgot password?
+                </Link>
             </div>
 
-            <Button
-              type="submit"
+              <Button
+                type="submit"
               className="w-full"
               size="lg"
-              disabled={loading}
-            >
+                disabled={loading}
+              >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -146,7 +146,7 @@ export function LoginPage() {
               ) : (
                 'Sign in'
               )}
-            </Button>
+              </Button>
           </form>
 
           <div className="mt-6">
