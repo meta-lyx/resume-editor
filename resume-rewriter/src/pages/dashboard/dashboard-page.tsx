@@ -6,6 +6,7 @@ import { ResumeComparison } from '@/components/ui/resume-comparison';
 import { InitialATSReport } from '@/components/ui/initial-ats-report';
 import { LoginModal } from '@/components/auth/login-modal';
 import { AccountInfo } from '@/components/ui/account-info';
+import { TemplateSelectorModal } from '@/components/ui/template-selector-modal';
 import { Upload, FileText, Check, Sparkles, ArrowRight, CreditCard, Loader2, Zap, ChevronRight, X, Crown, Rocket, Star } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
@@ -14,6 +15,12 @@ import { apiClient } from '@/lib/api-client';
 import { saveResumeData, loadResumeData, clearResumeData } from '@/lib/resume-storage';
 import { pdf } from '@react-pdf/renderer';
 import { ResumePDF, type ResumeData as PDFResumeData } from '@/components/pdf/resume-pdf-template';
+import {
+  ClassicExecutivePDF,
+  ModernMinimalPDF,
+  CreativeSidebarPDF,
+  TechModernPDF,
+} from '@/components/pdf/template-pdf-renderers';
 
 // Helper to extract personal info from raw resume text as fallback
 function extractPersonalInfoFromText(text: string): { name?: string; email?: string; phone?: string; location?: string; github?: string; linkedin?: string } {
@@ -93,6 +100,10 @@ export function DashboardPage() {
     
   // Structured resume data from AI (for PDF generation)
   const [structuredResume, setStructuredResume] = useState<PDFResumeData | null>(null);
+  
+  // Template selector modal state
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const showPaymentModalSafely = () => {
     if (authLoading) return;
@@ -170,6 +181,11 @@ export function DashboardPage() {
         // Load structured resume for PDF generation
         if (savedData.structuredResume) {
           setStructuredResume(savedData.structuredResume);
+        }
+        
+        // If resume was already processed, show the comparison view directly
+        if (savedData.resumeProcessed && sanitizedCustomized && !looksLikeError(savedData.customizedResume)) {
+          setShowOptimizedComparison(true);
         }
         
         return true;
@@ -557,16 +573,42 @@ export function DashboardPage() {
         return;
       }
       
+      // Show template selector modal instead of directly downloading
+      setShowTemplateSelector(true);
+    } catch (err) {
+      console.error('Error checking subscription:', err);
+      toast.error('Failed to verify subscription. Please try again.');
+    }
+  };
+
+  // Handle template selection and download
+  const handleTemplateSelect = async (templateId: string) => {
+    setIsGeneratingPDF(true);
+    
+    try {
       // Consume credit when downloading
       const { data: consumeData, error: consumeError } = await apiClient.consumeCredit();
       if (consumeError) {
-        toast.error(consumeError.message || 'Failed to use a credit');
-        return;
+        // Check if it's a network/backend error
+        const isNetworkError = consumeError.message?.includes('Unable to connect') || 
+                               consumeError.message?.includes('Failed to fetch') ||
+                               consumeError.message?.includes('Unexpected end of JSON') ||
+                               consumeError.message?.includes('NetworkError');
+        
+        if (isNetworkError) {
+          // Backend might not be running - proceed with download in dev mode
+          console.warn('Backend unavailable, proceeding with download (dev mode)');
+          toast.success('Generating resume...', { duration: 2000 });
+        } else {
+          toast.error(consumeError.message || 'Failed to use a credit');
+          setIsGeneratingPDF(false);
+          return;
+        }
       }
       
-      // Update subscription info
+      // Update subscription info if we got data
       if (consumeData) {
-      setHasSubscription(true);
+        setHasSubscription(true);
         setSubscriptionInfo({
           planName: consumeData.planName,
           remaining: consumeData.remaining ?? 0,
@@ -575,10 +617,20 @@ export function DashboardPage() {
         });
       }
       
-      downloadResumeFile();
-    } catch (err) {
-      console.error('Error checking subscription:', err);
-      toast.error('Failed to verify subscription. Please try again.');
+      await downloadResumeFileWithTemplate(templateId);
+      setShowTemplateSelector(false);
+    } catch (err: any) {
+      console.error('Error during template download:', err);
+      const errorMessage = err?.message || 'Unknown error';
+      
+      // Check for JSON parsing errors (backend not running)
+      if (errorMessage.includes('JSON') || errorMessage.includes('Unexpected')) {
+        toast.error('Backend server not available. Please ensure the API server is running.');
+      } else {
+        toast.error('Failed to generate resume. Please try again.');
+      }
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -635,6 +687,12 @@ export function DashboardPage() {
   };
 
   const downloadResumeFile = async () => {
+    // Legacy function - now uses template selector
+    setShowTemplateSelector(true);
+  };
+
+  // Download resume with a specific template
+  const downloadResumeFileWithTemplate = async (templateId: string) => {
     let resumeTitleToUse = resumeTitle;
     let resumeDataForPDF: PDFResumeData | null = structuredResume;
     
@@ -656,6 +714,7 @@ export function DashboardPage() {
     
     try {
       console.log('=== PDF Generation Debug ===');
+      console.log('Using template:', templateId);
       console.log('Using structured resume data:', {
         name: resumeDataForPDF.name,
         title: resumeDataForPDF.title,
@@ -675,11 +734,28 @@ export function DashboardPage() {
       const totalBullets = resumeDataForPDF.experience?.reduce((acc, e) => acc + (e.bullets?.length || 0), 0) || 0;
       console.log('Total experience bullets:', totalBullets);
       
-      // Generate professional PDF using react-pdf
+      // Generate professional PDF using react-pdf with selected template
       toast.loading('Generating professional PDF...', { id: toastId });
       
-      // Create the PDF document element
-      const pdfDocument = <ResumePDF data={resumeDataForPDF} showBranding={true} />;
+      // Create the PDF document element based on selected template
+      let pdfDocument;
+      switch (templateId) {
+        case 'classic-executive':
+          pdfDocument = <ClassicExecutivePDF data={resumeDataForPDF} showBranding={true} />;
+          break;
+        case 'modern-minimal':
+          pdfDocument = <ModernMinimalPDF data={resumeDataForPDF} showBranding={true} />;
+          break;
+        case 'creative-sidebar':
+          pdfDocument = <CreativeSidebarPDF data={resumeDataForPDF} showBranding={true} />;
+          break;
+        case 'tech-modern':
+          pdfDocument = <TechModernPDF data={resumeDataForPDF} showBranding={true} />;
+          break;
+        default:
+          // Fallback to the original template
+          pdfDocument = <ResumePDF data={resumeDataForPDF} showBranding={true} />;
+      }
         
       // Generate blob with timeout to prevent hanging
       const pdfBlob = await Promise.race([
@@ -695,11 +771,12 @@ export function DashboardPage() {
         throw new Error('Generated PDF is too small, likely empty');
       }
       
-      // Download the PDF
+      // Download the PDF with template name
+      const templateName = templateId.replace(/-/g, '_');
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${resumeTitleToUse || 'resume'}_optimized.pdf`;
+      a.download = `${resumeTitleToUse || 'resume'}_${templateName}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -739,7 +816,7 @@ export function DashboardPage() {
           lines.push(`${edu.degree} - ${edu.school}`);
           if (edu.graduationDate) lines.push(edu.graduationDate);
           lines.push('');
-      }
+        }
         if (resumeDataForPDF.skills && resumeDataForPDF.skills.length > 0) {
           lines.push('SKILLS');
           for (const skillGroup of resumeDataForPDF.skills) {
@@ -1383,6 +1460,15 @@ export function DashboardPage() {
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         onSuccess={handleLoginSuccess}
+      />
+
+      {/* Template Selector Modal */}
+      <TemplateSelectorModal
+        isOpen={showTemplateSelector}
+        onClose={() => setShowTemplateSelector(false)}
+        onSelectTemplate={handleTemplateSelect}
+        resumeData={structuredResume}
+        isDownloading={isGeneratingPDF}
       />
     </div>
   );

@@ -103,6 +103,14 @@ class ApiClient {
           },
         };
       }
+      // Handle JSON parsing errors (usually means empty response or backend not running)
+      if (errorMessage.includes('JSON') || errorMessage.includes('Unexpected end') || errorMessage.includes('Unexpected token')) {
+        return {
+          error: {
+            message: 'Unable to connect to server. Please check if the backend is running.',
+          },
+        };
+      }
       return {
         error: {
           message: errorMessage,
@@ -222,22 +230,46 @@ class ApiClient {
         };
       }
 
-      const data = await response.json();
+      // Handle empty responses safely
+      const text = await response.text();
+      let data: any = null;
+      
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          if (!response.ok) {
+            return {
+              error: {
+                message: 'Server returned an invalid response',
+              },
+            };
+          }
+        }
+      }
 
       if (!response.ok) {
         return {
           error: {
-            message: data.error || data.message || 'An error occurred',
-            code: data.code,
+            message: data?.error || data?.message || 'An error occurred',
+            code: data?.code,
           },
         };
       }
 
       return { data };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Network error';
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('JSON') || errorMessage.includes('Unexpected')) {
+        return {
+          error: {
+            message: 'Unable to connect to server. Please check if the backend is running.',
+          },
+        };
+      }
       return {
         error: {
-          message: error instanceof Error ? error.message : 'Network error',
+          message: errorMessage,
         },
       };
     }
@@ -268,15 +300,38 @@ class ApiClient {
       headers,
       body: formData,
     }).then(async (response) => {
-      const data = await response.json();
+      const text = await response.text();
+      let data: any = null;
+      
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          return {
+            error: {
+              message: 'Server returned an invalid response',
+            },
+          };
+        }
+      }
+      
       if (!response.ok) {
         return {
           error: {
-            message: data.message || 'Failed to extract text',
+            message: data?.message || 'Failed to extract text',
           },
         };
       }
       return { data };
+    }).catch((error) => {
+      const errorMessage = error instanceof Error ? error.message : 'Network error';
+      return {
+        error: {
+          message: errorMessage.includes('Failed to fetch') ? 
+            'Unable to connect to server. Please check if the backend is running.' : 
+            errorMessage,
+        },
+      };
     });
   }
 
@@ -292,15 +347,38 @@ class ApiClient {
       },
       body: formData,
     }).then(async (response) => {
-      const data = await response.json();
+      const text = await response.text();
+      let data: any = null;
+      
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          return {
+            error: {
+              message: 'Server returned an invalid response',
+            },
+          };
+        }
+      }
+      
       if (!response.ok) {
         return {
           error: {
-            message: data.message || 'Upload failed',
+            message: data?.message || 'Upload failed',
           },
         };
       }
       return { data };
+    }).catch((error) => {
+      const errorMessage = error instanceof Error ? error.message : 'Network error';
+      return {
+        error: {
+          message: errorMessage.includes('Failed to fetch') ? 
+            'Unable to connect to server. Please check if the backend is running.' : 
+            errorMessage,
+        },
+      };
     });
   }
 
