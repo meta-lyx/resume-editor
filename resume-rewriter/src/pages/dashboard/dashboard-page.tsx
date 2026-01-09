@@ -917,11 +917,9 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute inset-0 grid-pattern opacity-30" />
-      <div className="orb orb-pear w-[500px] h-[500px] -top-32 -right-32 opacity-20" />
-      <div className="orb orb-cyan w-[400px] h-[400px] bottom-0 -left-32 opacity-15" />
+    <div className="relative min-h-screen">
+      {/* Background */}
+      <div className="absolute inset-0 grid-pattern opacity-20" />
       
       <div className="container mx-auto px-4 py-8 relative">
         {/* Payment Success Banner */}
@@ -948,15 +946,10 @@ export function DashboardPage() {
         )}
 
         {/* Header */}
-        <div className="mb-8 animate-fade-in">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-xl bg-pear-400/10">
-              <Zap className="h-6 w-6 text-pear-400" />
-            </div>
-            <h1 className="font-display text-3xl font-bold">Dashboard</h1>
-          </div>
-          <p className="text-muted-foreground">
-            {user?.email ? `Welcome, ${user.email.split('@')[0]}!` : 'Welcome!'} Upload your resume and customize it for your target job.
+        <div className="mb-8">
+          <h1 className="font-display text-2xl font-semibold mb-1">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">
+            {user?.email ? `Welcome, ${user.email.split('@')[0]}` : 'Welcome'} — Upload your resume and customize it for your target job.
           </p>
         </div>
 
@@ -992,22 +985,22 @@ export function DashboardPage() {
 
                   {/* Subscription Status Banner */}
                   {user && subscriptionInfo && (
-                    <div className={`rounded-2xl p-4 mb-6 flex items-center justify-between ${
+                    <div className={`rounded-xl p-4 mb-6 flex items-center justify-between ${
                       hasSubscription 
-                        ? 'bg-pear-400/10 border border-pear-400/20' 
+                        ? 'bg-primary/10 border border-primary/20' 
                         : 'bg-amber-500/10 border border-amber-500/20'
                     }`}>
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          hasSubscription ? 'bg-pear-400/20' : 'bg-amber-500/20'
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          hasSubscription ? 'bg-primary/20' : 'bg-amber-500/20'
                         }`}>
-                          <CreditCard className={`h-5 w-5 ${hasSubscription ? 'text-pear-400' : 'text-amber-400'}`} />
+                          <CreditCard className={`h-5 w-5 ${hasSubscription ? 'text-primary' : 'text-amber-500'}`} />
                         </div>
                         <div>
-                          <p className={`font-medium ${hasSubscription ? 'text-pear-400' : 'text-amber-400'}`}>
+                          <p className={`font-medium text-sm ${hasSubscription ? 'text-primary' : 'text-amber-500'}`}>
                             {subscriptionInfo.planName || 'Your Plan'}
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {hasSubscription 
                               ? `${subscriptionInfo.remaining} of ${subscriptionInfo.monthlyLimit} credits remaining`
                               : subscriptionInfo.monthlyLimit > 0 
@@ -1069,30 +1062,30 @@ export function DashboardPage() {
                     <div
                       {...getRootProps()}
                       className={`upload-zone p-10 text-center cursor-pointer ${
-                        isDragActive ? 'active border-pear-400' : ''
-                      } ${resumeFile ? 'success-glow border-green-500/50' : ''} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        isDragActive ? 'active' : ''
+                      } ${resumeFile ? 'border-green-500/50' : ''} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <input {...getInputProps()} />
-                      <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
-                        resumeFile ? 'bg-green-500/20' : 'bg-pear-400/10'
+                      <div className={`w-14 h-14 mx-auto mb-4 rounded-xl flex items-center justify-center ${
+                        resumeFile ? 'bg-green-500/10' : 'bg-primary/10'
                       }`}>
-                        <Upload className={`h-8 w-8 ${resumeFile ? 'text-green-400' : 'text-pear-400'}`} />
+                        <Upload className={`h-7 w-7 ${resumeFile ? 'text-green-500' : 'text-primary'}`} />
                       </div>
                       
                       {resumeFile ? (
                         <div>
-                          <p className="text-green-400 font-medium mb-2 flex items-center justify-center gap-2">
-                            <Check className="w-5 h-5" />
-                            Resume uploaded successfully
+                          <p className="text-green-500 font-medium mb-2 flex items-center justify-center gap-2">
+                            <Check className="w-4 h-4" />
+                            Resume uploaded
                           </p>
                           <p className="text-muted-foreground text-sm">{resumeFile.name}</p>
                           <p className="text-muted-foreground/60 text-xs mt-2">Click or drag to replace</p>
                         </div>
                       ) : isDragActive ? (
-                        <p className="text-pear-400 font-medium">Drop your resume here...</p>
+                        <p className="text-primary font-medium">Drop your resume here...</p>
                       ) : (
                         <>
-                          <p className="text-foreground font-medium mb-2">Drag and drop your resume, or click to browse</p>
+                          <p className="font-medium mb-2">Drag and drop your resume, or click to browse</p>
                           <p className="text-muted-foreground text-sm">Supports PDF, Word, PNG, JPG, WEBP</p>
                         </>
                       )}
@@ -1105,11 +1098,11 @@ export function DashboardPage() {
                           <label className="text-sm font-medium text-muted-foreground">
                             Extracted Content
                           </label>
-                          <span className="font-mono text-xs text-pear-400">
+                          <span className="font-mono text-xs text-primary">
                             {extractedText.length} chars
                           </span>
                         </div>
-                        <div className="bg-surface-light rounded-xl p-4 border border-border h-40 overflow-y-auto scrollbar-custom">
+                        <div className="bg-muted/30 rounded-lg p-4 border border-border h-40 overflow-y-auto scrollbar-custom">
                           <pre className="whitespace-pre-wrap text-sm text-muted-foreground font-mono">{extractedText}</pre>
                         </div>
                       </div>
@@ -1147,7 +1140,7 @@ export function DashboardPage() {
                         saveResumeData({ jobDescription: newJD });
                       }}
                         placeholder="Paste the full job description here. Include requirements, responsibilities, and qualifications."
-                        className="w-full p-5 bg-surface-light border border-border rounded-xl h-48 focus:outline-none focus:ring-2 focus:ring-pear-400/50 focus:border-pear-400/50 resize-none text-foreground placeholder:text-muted-foreground/60 transition-all"
+                        className="w-full p-4 bg-muted/30 border border-border rounded-lg h-48 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 resize-none text-foreground placeholder:text-muted-foreground/60 transition-all"
                     />
                       <div className="absolute bottom-4 right-4 flex items-center gap-3">
                         <span className={`text-sm ${jobDescription.length >= 50 ? 'text-green-400' : 'text-muted-foreground'}`}>
@@ -1163,28 +1156,28 @@ export function DashboardPage() {
                   </div>
 
                   {/* How It Works Info Box */}
-                  <div className="rounded-2xl bg-gradient-to-br from-pear-400/10 via-cyan-400/5 to-pink-400/10 border border-pear-400/20 p-6 mb-8">
+                  <div className="rounded-xl bg-muted/50 border border-border p-5 mb-8">
                     <div className="flex items-start gap-4">
-                      <div className="feature-icon flex-shrink-0">
-                        <Sparkles className="h-6 w-6 text-pear-400" />
+                      <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
+                        <Sparkles className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-display font-semibold mb-3">How Our AI Works</h3>
-                        <ul className="grid sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                        <h3 className="font-medium text-sm mb-2">How Our AI Works</h3>
+                        <ul className="grid sm:grid-cols-2 gap-1.5 text-sm text-muted-foreground">
                           <li className="flex items-center gap-2">
-                            <ChevronRight className="w-4 h-4 text-pear-400 flex-shrink-0" />
+                            <ChevronRight className="w-3 h-3 text-primary flex-shrink-0" />
                             Extracts key requirements
                           </li>
                           <li className="flex items-center gap-2">
-                            <ChevronRight className="w-4 h-4 text-pear-400 flex-shrink-0" />
+                            <ChevronRight className="w-3 h-3 text-primary flex-shrink-0" />
                             Highlights relevant experience
                           </li>
                           <li className="flex items-center gap-2">
-                            <ChevronRight className="w-4 h-4 text-pear-400 flex-shrink-0" />
+                            <ChevronRight className="w-3 h-3 text-primary flex-shrink-0" />
                             Optimizes for ATS systems
                           </li>
                           <li className="flex items-center gap-2">
-                            <ChevronRight className="w-4 h-4 text-pear-400 flex-shrink-0" />
+                            <ChevronRight className="w-3 h-3 text-primary flex-shrink-0" />
                             Rewrites with impact
                           </li>
                         </ul>
@@ -1235,10 +1228,10 @@ export function DashboardPage() {
 
               <ul className="space-y-4">
                 <li className="flex gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    extractedText ? 'bg-green-500/20' : 'bg-pear-400/10'
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    extractedText ? 'bg-green-500/10' : 'bg-primary/10'
                   }`}>
-                    <Upload className={`h-5 w-5 ${extractedText ? 'text-green-400' : 'text-pear-400'}`} />
+                    <Upload className={`h-4 w-4 ${extractedText ? 'text-green-500' : 'text-primary'}`} />
                   </div>
                   <div>
                     <h3 className="font-medium text-sm">1. Upload Resume</h3>
@@ -1246,10 +1239,10 @@ export function DashboardPage() {
                   </div>
                 </li>
                 <li className="flex gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    jobDescription.length >= 50 ? 'bg-green-500/20' : 'bg-pear-400/10'
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    jobDescription.length >= 50 ? 'bg-green-500/10' : 'bg-primary/10'
                   }`}>
-                    <FileText className={`h-5 w-5 ${jobDescription.length >= 50 ? 'text-green-400' : 'text-pear-400'}`} />
+                    <FileText className={`h-4 w-4 ${jobDescription.length >= 50 ? 'text-green-500' : 'text-primary'}`} />
                   </div>
                   <div>
                     <h3 className="font-medium text-sm">2. Paste Job Description</h3>
@@ -1257,10 +1250,10 @@ export function DashboardPage() {
                   </div>
                 </li>
                 <li className="flex gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    resumeProcessed ? 'bg-green-500/20' : 'bg-pear-400/10'
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    resumeProcessed ? 'bg-green-500/10' : 'bg-primary/10'
                   }`}>
-                    <Sparkles className={`h-5 w-5 ${resumeProcessed ? 'text-green-400' : 'text-pear-400'}`} />
+                    <Sparkles className={`h-4 w-4 ${resumeProcessed ? 'text-green-500' : 'text-primary'}`} />
                   </div>
                   <div>
                     <h3 className="font-medium text-sm">3. Get AI-Optimized Resume</h3>
@@ -1292,48 +1285,44 @@ export function DashboardPage() {
 
       {/* Payment Modal */}
       {showPaymentModal && user && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="glass-card max-w-4xl w-full p-8 relative max-h-[90vh] overflow-y-auto animate-scale-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-background border border-border rounded-2xl max-w-4xl w-full p-6 relative max-h-[90vh] overflow-y-auto shadow-xl">
             <button
               onClick={() => setShowPaymentModal(false)}
-              className="absolute top-4 right-4 p-2 hover:bg-white/5 rounded-lg transition-colors"
+              className="absolute top-4 right-4 p-2 hover:bg-muted rounded-lg transition-colors"
             >
               <X className="h-5 w-5 text-muted-foreground" />
             </button>
             
-            <div className="text-center mb-8">
-              <h2 className="font-display text-3xl font-bold mb-2">Choose Your Plan</h2>
-              <p className="text-muted-foreground">
+            <div className="text-center mb-6">
+              <h2 className="font-display text-2xl font-bold mb-2">Choose Your Plan</h2>
+              <p className="text-muted-foreground text-sm">
               Select a plan to download your customized resume
             </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Starter Plan */}
-              <div className="glass-card-hover p-6 relative">
-                <div className="w-12 h-12 rounded-xl bg-pear-400/10 flex items-center justify-center mb-4">
-                  <Rocket className="h-6 w-6 text-pear-400" />
+              <div className="border border-border rounded-xl p-5 bg-card">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Rocket className="h-5 w-5 text-primary" />
                 </div>
-                <h3 className="font-display text-xl font-semibold mb-2">Starter</h3>
+                <h3 className="font-semibold text-lg mb-2">Starter</h3>
                 <div className="mb-4">
-                  <span className="font-mono text-4xl font-bold text-pear-400">$9</span>
-                  <span className="text-muted-foreground"> one-time</span>
+                  <span className="font-mono text-3xl font-bold">$9</span>
+                  <span className="text-muted-foreground text-sm"> one-time</span>
                 </div>
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-2 mb-5">
                   <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">3 Custom Resumes</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">ATS Optimization</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-muted-foreground">Job Matching</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">Email Support</span>
                   </li>
                 </ul>
@@ -1352,39 +1341,35 @@ export function DashboardPage() {
               </div>
 
               {/* Professional Plan - Most Popular */}
-              <div className="glass-card p-6 relative border-pear-400/30 shadow-glow">
+              <div className="border border-primary/30 rounded-xl p-5 bg-card relative">
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="px-4 py-1 bg-gradient-pear text-background text-xs font-semibold rounded-full">
+                  <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-full">
                   Most Popular
                   </span>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-pear-400/20 flex items-center justify-center mb-4">
-                  <Star className="h-6 w-6 text-pear-400" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Star className="h-5 w-5 text-primary" />
                 </div>
-                <h3 className="font-display text-xl font-semibold mb-2">Professional</h3>
+                <h3 className="font-semibold text-lg mb-2">Professional</h3>
                 <div className="mb-4">
-                  <span className="font-mono text-4xl font-bold text-pear-400">$19</span>
-                  <span className="text-muted-foreground"> one-time</span>
+                  <span className="font-mono text-3xl font-bold text-primary">$19</span>
+                  <span className="text-muted-foreground text-sm"> one-time</span>
                 </div>
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-2 mb-5">
                   <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">10 Custom Resumes</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">Advanced ATS Optimization</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-muted-foreground">AI-Powered Job Matching</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">Priority Support</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">LinkedIn Tips</span>
                   </li>
                 </ul>
@@ -1402,34 +1387,30 @@ export function DashboardPage() {
               </div>
 
               {/* Lifetime Plan */}
-              <div className="glass-card-hover p-6 relative">
-                <div className="w-12 h-12 rounded-xl bg-pink-400/10 flex items-center justify-center mb-4">
-                  <Crown className="h-6 w-6 text-pink-400" />
+              <div className="border border-border rounded-xl p-5 bg-card">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mb-4">
+                  <Crown className="h-5 w-5 text-foreground" />
                 </div>
-                <h3 className="font-display text-xl font-semibold mb-2">Lifetime</h3>
+                <h3 className="font-semibold text-lg mb-2">Lifetime</h3>
                 <div className="mb-4">
-                  <span className="font-mono text-4xl font-bold text-pink-400">$49</span>
-                  <span className="text-muted-foreground"> one-time</span>
+                  <span className="font-mono text-3xl font-bold">$49</span>
+                  <span className="text-muted-foreground text-sm"> one-time</span>
                 </div>
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-2 mb-5">
                   <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-foreground font-medium">Unlimited Resumes</span>
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="font-medium">Unlimited Resumes</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">All Pro Features</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-muted-foreground">Lifetime Updates</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">VIP Support</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">Early Access</span>
                   </li>
                 </ul>

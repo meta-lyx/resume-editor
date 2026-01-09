@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
-import { FileText, CheckCircle, Award, Sparkles, ArrowRight, Zap, Target, BarChart3, Users } from 'lucide-react';
+import { FileText, CheckCircle, Award, Sparkles, ArrowRight, Target, BarChart3, Users } from 'lucide-react';
 
 export function HomePage() {
   const { user } = useAuth();
@@ -11,37 +11,31 @@ export function HomePage() {
       icon: CheckCircle,
       title: "ATS Optimization",
       description: "Intelligent analysis of job descriptions to optimize keyword distribution and ensure your resume passes through applicant tracking systems.",
-      color: "pear",
     },
     {
       icon: Target,
       title: "Job Matching",
       description: "Tailor your resume to specific job descriptions, highlighting relevant skills and experience to increase your success rate.",
-      color: "cyan",
     },
     {
       icon: Sparkles,
       title: "Language Polishing",
       description: "Enhance your resume with professional, powerful vocabulary and expressions to make a lasting impression on recruiters.",
-      color: "pink",
     },
     {
       icon: BarChart3,
       title: "Achievement Quantification",
       description: "Transform abstract descriptions into concrete, measurable achievements using data and numbers to showcase your value.",
-      color: "pear",
     },
     {
       icon: FileText,
       title: "LinkedIn Integration",
       description: "Seamlessly integrate your optimized resume content with your LinkedIn profile to create a consistent professional image.",
-      color: "cyan",
     },
     {
       icon: Award,
       title: "Expert Templates",
       description: "Access resume templates designed by experienced HR professionals and recruiters across various industries.",
-      color: "pink",
     },
   ];
 
@@ -50,80 +44,57 @@ export function HomePage() {
       name: "Michael Wang",
       role: "Software Engineer",
       initial: "M",
-      color: "pear",
       quote: "After using this tool, my resume pass rate increased by 40%. The AI not only helped optimize my language but also highlighted key skills relevant to the positions I was applying for.",
     },
     {
       name: "Lisa Chen",
       role: "Marketing Manager",
       initial: "L",
-      color: "cyan",
       quote: "I always struggled with quantifying my achievements. This tool solved that problem. My rewritten resume is much more powerful, and I received multiple interview invitations within two weeks.",
     },
     {
       name: "James Zhang",
       role: "Product Manager",
       initial: "J",
-      color: "pink",
       quote: "I've tried many resume tools, and this is the best. It not only provides ATS optimization but can also customize resumes for specific positions. Completely transformed my resume.",
     },
   ];
 
-  const getIconColor = (color: string) => {
-    switch (color) {
-      case 'pear': return 'text-pear-400';
-      case 'cyan': return 'text-cyan-400';
-      case 'pink': return 'text-pink-400';
-      default: return 'text-pear-400';
-    }
-  };
-
-  const getIconBg = (color: string) => {
-    switch (color) {
-      case 'pear': return 'bg-pear-400/10';
-      case 'cyan': return 'bg-cyan-400/10';
-      case 'pink': return 'bg-pink-400/10';
-      default: return 'bg-pear-400/10';
-    }
-  };
-
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative">
       {/* Hero section */}
-      <section className="relative py-20 md:py-32">
+      <section className="relative py-20 md:py-28">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="animate-fade-in">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-pear-400/10 border border-pear-400/20 text-pear-400 text-sm font-medium mb-6">
-                <Zap className="w-4 h-4" />
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
+                <Sparkles className="w-4 h-4" />
                 AI-Powered Resume Optimization
               </div>
-              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-                Build Your{' '}
-                <span className="gradient-text">Professional Brand</span>{' '}
-                with AI
+              <h1 className="font-display text-4xl md:text-5xl font-bold leading-tight mb-6">
+                Build Your <span className="text-primary">Professional Brand</span> with AI
               </h1>
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
                 AI-powered assistant based on professional resume writing principles to optimize your resume and boost your career competitiveness.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 {user ? (
                   <Link to="/dashboard">
-                    <Button size="xl" className="px-8 group">
+                    <Button size="lg" className="group">
                       Go to Dashboard 
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
                 ) : (
                   <Link to="/">
-                    <Button size="xl" className="px-8 group">
+                    <Button size="lg" className="group">
                       Get Started Free 
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
                 )}
                 <Link to="/features">
-                  <Button variant="outline" size="xl" className="px-8">
+                  <Button variant="outline" size="lg">
                     Learn More
                   </Button>
                 </Link>
@@ -131,21 +102,18 @@ export function HomePage() {
             </div>
             
             {/* Before/After Card */}
-            <div className="relative animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <div className="glass-card p-6 relative z-10">
+            <div className="relative">
+              <div className="border border-border rounded-xl bg-card p-6">
                 {/* Before */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <span className="font-medium">Before</span>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Before</span>
                   </div>
-                  <span className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded-full">Original</span>
+                  <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded">Original</span>
                 </div>
-                <div className="bg-surface-light rounded-xl p-4 mb-6 text-sm">
+                <div className="bg-muted/50 rounded-lg p-4 mb-6 text-sm">
                   <p className="font-medium mb-2">John Smith | Frontend Developer</p>
-                  <p className="text-muted-foreground mb-2">Work Experience:</p>
                   <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground text-xs">
                     <li>Responsible for frontend development</li>
                     <li>Participated in multiple frontend projects</li>
@@ -154,18 +122,15 @@ export function HomePage() {
                 </div>
                 
                 {/* After */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-pear-400/10 flex items-center justify-center">
-                      <Sparkles className="h-5 w-5 text-pear-400" />
-                    </div>
-                    <span className="font-medium">After</span>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">After</span>
                   </div>
-                  <span className="px-3 py-1 bg-pear-400/10 text-pear-400 text-xs rounded-full border border-pear-400/20">AI Optimized</span>
+                  <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded border border-primary/20">AI Optimized</span>
                 </div>
-                <div className="bg-pear-400/5 rounded-xl p-4 border border-pear-400/20 text-sm">
-                  <p className="font-medium mb-2 text-foreground">John Smith | Senior Frontend Engineer</p>
-                  <p className="text-muted-foreground mb-2">Work Experience:</p>
+                <div className="bg-primary/5 rounded-lg p-4 border border-primary/10 text-sm">
+                  <p className="font-medium mb-2">John Smith | Senior Frontend Engineer</p>
                   <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground text-xs">
                     <li>Led frontend architecture, improving load speed by 40%</li>
                     <li>Spearheaded 5 enterprise apps, increasing productivity 30%</li>
@@ -173,39 +138,33 @@ export function HomePage() {
                   </ul>
                 </div>
               </div>
-              
-              {/* Floating badge */}
-              <div className="absolute -top-4 -right-4 w-20 h-20 rounded-2xl bg-pear-400/10 border border-pear-400/20 flex items-center justify-center animate-float hidden lg:flex">
-                <Sparkles className="h-10 w-10 text-pear-400" />
-              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Key features */}
-      <section className="relative py-20">
+      <section className="relative py-16 border-t border-border">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16 animate-fade-in">
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
+          <div className="text-center mb-12">
+            <h2 className="font-display text-2xl md:text-3xl font-bold mb-3">
               Professional Resume Features
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-xl mx-auto">
               We offer multiple professional resume optimization features to help you stand out.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
+            {features.map((feature) => (
               <div 
                 key={feature.title}
-                className="glass-card-hover p-6 animate-fade-in-up"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className="border border-border rounded-xl p-5 bg-card hover:border-primary/30 transition-colors"
               >
-                <div className={`${getIconBg(feature.color)} p-3 rounded-xl w-12 h-12 flex items-center justify-center mb-4`}>
-                  <feature.icon className={`h-6 w-6 ${getIconColor(feature.color)}`} />
+                <div className="p-2 rounded-lg bg-primary/10 w-fit mb-4">
+                  <feature.icon className="h-5 w-5 text-primary" />
                 </div>
-                <h3 className="font-display text-lg font-semibold mb-2">{feature.title}</h3>
+                <h3 className="font-semibold mb-2">{feature.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   {feature.description}
                 </p>
@@ -216,35 +175,34 @@ export function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="relative py-20">
+      <section className="relative py-16 border-t border-border">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-400 text-sm font-medium mb-6">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border border-border text-muted-foreground text-sm font-medium mb-4">
               <Users className="w-4 h-4" />
               Real User Feedback
             </div>
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="font-display text-2xl md:text-3xl font-bold mb-3">
               What Our Users Say
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-xl mx-auto">
               See what our users are saying after using our AI resume optimization.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((testimonial, index) => (
+            {testimonials.map((testimonial) => (
               <div 
                 key={testimonial.name}
-                className="glass-card p-6 animate-fade-in-up"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className="border border-border rounded-xl p-5 bg-card"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-12 h-12 rounded-xl ${getIconBg(testimonial.color)} flex items-center justify-center font-display font-bold ${getIconColor(testimonial.color)}`}>
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center font-semibold text-primary">
                     {testimonial.initial}
                   </div>
                   <div>
-                    <h4 className="font-semibold">{testimonial.name}</h4>
-                    <p className="text-muted-foreground text-sm">{testimonial.role}</p>
+                    <h4 className="font-medium text-sm">{testimonial.name}</h4>
+                    <p className="text-muted-foreground text-xs">{testimonial.role}</p>
                   </div>
                 </div>
                 <p className="text-muted-foreground text-sm leading-relaxed">
@@ -257,37 +215,33 @@ export function HomePage() {
       </section>
 
       {/* Call to action */}
-      <section className="relative py-20">
+      <section className="relative py-16 border-t border-border">
         <div className="container mx-auto px-4">
-          <div className="glass-card p-12 md:p-16 text-center relative overflow-hidden animate-fade-in-up">
-            <div className="absolute inset-0 bg-gradient-to-br from-pear-400/10 via-transparent to-cyan-400/10" />
-            
-            <div className="relative">
-              <div className="w-20 h-20 rounded-3xl bg-pear-400/10 border border-pear-400/20 flex items-center justify-center mx-auto mb-8">
-                <Sparkles className="h-10 w-10 text-pear-400" />
-              </div>
-              <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-                Ready to Enhance Your Resume?
-              </h2>
-              <p className="text-xl text-muted-foreground mb-8 max-w-xl mx-auto">
-                Start using our AI-powered resume optimization tool today and experience professional resume transformation.
-              </p>
-              {user ? (
-                <Link to="/dashboard">
-                  <Button size="xl" className="px-10 group">
-                    Go to Dashboard 
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-              ) : (
-                <Link to="/">
-                  <Button size="xl" className="px-10 group">
-                    Get Started Free 
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-              )}
+          <div className="border border-border rounded-xl bg-card p-10 md:p-14 text-center">
+            <div className="p-3 rounded-xl bg-primary/10 w-fit mx-auto mb-6">
+              <Sparkles className="h-8 w-8 text-primary" />
             </div>
+            <h2 className="font-display text-2xl md:text-3xl font-bold mb-3">
+              Ready to Enhance Your Resume?
+            </h2>
+            <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+              Start using our AI-powered resume optimization tool today and experience professional resume transformation.
+            </p>
+            {user ? (
+              <Link to="/dashboard">
+                <Button size="lg" className="group">
+                  Go to Dashboard 
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/">
+                <Button size="lg" className="group">
+                  Get Started Free 
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </section>
