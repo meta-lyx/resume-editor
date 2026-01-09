@@ -286,7 +286,7 @@ class ApiClient {
     );
   }
 
-  async extractResumeText(file: File) {
+  async extractResumeText(file: File): Promise<ApiResponse<any>> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -295,11 +295,13 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    return fetch(`${this.baseUrl}/ai/extract-text`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    }).then(async (response) => {
+    try {
+      const response = await fetch(`${this.baseUrl}/ai/extract-text`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      
       const text = await response.text();
       let data: any = null;
       
@@ -323,7 +325,7 @@ class ApiClient {
         };
       }
       return { data };
-    }).catch((error) => {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Network error';
       return {
         error: {
@@ -332,21 +334,23 @@ class ApiClient {
             errorMessage,
         },
       };
-    });
+    }
   }
 
   // Upload endpoints
-  async uploadResume(file: File) {
+  async uploadResume(file: File): Promise<ApiResponse<any>> {
     const formData = new FormData();
     formData.append('file', file);
 
-    return fetch(`${this.baseUrl}/upload/resume`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-      },
-      body: formData,
-    }).then(async (response) => {
+    try {
+      const response = await fetch(`${this.baseUrl}/upload/resume`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
+        body: formData,
+      });
+      
       const text = await response.text();
       let data: any = null;
       
@@ -370,7 +374,7 @@ class ApiClient {
         };
       }
       return { data };
-    }).catch((error) => {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Network error';
       return {
         error: {
@@ -379,7 +383,7 @@ class ApiClient {
             errorMessage,
         },
       };
-    });
+    }
   }
 
   // Subscription endpoints
