@@ -108,18 +108,32 @@ export function loadResumeData(): ResumeStorageData {
 
 // Convert AI structured resume to PDF template format
 function convertToResumeData(aiResume: any): PDFResumeData {
+  // Handle both formats: data might have personalInfo object OR have fields at top level
   const personalInfo = aiResume.personalInfo || {};
+  const contact = aiResume.contact || {};
+  
+  // Try to get name from multiple possible locations
+  const name = aiResume.name || personalInfo.name || 'Your Name';
+  const title = aiResume.title || personalInfo.title;
+  
+  // Contact info can be in personalInfo, contact object, or at top level
+  const email = contact.email || personalInfo.email || aiResume.email;
+  const phone = contact.phone || personalInfo.phone || aiResume.phone;
+  const location = contact.location || personalInfo.location || aiResume.location;
+  const linkedin = contact.linkedin || personalInfo.linkedin || aiResume.linkedin;
+  const github = contact.github || personalInfo.github || aiResume.github;
+  const website = contact.website || personalInfo.website || aiResume.website;
   
   return {
-    name: personalInfo.name || 'Your Name',
-    title: personalInfo.title,
+    name,
+    title,
     contact: {
-      email: personalInfo.email,
-      phone: personalInfo.phone,
-      location: personalInfo.location,
-      linkedin: personalInfo.linkedin,
-      github: personalInfo.github,
-      website: personalInfo.website,
+      email,
+      phone,
+      location,
+      linkedin,
+      github,
+      website,
     },
     summary: aiResume.summary || '',
     experience: (aiResume.experience || []).map((exp: any) => ({
