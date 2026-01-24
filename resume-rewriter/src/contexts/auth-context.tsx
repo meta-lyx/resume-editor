@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { initiateGoogleOAuth, isGoogleOAuthConfigured } from '@/lib/google-oauth';
+import { clearResumeData } from '@/lib/resume-storage';
 
 type User = {
   id: string;
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<{ token: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const previousUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Load user state on mount
@@ -35,12 +37,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (token) {
           const { data, error } = await apiClient.getCurrentUser();
           if (data && !error) {
+            const currentUserId = data.user.id;
+            
+            // If a different user logged in, clear their resume data
+            if (previousUserIdRef.current && previousUserIdRef.current !== currentUserId) {
+              console.log('Different user detected, clearing resume data');
+              clearResumeData();
+            }
+            
+            previousUserIdRef.current = currentUserId;
             setUser(data.user);
             setSession({ token });
           } else {
             // Invalid token, clear it
             apiClient.setToken(null);
+            previousUserIdRef.current = null;
           }
+        } else {
+          previousUserIdRef.current = null;
         }
       } finally {
         setLoading(false);
@@ -58,6 +72,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Extracted token:', token);
       console.log('Full data object:', data);
       if (token) {
+        const currentUserId = data.user.id;
+        
+        // If a different user logged in, clear their resume data
+        if (previousUserIdRef.current && previousUserIdRef.current !== currentUserId) {
+          console.log('Different user logged in, clearing resume data');
+          clearResumeData();
+        }
+        
+        previousUserIdRef.current = currentUserId;
         apiClient.setToken(token);
         setUser(data.user);
         setSession({ token });
@@ -74,6 +97,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Extracted token from registration:', token);
       console.log('Full registration data:', data);
       if (token) {
+        const currentUserId = data.user.id;
+        
+        // Clear any existing resume data for new user
+        if (previousUserIdRef.current && previousUserIdRef.current !== currentUserId) {
+          console.log('New user registered, clearing resume data');
+          clearResumeData();
+        }
+        
+        previousUserIdRef.current = currentUserId;
         apiClient.setToken(token);
         setUser(data.user);
         setSession({ token });
@@ -119,6 +151,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (data) {
               const token = data.session?.token;
               if (token) {
+                const currentUserId = data.user.id;
+                
+                // If a different user logged in, clear their resume data
+                if (previousUserIdRef.current && previousUserIdRef.current !== currentUserId) {
+                  console.log('Different user logged in via Google, clearing resume data');
+                  clearResumeData();
+                }
+                
+                previousUserIdRef.current = currentUserId;
                 apiClient.setToken(token);
                 setUser(data.user);
                 setSession({ token });
@@ -149,6 +190,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Ignore API errors - logout should always succeed client-side
       console.log('Logout API error (ignored):', e);
     }
+    
+    // Clear resume data when user logs out
+    clearResumeData();
+    previousUserIdRef.current = null;
     setUser(null);
     setSession(null);
   }
