@@ -148,7 +148,7 @@ function ResumePreview({
         
         {/* Frosted glass overlay for bottom 80% - blurs content underneath */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] backdrop-blur-lg bg-white/70 pointer-events-none z-20"
+          className="absolute bottom-0 left-0 right-0 h-[80%] backdrop-blur-xl bg-white/90 pointer-events-none z-20"
           style={{
             maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
@@ -342,14 +342,14 @@ function ResumePreview({
         )}
       </div>
       
-      {/* Frosted glass overlay for bottom 80% - blurs content underneath */}
-      <div 
-        className="absolute bottom-0 left-0 right-0 h-[80%] backdrop-blur-lg bg-white/70 pointer-events-none z-20"
-        style={{
-          maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-        }}
-      />
+        {/* Frosted glass overlay for bottom 80% - blurs content underneath */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-[80%] backdrop-blur-xl bg-white/90 pointer-events-none z-20"
+          style={{
+            maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+          }}
+        />
     </div>
   );
 }
