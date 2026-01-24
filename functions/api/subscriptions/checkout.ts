@@ -130,10 +130,13 @@ export async function onRequest(context: any) {
       checkoutParams.set('line_items[0][price_data][recurring][interval]', plan.interval);
     }
     
+    // Remove any whitespace from Stripe key (common issue when copying keys)
+    const stripeKey = env.STRIPE_SECRET_KEY.replace(/\s+/g, '');
+    
     const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Authorization': `Bearer ${stripeKey}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: checkoutParams.toString(),
