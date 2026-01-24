@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { initiateGoogleOAuth, isGoogleOAuthConfigured } from '@/lib/google-oauth';
 
 type User = {
   id: string;
@@ -15,6 +16,7 @@ type AuthContextType = {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name?: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -80,6 +82,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function signInWithGoogle() {
+    if (!isGoogleOAuthConfigured()) {
+      throw new Error('Google OAuth is not configured. Please contact support.');
+    }
+
+    // Initiate OAuth flow
+    const popup = initiateGoogleOAuth();
+    
+    if (!popup) {
+      throw new Error('Failed to open Google Sign-In window. Please check your popup blocker.');
+    }
+
+    // Listen for OAuth callback
+    return new Promise<void>((resolve, reject) => {
+      const checkPopup = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkPopup);
+          reject(new Error('Sign-in was cancelled'));
+        }
+      }, 500);
+
+      // Listen for message from popup
+      const messageHandler = async (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+          clearInterval(checkPopup);
+          window.removeEventListener('message', messageHandler);
+          popup.close();
+
+          // Exchange code for token via backend
+          try {
+            const { data, error } = await apiClient.googleAuth(event.data.code);
+            if (error) throw new Error(error.message);
+            if (data) {
+              const token = data.session?.token;
+              if (token) {
+                apiClient.setToken(token);
+                setUser(data.user);
+                setSession({ token });
+                resolve();
+              }
+            }
+          } catch (err: any) {
+            reject(err);
+          }
+        } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+          clearInterval(checkPopup);
+          window.removeEventListener('message', messageHandler);
+          popup.close();
+          reject(new Error(event.data.error || 'Google Sign-In failed'));
+        }
+      };
+
+      window.addEventListener('message', messageHandler);
+    });
+  }
+
   async function signOut() {
     // Clear local state regardless of API response
     // Token-based auth means client-side clearing is sufficient
@@ -99,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
   };
 

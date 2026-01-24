@@ -134,6 +134,13 @@ class ApiClient {
     });
   }
 
+  async googleAuth(code: string) {
+    return this.request<{ user: any; session: { token: string; expiresAt: number } }>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  }
+
   async logout() {
     const result = await this.request('/auth/logout', {
       method: 'POST',
