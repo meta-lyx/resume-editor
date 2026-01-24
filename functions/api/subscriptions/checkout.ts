@@ -104,6 +104,33 @@ export async function onRequest(context: any) {
     const originHeader = request.headers.get('origin');
     const baseUrl = originHeader || env.APP_URL || new URL(request.url).origin;
     
+    // Validate Stripe key is configured
+    if (!env.STRIPE_SECRET_KEY) {
+      return new Response(JSON.stringify({ error: 'Stripe is not configured. Please contact support.' }), {
+        status: 500,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+    
+    // Validate Stripe key format
+    const stripeKey = env.STRIPE_SECRET_KEY.trim();
+    if (!stripeKey.startsWith('sk_live_') && !stripeKey.startsWith('sk_test_')) {
+      console.error('Invalid Stripe key format. Key should start with sk_live_ or sk_test_');
+      return new Response(JSON.stringify({ 
+        error: 'Stripe configuration error. Please check your API key.',
+        hint: 'Make sure STRIPE_SECRET_KEY is set correctly in Cloudflare Pages environment variables'
+      }), {
+        status: 500,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+    
     // Create Stripe checkout session using Stripe API directly
     const checkoutParams = new URLSearchParams({
       'payment_method_types[]': 'card',
@@ -133,7 +160,7 @@ export async function onRequest(context: any) {
     const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Authorization': `Bearer ${stripeKey}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: checkoutParams.toString(),
@@ -141,8 +168,29 @@ export async function onRequest(context: any) {
     
     if (!stripeResponse.ok) {
       const errorText = await stripeResponse.text();
+      let errorMessage = 'Stripe API error';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.error?.message || errorText;
+        
+        // Provide helpful hints for common errors
+        if (errorMessage.includes('Invalid API Key')) {
+          errorMessage += '. Please check your STRIPE_SECRET_KEY in Cloudflare Pages environment variables. Make sure it\'s the correct key from your Stripe dashboard (https://dashboard.stripe.com/apikeys)';
+        }
+      } catch {
+        errorMessage = errorText;
+      }
       console.error('Stripe API error:', errorText);
-      throw new Error(`Stripe API error: ${errorText}`);
+      return new Response(JSON.stringify({ 
+        error: errorMessage,
+        hint: 'Check your Stripe API key in Cloudflare Pages → Settings → Environment Variables → STRIPE_SECRET_KEY'
+      }), {
+        status: stripeResponse.status,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
     }
     
     const session = await stripeResponse.json();
