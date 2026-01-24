@@ -38,78 +38,117 @@ function ResumePreview({
   const name = resumeData?.name || 'Your Name';
   const title = resumeData?.title || 'Professional Title';
   const email = resumeData?.contact?.email || 'email@example.com';
-  const summary = resumeData?.summary?.slice(0, 200) || 'Professional summary will appear here...';
-  const experience = resumeData?.experience?.[0];
-  const skills = resumeData?.skills?.flatMap(g => g.items).slice(0, 8) || ['Skill 1', 'Skill 2', 'Skill 3'];
+  const phone = resumeData?.contact?.phone || '';
+  const location = resumeData?.contact?.location || '';
+  const summary = resumeData?.summary || 'Professional summary will appear here...';
+  const experiences = resumeData?.experience || [];
+  const education = resumeData?.education || [];
+  const skills = resumeData?.skills?.flatMap(g => g.items) || ['Skill 1', 'Skill 2', 'Skill 3', 'Skill 4', 'Skill 5', 'Skill 6', 'Skill 7', 'Skill 8'];
+  const certifications = resumeData?.certifications || [];
 
   // Two-column layout (Creative Sidebar)
   if (template.layout === 'two-column') {
     return (
       <div className="relative w-full bg-white rounded-lg shadow-xl overflow-hidden" style={{ aspectRatio: '8.5/11' }}>
-        {/* Visible content - top 20% */}
-        <div className="relative z-10">
-          <div className="h-full flex">
-            {/* Sidebar */}
-            <div className="w-[35%] h-full p-6" style={{ backgroundColor: template.primaryColor }}>
-              <div className="text-white">
-                <div className="text-lg font-bold mb-1" style={{ color: '#FFFFFF' }}>{name}</div>
-                <div className="text-xs mb-6 opacity-80" style={{ color: template.accentColor }}>{title}</div>
-                
-                <div className="mb-6">
-                  <div className="text-[10px] font-bold mb-2 uppercase tracking-wider" style={{ color: template.accentColor }}>
-                    Contact
-                  </div>
-                  <div className="text-[11px] opacity-80 leading-relaxed">{email}</div>
+        {/* Full resume content - all sections rendered */}
+        <div className="relative h-full flex">
+          {/* Sidebar */}
+          <div className="w-[35%] h-full p-6 overflow-y-auto" style={{ backgroundColor: template.primaryColor }}>
+            <div className="text-white">
+              <div className="text-lg font-bold mb-1" style={{ color: '#FFFFFF' }}>{name}</div>
+              <div className="text-xs mb-6 opacity-80" style={{ color: template.accentColor }}>{title}</div>
+              
+              <div className="mb-6">
+                <div className="text-[10px] font-bold mb-2 uppercase tracking-wider" style={{ color: template.accentColor }}>
+                  Contact
                 </div>
-                
-                <div>
-                  <div className="text-[10px] font-bold mb-2 uppercase tracking-wider" style={{ color: template.accentColor }}>
-                    Skills
-                  </div>
-                  <div className="space-y-1">
-                    {skills.slice(0, 6).map((skill, i) => (
-                      <div key={i} className="text-[11px] opacity-80">• {skill}</div>
-                    ))}
-                  </div>
+                <div className="text-[11px] opacity-80 leading-relaxed space-y-1">
+                  <div>{email}</div>
+                  {phone && <div>{phone}</div>}
+                  {location && <div>{location}</div>}
                 </div>
-              </div>
-            </div>
-            
-            {/* Main content */}
-            <div className="flex-1 p-6">
-              <div className="mb-5">
-                <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: template.primaryColor }}>
-                  Profile
-                  <div className="h-0.5 w-12 mt-1" style={{ backgroundColor: template.accentColor }} />
-                </div>
-                <p className="text-[11px] text-gray-600 leading-relaxed">{summary}</p>
               </div>
               
-              {experience && (
+              <div className="mb-6">
+                <div className="text-[10px] font-bold mb-2 uppercase tracking-wider" style={{ color: template.accentColor }}>
+                  Skills
+                </div>
+                <div className="space-y-1">
+                  {skills.map((skill, i) => (
+                    <div key={i} className="text-[11px] opacity-80">• {skill}</div>
+                  ))}
+                </div>
+              </div>
+
+              {certifications.length > 0 && (
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: template.primaryColor }}>
-                    Experience
-                    <div className="h-0.5 w-12 mt-1" style={{ backgroundColor: template.accentColor }} />
+                  <div className="text-[10px] font-bold mb-2 uppercase tracking-wider" style={{ color: template.accentColor }}>
+                    Certifications
                   </div>
-                  <div>
-                    <div className="text-sm font-semibold text-gray-800">{experience.title}</div>
-                    <div className="text-xs" style={{ color: template.primaryColor }}>{experience.company}</div>
-                    <div className="text-[10px] text-gray-500 mb-2">{experience.startDate} - {experience.endDate}</div>
-                    <div className="space-y-1">
-                      {experience.bullets.slice(0, 3).map((bullet, i) => (
-                        <p key={i} className="text-[11px] text-gray-600 leading-relaxed">• {bullet.slice(0, 80)}...</p>
-                      ))}
-                    </div>
+                  <div className="space-y-1">
+                    {certifications.slice(0, 3).map((cert, i) => (
+                      <div key={i} className="text-[11px] opacity-80">• {cert}</div>
+                    ))}
                   </div>
                 </div>
               )}
             </div>
           </div>
+          
+          {/* Main content - Full resume */}
+          <div className="flex-1 p-6 overflow-y-auto">
+            <div className="mb-5">
+              <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: template.primaryColor }}>
+                Profile
+                <div className="h-0.5 w-12 mt-1" style={{ backgroundColor: template.accentColor }} />
+              </div>
+              <p className="text-[11px] text-gray-600 leading-relaxed">{summary}</p>
+            </div>
+            
+            {experiences.length > 0 && (
+              <div className="mb-5">
+                <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: template.primaryColor }}>
+                  Experience
+                  <div className="h-0.5 w-12 mt-1" style={{ backgroundColor: template.accentColor }} />
+                </div>
+                {experiences.map((exp, idx) => (
+                  <div key={idx} className="mb-4">
+                    <div className="text-sm font-semibold text-gray-800">{exp.title}</div>
+                    <div className="text-xs" style={{ color: template.primaryColor }}>{exp.company}</div>
+                    <div className="text-[10px] text-gray-500 mb-2">{exp.startDate} - {exp.endDate || 'Present'}</div>
+                    <div className="space-y-1">
+                      {exp.bullets?.slice(0, 3).map((bullet, i) => (
+                        <p key={i} className="text-[11px] text-gray-600 leading-relaxed">• {bullet}</p>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {education.length > 0 && (
+              <div className="mb-5">
+                <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: template.primaryColor }}>
+                  Education
+                  <div className="h-0.5 w-12 mt-1" style={{ backgroundColor: template.accentColor }} />
+                </div>
+                {education.map((edu, idx) => (
+                  <div key={idx} className="mb-3">
+                    <div className="text-sm font-semibold text-gray-800">{edu.degree}</div>
+                    <div className="text-xs text-gray-600">{edu.school}</div>
+                    {edu.graduationDate && (
+                      <div className="text-[10px] text-gray-500">{edu.graduationDate}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         
-        {/* Frosted glass overlay for bottom 80% */}
+        {/* Frosted glass overlay for bottom 80% - blurs content underneath */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] backdrop-blur-md bg-white/60 pointer-events-none"
+          className="absolute bottom-0 left-0 right-0 h-[80%] backdrop-blur-lg bg-white/70 pointer-events-none z-20"
           style={{
             maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
@@ -125,8 +164,8 @@ function ResumePreview({
 
   return (
     <div className="relative w-full bg-white rounded-lg shadow-xl overflow-hidden p-6" style={{ aspectRatio: '8.5/11' }}>
-      {/* Visible content - top 20% */}
-      <div className="relative z-10">
+      {/* Full resume content - all sections rendered */}
+      <div className="relative h-full overflow-y-auto">
         {/* Header */}
         <div 
           className="mb-5 pb-4"
@@ -155,7 +194,11 @@ function ResumePreview({
           >
             {isTech ? '// ' : ''}{title}
           </div>
-          <div className="text-xs text-gray-500 mt-2">{email}</div>
+          <div className="text-xs text-gray-500 mt-2">
+            {email}
+            {phone && ` • ${phone}`}
+            {location && ` • ${location}`}
+          </div>
         </div>
 
         {/* Summary */}
@@ -179,8 +222,8 @@ function ResumePreview({
           </p>
         </div>
 
-        {/* Experience */}
-        {experience && (
+        {/* Experience - Show all experiences */}
+        {experiences.length > 0 && (
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-3">
               {!isClassic && (
@@ -193,29 +236,57 @@ function ResumePreview({
                 {isTech ? '## ' : ''}Experience
               </span>
             </div>
-            <div style={isTech ? { borderLeft: `2px solid ${template.accentColor}`, paddingLeft: '12px' } : {}}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="text-sm font-semibold text-gray-800">{experience.title}</div>
-                  <div className="text-xs" style={{ color: template.accentColor }}>{experience.company}</div>
+            {experiences.map((exp, idx) => (
+              <div key={idx} className="mb-4" style={isTech ? { borderLeft: `2px solid ${template.accentColor}`, paddingLeft: '12px' } : {}}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-800">{exp.title}</div>
+                    <div className="text-xs" style={{ color: template.accentColor }}>{exp.company}</div>
+                  </div>
+                  <div className={`text-[10px] text-gray-500 ${isTech ? 'font-mono bg-gray-100 px-2 py-0.5 rounded' : ''}`}>
+                    {exp.startDate} - {exp.endDate || 'Present'}
+                  </div>
                 </div>
-                <div className={`text-[10px] text-gray-500 ${isTech ? 'font-mono bg-gray-100 px-2 py-0.5 rounded' : ''}`}>
-                  {experience.startDate} - {experience.endDate}
+                <div className="space-y-1 mt-2">
+                  {exp.bullets?.slice(0, 3).map((bullet, i) => (
+                    <p key={i} className="text-[11px] text-gray-600">
+                      {isClassic ? '◆' : isTech ? '>' : '•'} {bullet}
+                    </p>
+                  ))}
                 </div>
               </div>
-              <div className="space-y-1 mt-2">
-                {experience.bullets.slice(0, 2).map((bullet, i) => (
-                  <p key={i} className="text-[11px] text-gray-600">
-                    {isClassic ? '◆' : isTech ? '>' : '•'} {bullet.slice(0, 100)}...
-                  </p>
-                ))}
-              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Education */}
+        {education.length > 0 && (
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-3">
+              {!isClassic && (
+                <div className="w-1 h-4 rounded-sm" style={{ backgroundColor: template.accentColor }} />
+              )}
+              <span 
+                className={`text-xs font-bold uppercase tracking-wider ${isClassic ? 'font-serif' : ''}`}
+                style={{ color: template.primaryColor }}
+              >
+                {isTech ? '## ' : ''}Education
+              </span>
             </div>
+            {education.map((edu, idx) => (
+              <div key={idx} className="mb-3">
+                <div className="text-sm font-semibold text-gray-800">{edu.degree}</div>
+                <div className="text-xs text-gray-600">{edu.school}</div>
+                {edu.graduationDate && (
+                  <div className="text-[10px] text-gray-500">{edu.graduationDate}</div>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
         {/* Skills */}
-        <div>
+        <div className="mb-5">
           <div className="flex items-center gap-2 mb-2">
             {!isClassic && (
               <div className="w-1 h-4 rounded-sm" style={{ backgroundColor: template.accentColor }} />
@@ -245,11 +316,35 @@ function ResumePreview({
             ))}
           </div>
         </div>
+
+        {/* Certifications */}
+        {certifications.length > 0 && (
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-2">
+              {!isClassic && (
+                <div className="w-1 h-4 rounded-sm" style={{ backgroundColor: template.accentColor }} />
+              )}
+              <span 
+                className={`text-xs font-bold uppercase tracking-wider ${isClassic ? 'font-serif' : ''}`}
+                style={{ color: template.primaryColor }}
+              >
+                {isTech ? '## ' : ''}Certifications
+              </span>
+            </div>
+            <div className="space-y-1">
+              {certifications.map((cert, i) => (
+                <div key={i} className="text-[11px] text-gray-600">
+                  {isClassic ? '◆' : isTech ? '>' : '•'} {cert}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       
-      {/* Frosted glass overlay for bottom 80% */}
+      {/* Frosted glass overlay for bottom 80% - blurs content underneath */}
       <div 
-        className="absolute bottom-0 left-0 right-0 h-[80%] backdrop-blur-md bg-white/60 pointer-events-none"
+        className="absolute bottom-0 left-0 right-0 h-[80%] backdrop-blur-lg bg-white/70 pointer-events-none z-20"
         style={{
           maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
