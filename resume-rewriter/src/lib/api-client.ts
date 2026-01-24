@@ -1,6 +1,12 @@
 // API Client for Cloudflare Backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
+// Debug: Log API URL on load
+if (typeof window !== 'undefined') {
+  console.log('API Base URL:', API_BASE_URL);
+  console.log('VITE_API_URL env var:', import.meta.env.VITE_API_URL);
+}
+
 interface ApiResponse<T> {
   data?: T;
   error?: {
