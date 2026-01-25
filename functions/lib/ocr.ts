@@ -228,8 +228,8 @@ export async function extractTextFromDOCX(fileBuffer: ArrayBuffer): Promise<OCRR
   try {
     console.log('Extracting text from DOCX using mammoth...');
     
-    // Convert ArrayBuffer to Buffer for mammoth
-    const buffer = Buffer.from(fileBuffer);
+    // Convert ArrayBuffer to Uint8Array for mammoth (Cloudflare Workers compatible)
+    const buffer = new Uint8Array(fileBuffer);
     
     // Extract raw text from DOCX
     const result = await mammoth.extractRawText({ buffer });
