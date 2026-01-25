@@ -49,7 +49,7 @@ function ResumePreview({
   // Two-column layout (Creative Sidebar)
   if (template.layout === 'two-column') {
     return (
-      <div className="relative w-full bg-white rounded-lg shadow-xl overflow-hidden" style={{ aspectRatio: '8.5/11' }}>
+      <div className="relative w-full bg-white rounded-lg shadow-xl overflow-hidden select-none" style={{ aspectRatio: '8.5/11', userSelect: 'none', WebkitUserSelect: 'none' }}>
         {/* Full resume content - all sections rendered */}
         <div className="relative h-full flex">
           {/* Sidebar */}
@@ -148,7 +148,7 @@ function ResumePreview({
         
         {/* Solid white layer with favicon mosaic pattern - makes content unselectable */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white select-none"
+          className="absolute bottom-0 left-0 right-0 h-[80%] z-20 bg-white select-none"
           style={{
             backgroundImage: 'url(/favicon.svg)',
             backgroundRepeat: 'repeat',
@@ -159,17 +159,19 @@ function ResumePreview({
             WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
             userSelect: 'none',
             WebkitUserSelect: 'none',
+            pointerEvents: 'auto',
           }}
         />
         {/* Solid white overlay for complete coverage */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white select-none"
+          className="absolute bottom-0 left-0 right-0 h-[80%] z-20 bg-white select-none"
           style={{
             opacity: 0.9,
             maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
             userSelect: 'none',
             WebkitUserSelect: 'none',
+            pointerEvents: 'auto',
           }}
         />
       </div>
@@ -181,7 +183,7 @@ function ResumePreview({
   const isTech = template.id === 'tech-modern';
 
   return (
-    <div className="relative w-full bg-white rounded-lg shadow-xl overflow-hidden p-6" style={{ aspectRatio: '8.5/11' }}>
+    <div className="relative w-full bg-white rounded-lg shadow-xl overflow-hidden p-6 select-none" style={{ aspectRatio: '8.5/11', userSelect: 'none', WebkitUserSelect: 'none' }}>
       {/* Full resume content - all sections rendered */}
       <div className="relative h-full overflow-y-auto">
         {/* Header */}
@@ -362,7 +364,7 @@ function ResumePreview({
       
       {/* Solid white layer with favicon mosaic pattern - makes content unselectable */}
       <div 
-        className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white select-none"
+        className="absolute bottom-0 left-0 right-0 h-[80%] z-20 bg-white select-none"
         style={{
           backgroundImage: 'url(/favicon.svg)',
           backgroundRepeat: 'repeat',
@@ -373,17 +375,19 @@ function ResumePreview({
           WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
           userSelect: 'none',
           WebkitUserSelect: 'none',
+          pointerEvents: 'auto',
         }}
       />
       {/* Solid white overlay for complete coverage */}
       <div 
-        className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white select-none"
+        className="absolute bottom-0 left-0 right-0 h-[80%] z-20 bg-white select-none"
         style={{
           opacity: 0.9,
           maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
           userSelect: 'none',
           WebkitUserSelect: 'none',
+          pointerEvents: 'auto',
         }}
       />
     </div>
