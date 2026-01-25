@@ -91,6 +91,7 @@ export function DashboardPage() {
     monthlyLimit: number;
     usageCount: number;
   } | null>(null);
+  const [hasPreviousWork, setHasPreviousWork] = useState(false); // Track if there's previous work to resume
 
   // AI processing results
   const [aiProcessingTime, setAiProcessingTime] = useState<number>(0);
@@ -154,7 +155,7 @@ export function DashboardPage() {
     }
   };
 
-  const loadPersistedData = () => {
+  const loadPersistedData = (autoShowResults = false) => {
     try {
       const savedData = loadResumeData();
       if (savedData.extractedText || savedData.customizedResume) {
@@ -183,9 +184,13 @@ export function DashboardPage() {
           setStructuredResume(savedData.structuredResume);
         }
         
-        // If resume was already processed, show the comparison view directly
+        // Check if there's previous work (but don't auto-show it unless explicitly requested)
         if (savedData.resumeProcessed && sanitizedCustomized && !looksLikeError(savedData.customizedResume)) {
-          setShowOptimizedComparison(true);
+          setHasPreviousWork(true);
+          // Only auto-show comparison view if explicitly requested (e.g., just finished processing)
+          if (autoShowResults) {
+            setShowOptimizedComparison(true);
+          }
         }
         
         return true;
@@ -514,6 +519,7 @@ export function DashboardPage() {
       
       // Analysis complete - stop analyzing animation but keep showing report
       setIsAnalyzing(false);
+      setHasPreviousWork(false); // Clear the "resume previous work" state since we just processed
       toast.success(`Resume optimized by ${data.provider}!`);
     } catch (error: any) {
       toast.error(error.message || 'Processing failed');
@@ -913,7 +919,13 @@ export function DashboardPage() {
     setAiAtsScore(0);
     setAiKeywordsMatched([]);
     setAiSuggestions([]);
+    setHasPreviousWork(false);
     clearResumeData();
+  };
+  
+  // Resume previous work - load saved data and show comparison
+  const handleResumePreviousWork = () => {
+    loadPersistedData(true); // Pass true to auto-show results
   };
 
   return (
@@ -1047,6 +1059,39 @@ export function DashboardPage() {
                 </div>
               ) : (
                 <>
+                  {/* Resume Previous Work Banner */}
+                  {hasPreviousWork && !extractedText && (
+                    <div className="mb-6 rounded-xl bg-primary/10 border border-primary/20 p-5">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                          <FileText className="h-6 w-6 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-display font-semibold mb-1">Previous Work Found</h3>
+                          <p className="text-muted-foreground text-sm mb-4">
+                            You have a previously customized resume. Would you like to continue where you left off or start fresh?
+                          </p>
+                          <div className="flex gap-3">
+                            <Button 
+                              onClick={handleResumePreviousWork}
+                              size="sm"
+                            >
+                              <ArrowRight className="h-4 w-4 mr-2" />
+                              Resume Previous Work
+                            </Button>
+                            <Button 
+                              onClick={handleStartOver}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Start Fresh
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Step 1: Upload Resume */}
                   <div className="mb-10">
                     <div className="flex items-center gap-4 mb-6">
