@@ -146,12 +146,11 @@ function ResumePreview({
           </div>
         </div>
         
-        {/* Frosted glass overlay for bottom 80% - blurs content underneath */}
+        {/* Solid gradient overlay for bottom 80% - completely hides content */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] backdrop-blur-xl bg-white/90 pointer-events-none z-20"
+          className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20"
           style={{
-            maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+            background: 'linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 20%, rgba(255, 255, 255, 0.9) 40%, rgba(255, 255, 255, 0.85) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 100%)',
           }}
         />
       </div>
@@ -342,14 +341,13 @@ function ResumePreview({
         )}
       </div>
       
-        {/* Frosted glass overlay for bottom 80% - blurs content underneath */}
-        <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] backdrop-blur-xl bg-white/90 pointer-events-none z-20"
-          style={{
-            maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-          }}
-        />
+      {/* Solid gradient overlay for bottom 80% - completely hides content */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20"
+        style={{
+          background: 'linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 20%, rgba(255, 255, 255, 0.9) 40%, rgba(255, 255, 255, 0.85) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 100%)',
+        }}
+      />
     </div>
   );
 }
