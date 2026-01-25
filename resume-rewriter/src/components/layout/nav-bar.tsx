@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
-import { LogIn, Menu, User, X, ChevronDown, Sparkles } from 'lucide-react';
+import { LogIn, Menu, User, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
 function Logo() {
   return (
     <div className="flex items-center gap-2">
-      <div className="p-1.5 bg-primary/10 rounded-lg">
-        <Sparkles className="h-5 w-5 text-primary" />
-      </div>
+      <img 
+        src="/favicon.svg" 
+        alt="PixelPear Logo" 
+        className="h-8 w-8 object-contain"
+      />
       <span className="font-display text-lg font-bold">
         Pixel<span className="text-primary">Pear</span>
       </span>

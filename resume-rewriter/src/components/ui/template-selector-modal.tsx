@@ -146,26 +146,30 @@ function ResumePreview({
           </div>
         </div>
         
-        {/* Solid mosaic logo overlay for bottom 80% - completely hides content */}
+        {/* Solid white layer with favicon mosaic pattern - makes content unselectable */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white"
+          className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white select-none"
           style={{
-            backgroundImage: 'url(/images/pixelpear-logo.png)',
+            backgroundImage: 'url(/favicon.svg)',
             backgroundRepeat: 'repeat',
-            backgroundSize: '120px 120px',
+            backgroundSize: '100px 100px',
             backgroundPosition: '0 0',
-            opacity: 0.3,
+            opacity: 0.2,
             maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
           }}
         />
-        {/* Solid white overlay on top for complete coverage */}
+        {/* Solid white overlay for complete coverage */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white"
+          className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white select-none"
           style={{
-            opacity: 0.85,
+            opacity: 0.9,
             maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
           }}
         />
       </div>
@@ -356,26 +360,30 @@ function ResumePreview({
         )}
       </div>
       
-      {/* Solid mosaic logo overlay for bottom 80% - completely hides content */}
+      {/* Solid white layer with favicon mosaic pattern - makes content unselectable */}
       <div 
-        className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white"
+        className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white select-none"
         style={{
-          backgroundImage: 'url(/images/pixelpear-logo.png)',
+          backgroundImage: 'url(/favicon.svg)',
           backgroundRepeat: 'repeat',
-          backgroundSize: '120px 120px',
+          backgroundSize: '100px 100px',
           backgroundPosition: '0 0',
-          opacity: 0.3,
+          opacity: 0.2,
           maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
         }}
       />
-      {/* Solid white overlay on top for complete coverage */}
+      {/* Solid white overlay for complete coverage */}
       <div 
-        className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white"
+        className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white select-none"
         style={{
-          opacity: 0.85,
+          opacity: 0.9,
           maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
         }}
       />
     </div>
