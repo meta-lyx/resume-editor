@@ -146,29 +146,17 @@ function ResumePreview({
           </div>
         </div>
         
-        {/* Solid white layer with favicon mosaic pattern - makes content unselectable */}
+        {/* SOLID white layer with favicon pattern - completely blocks content */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] z-20 bg-white select-none"
+          className="absolute bottom-0 left-0 right-0 h-[80%] z-20 select-none"
           style={{
+            backgroundColor: '#FFFFFF',
             backgroundImage: 'url(/favicon.svg)',
             backgroundRepeat: 'repeat',
-            backgroundSize: '100px 100px',
-            backgroundPosition: '0 0',
-            opacity: 0.2,
-            maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-            pointerEvents: 'auto',
-          }}
-        />
-        {/* Solid white overlay for complete coverage */}
-        <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] z-20 bg-white select-none"
-          style={{
-            opacity: 0.9,
-            maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+            backgroundSize: '80px 80px',
+            backgroundPosition: 'center',
+            maskImage: 'linear-gradient(to top, black 0%, black 90%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 0%, black 90%, transparent 100%)',
             userSelect: 'none',
             WebkitUserSelect: 'none',
             pointerEvents: 'auto',
@@ -362,29 +350,17 @@ function ResumePreview({
         )}
       </div>
       
-      {/* Solid white layer with favicon mosaic pattern - makes content unselectable */}
+      {/* SOLID white layer with favicon pattern - completely blocks content */}
       <div 
-        className="absolute bottom-0 left-0 right-0 h-[80%] z-20 bg-white select-none"
+        className="absolute bottom-0 left-0 right-0 h-[80%] z-20 select-none"
         style={{
+          backgroundColor: '#FFFFFF',
           backgroundImage: 'url(/favicon.svg)',
           backgroundRepeat: 'repeat',
-          backgroundSize: '100px 100px',
-          backgroundPosition: '0 0',
-          opacity: 0.2,
-          maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          pointerEvents: 'auto',
-        }}
-      />
-      {/* Solid white overlay for complete coverage */}
-      <div 
-        className="absolute bottom-0 left-0 right-0 h-[80%] z-20 bg-white select-none"
-        style={{
-          opacity: 0.9,
-          maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+          backgroundSize: '80px 80px',
+          backgroundPosition: 'center',
+          maskImage: 'linear-gradient(to top, black 0%, black 90%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to top, black 0%, black 90%, transparent 100%)',
           userSelect: 'none',
           WebkitUserSelect: 'none',
           pointerEvents: 'auto',
