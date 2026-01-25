@@ -146,12 +146,12 @@ function ResumePreview({
           </div>
         </div>
         
-        {/* SOLID white layer with favicon pattern - completely blocks content */}
+        {/* SOLID white layer with pear pattern - completely blocks content */}
         <div 
           className="absolute bottom-0 left-0 right-0 h-[80%] z-20 select-none"
           style={{
             backgroundColor: '#FFFFFF',
-            backgroundImage: 'url(/favicon.svg)',
+            backgroundImage: 'url(/images/pear-only.svg)',
             backgroundRepeat: 'repeat',
             backgroundSize: '80px 80px',
             backgroundPosition: 'center',
@@ -350,12 +350,12 @@ function ResumePreview({
         )}
       </div>
       
-      {/* SOLID white layer with favicon pattern - completely blocks content */}
+      {/* SOLID white layer with pear pattern - completely blocks content */}
       <div 
         className="absolute bottom-0 left-0 right-0 h-[80%] z-20 select-none"
         style={{
           backgroundColor: '#FFFFFF',
-          backgroundImage: 'url(/favicon.svg)',
+          backgroundImage: 'url(/images/pear-only.svg)',
           backgroundRepeat: 'repeat',
           backgroundSize: '80px 80px',
           backgroundPosition: 'center',
