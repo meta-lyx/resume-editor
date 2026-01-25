@@ -146,11 +146,24 @@ function ResumePreview({
           </div>
         </div>
         
-        {/* Solid gradient overlay for bottom 80% - completely hides content */}
+        {/* Mosaic logo overlay for bottom 80% - completely hides content */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white"
+          style={{
+            backgroundImage: 'url(/images/pixelpear-logo.png)',
+            backgroundRepeat: 'repeat',
+            backgroundSize: '120px 120px',
+            backgroundPosition: '0 0',
+            opacity: 0.15,
+            maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+          }}
+        />
+        {/* Solid white overlay on top for better coverage */}
         <div 
           className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20"
           style={{
-            background: 'linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 20%, rgba(255, 255, 255, 0.9) 40%, rgba(255, 255, 255, 0.85) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 100%)',
+            background: 'linear-gradient(to top, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0) 100%)',
           }}
         />
       </div>
@@ -341,11 +354,24 @@ function ResumePreview({
         )}
       </div>
       
-      {/* Solid gradient overlay for bottom 80% - completely hides content */}
+      {/* Mosaic logo overlay for bottom 80% - completely hides content */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white"
+        style={{
+          backgroundImage: 'url(/images/pixelpear-logo.png)',
+          backgroundRepeat: 'repeat',
+          backgroundSize: '120px 120px',
+          backgroundPosition: '0 0',
+          opacity: 0.15,
+          maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+        }}
+      />
+      {/* Solid white overlay on top for better coverage */}
       <div 
         className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20"
         style={{
-          background: 'linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 20%, rgba(255, 255, 255, 0.9) 40%, rgba(255, 255, 255, 0.85) 60%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 100%)',
+          background: 'linear-gradient(to top, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0) 100%)',
         }}
       />
     </div>
