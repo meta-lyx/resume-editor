@@ -146,22 +146,31 @@ function ResumePreview({
           </div>
         </div>
         
-        {/* SOLID white layer with pear pattern - completely blocks content */}
+        {/* SOLID white layer with rotated pear pattern - completely blocks content */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] z-20 select-none"
+          className="absolute bottom-0 left-0 right-0 h-[80%] z-20 select-none overflow-hidden"
           style={{
             backgroundColor: '#FFFFFF',
-            backgroundImage: 'url(/images/pear-only.svg)',
-            backgroundRepeat: 'repeat',
-            backgroundSize: '80px 80px',
-            backgroundPosition: 'center',
             maskImage: 'linear-gradient(to top, black 0%, black 90%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to top, black 0%, black 90%, transparent 100%)',
             userSelect: 'none',
             WebkitUserSelect: 'none',
             pointerEvents: 'auto',
           }}
-        />
+        >
+          {/* Rotated pattern layer */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: 'url(/images/pear-only.svg)',
+              backgroundRepeat: 'repeat',
+              backgroundSize: '80px 80px',
+              backgroundPosition: 'center',
+              transform: 'rotate(45deg) scale(1.5)',
+              transformOrigin: 'center',
+            }}
+          />
+        </div>
       </div>
     );
   }
@@ -350,22 +359,31 @@ function ResumePreview({
         )}
       </div>
       
-      {/* SOLID white layer with pear pattern - completely blocks content */}
+      {/* SOLID white layer with rotated pear pattern - completely blocks content */}
       <div 
-        className="absolute bottom-0 left-0 right-0 h-[80%] z-20 select-none"
+        className="absolute bottom-0 left-0 right-0 h-[80%] z-20 select-none overflow-hidden"
         style={{
           backgroundColor: '#FFFFFF',
-          backgroundImage: 'url(/images/pear-only.svg)',
-          backgroundRepeat: 'repeat',
-          backgroundSize: '80px 80px',
-          backgroundPosition: 'center',
           maskImage: 'linear-gradient(to top, black 0%, black 90%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to top, black 0%, black 90%, transparent 100%)',
           userSelect: 'none',
           WebkitUserSelect: 'none',
           pointerEvents: 'auto',
         }}
-      />
+      >
+        {/* Rotated pattern layer */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'url(/images/pear-only.svg)',
+            backgroundRepeat: 'repeat',
+            backgroundSize: '80px 80px',
+            backgroundPosition: 'center',
+            transform: 'rotate(45deg) scale(1.5)',
+            transformOrigin: 'center',
+          }}
+        />
+      </div>
     </div>
   );
 }
