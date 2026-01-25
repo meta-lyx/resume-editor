@@ -163,37 +163,37 @@ export function DashboardPage() {
         const looksLikeError = (s: string) => /cloudflare|utm_source=error_100x|worker threw exception/i.test(s);
         const sanitizedExtracted = sanitize(savedData.extractedText);
         const sanitizedCustomized = sanitize(savedData.customizedResume);
-        setExtractedText(sanitizedExtracted);
-        setResumeTitle(savedData.resumeTitle);
-        setJobDescription(savedData.jobDescription);
-        if (sanitizedCustomized && !looksLikeError(savedData.customizedResume)) {
+        
+        // Check if there's previous work that was completed
+        const hasCompletedWork = savedData.resumeProcessed && sanitizedCustomized && !looksLikeError(savedData.customizedResume);
+        
+        // Only load data into state if explicitly requested OR if we should auto-show results
+        if (autoShowResults && hasCompletedWork) {
+          setExtractedText(sanitizedExtracted);
+          setResumeTitle(savedData.resumeTitle);
+          setJobDescription(savedData.jobDescription);
           setCustomizedResume(sanitizedCustomized);
-        } else {
-          setCustomizedResume('');
-        }
-        setResumeProcessed(savedData.resumeProcessed);
-        
-        // Load AI processing metadata
-        if (savedData.aiProcessingTime) setAiProcessingTime(savedData.aiProcessingTime);
-        if (savedData.aiAtsScore) setAiAtsScore(savedData.aiAtsScore);
-        if (savedData.aiKeywordsMatched) setAiKeywordsMatched(savedData.aiKeywordsMatched);
-        if (savedData.aiSuggestions) setAiSuggestions(savedData.aiSuggestions);
-        
-        // Load structured resume for PDF generation
-        if (savedData.structuredResume) {
-          setStructuredResume(savedData.structuredResume);
-        }
-        
-        // Check if there's previous work (but don't auto-show it unless explicitly requested)
-        if (savedData.resumeProcessed && sanitizedCustomized && !looksLikeError(savedData.customizedResume)) {
-          setHasPreviousWork(true);
-          // Only auto-show comparison view if explicitly requested (e.g., just finished processing)
-          if (autoShowResults) {
-            setShowOptimizedComparison(true);
+          setResumeProcessed(savedData.resumeProcessed);
+          
+          // Load AI processing metadata
+          if (savedData.aiProcessingTime) setAiProcessingTime(savedData.aiProcessingTime);
+          if (savedData.aiAtsScore) setAiAtsScore(savedData.aiAtsScore);
+          if (savedData.aiKeywordsMatched) setAiKeywordsMatched(savedData.aiKeywordsMatched);
+          if (savedData.aiSuggestions) setAiSuggestions(savedData.aiSuggestions);
+          
+          // Load structured resume for PDF generation
+          if (savedData.structuredResume) {
+            setStructuredResume(savedData.structuredResume);
           }
+          
+          setShowOptimizedComparison(true);
+          setHasPreviousWork(false); // Clear the banner since we're showing the results
+        } else if (hasCompletedWork) {
+          // Just set the flag to show the banner, don't load data yet
+          setHasPreviousWork(true);
         }
         
-        return true;
+        return hasCompletedWork;
       }
       return false;
     } catch (error) {
@@ -208,7 +208,11 @@ export function DashboardPage() {
     const onboardingText = sessionStorage.getItem('onboarding_resume_text');
 
     if (onboardingText && onboardingJob) {
-      // Prioritize onboarding data
+      // Prioritize onboarding data - load it and show the upload form
+      setExtractedText(onboardingText);
+      setJobDescription(onboardingJob);
+      setResumeTitle(onboardingFile ? onboardingFile.replace(/\.[^/.]+$/, '') : '');
+      
       const newData = {
         extractedText: onboardingText,
         jobDescription: onboardingJob,
@@ -222,9 +226,12 @@ export function DashboardPage() {
       sessionStorage.removeItem('onboarding_resume_file');
       sessionStorage.removeItem('onboarding_job_description');
       sessionStorage.removeItem('onboarding_resume_text');
+      
+      setHasPreviousWork(false); // New onboarding data, no previous work banner
+    } else {
+      // Check for previous work but don't auto-load it
+      loadPersistedData(false);
     }
-    
-    loadPersistedData();
   }, []);
 
   useEffect(() => {
@@ -235,7 +242,7 @@ export function DashboardPage() {
         return;
       }
 
-      loadPersistedData();
+      // Don't load persisted data here - it's already loaded in the initial useEffect
 
       try {
         const { data, error } = await apiClient.getSubscriptionUsage();
@@ -925,7 +932,34 @@ export function DashboardPage() {
   
   // Resume previous work - load saved data and show comparison
   const handleResumePreviousWork = () => {
-    loadPersistedData(true); // Pass true to auto-show results
+    const savedData = loadResumeData();
+    const sanitize = (s: string) => s ? s.replace(/<\/?[^>]+(>|$)/g, '') : '';
+    const looksLikeError = (s: string) => /cloudflare|utm_source=error_100x|worker threw exception/i.test(s);
+    
+    const sanitizedExtracted = sanitize(savedData.extractedText);
+    const sanitizedCustomized = sanitize(savedData.customizedResume);
+    
+    // Load all the data into state
+    setExtractedText(sanitizedExtracted);
+    setResumeTitle(savedData.resumeTitle);
+    setJobDescription(savedData.jobDescription);
+    setCustomizedResume(sanitizedCustomized);
+    setResumeProcessed(savedData.resumeProcessed);
+    
+    // Load AI processing metadata
+    if (savedData.aiProcessingTime) setAiProcessingTime(savedData.aiProcessingTime);
+    if (savedData.aiAtsScore) setAiAtsScore(savedData.aiAtsScore);
+    if (savedData.aiKeywordsMatched) setAiKeywordsMatched(savedData.aiKeywordsMatched);
+    if (savedData.aiSuggestions) setAiSuggestions(savedData.aiSuggestions);
+    
+    // Load structured resume for PDF generation
+    if (savedData.structuredResume) {
+      setStructuredResume(savedData.structuredResume);
+    }
+    
+    // Show the comparison view
+    setShowOptimizedComparison(true);
+    setHasPreviousWork(false); // Hide the banner
   };
 
   return (

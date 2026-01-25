@@ -102,14 +102,14 @@ export const RESUME_OPTIMIZATION_PROMPT = `You are an expert resume writer and A
 Return a JSON object with this EXACT structure:
 {
   "personalInfo": {
-    "name": "ACTUAL Full Name from resume (e.g., 'Yingxuan (Claire) Li', 'John Smith') - NEVER use 'Your Name' as a placeholder!",
-    "title": "Professional Title from resume (e.g., AI Product Manager, Senior Software Engineer)",
-    "email": "actual_email@example.com",
-    "phone": "+86 188 0116 0967 (use exact format from resume)",
-    "location": "City, Country (e.g., Beijing, China)",
-    "linkedin": "linkedin.com/in/username",
-    "github": "github.com/username",
-    "website": "portfolio.com"
+    "name": "ACTUAL Full Name from resume - EXTRACT THE REAL NAME, NEVER use placeholders!",
+    "title": "Professional Title from resume",
+    "email": "REAL EMAIL from the resume",
+    "phone": "REAL PHONE from the resume in its exact format",
+    "location": "REAL LOCATION from the resume",
+    "linkedin": "REAL linkedin URL from resume if present",
+    "github": "REAL github URL from resume if present",
+    "website": "REAL website URL from resume if present"
   },
   "summary": "Professional summary paragraph optimized for the target role...",
   "experience": [
