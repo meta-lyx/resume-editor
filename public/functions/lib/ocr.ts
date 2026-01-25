@@ -1,9 +1,11 @@
-// Google Cloud Vision OCR integration for Cloudflare Workers
+// Text extraction for multiple file formats - Cloudflare Workers compatible
+import mammoth from 'mammoth';
 
 interface OCRResult {
   text: string;
   confidence: number;
   pages: number;
+  extractionMethod: 'docx' | 'ocr' | 'pdf';
 }
 
 interface VisionAPIResponse {
@@ -122,6 +124,7 @@ export async function extractTextWithVision(
     text: extractedText.trim(),
     confidence,
     pages,
+    extractionMethod: 'ocr',
   };
 }
 
@@ -200,7 +203,44 @@ export async function extractTextFromPDF(
     text: extractedText.trim(),
     confidence: pageCount > 0 ? totalConfidence / pageCount : 0,
     pages: pageCount || 1,
+    extractionMethod: 'pdf',
   };
+}
+
+/**
+ * Extract text from DOCX files using mammoth
+ * DOCX files are structured documents (ZIP archives with XML), not images
+ * Direct text extraction is faster and more accurate than OCR
+ */
+export async function extractTextFromDOCX(fileBuffer: ArrayBuffer): Promise<OCRResult> {
+  try {
+    console.log('Extracting text from DOCX using mammoth...');
+    
+    // Convert ArrayBuffer to Buffer for mammoth
+    const buffer = Buffer.from(fileBuffer);
+    
+    // Extract raw text from DOCX
+    const result = await mammoth.extractRawText({ buffer });
+    
+    if (!result.value || result.value.trim().length === 0) {
+      throw new Error('DOCX file appears to be empty or could not be parsed');
+    }
+    
+    // Log any warnings from mammoth
+    if (result.messages && result.messages.length > 0) {
+      console.log('DOCX extraction warnings:', result.messages);
+    }
+    
+    return {
+      text: result.value.trim(),
+      confidence: 1.0, // Direct text extraction has perfect confidence
+      pages: 1, // DOCX doesn't have distinct pages in the same way as PDF
+      extractionMethod: 'docx',
+    };
+  } catch (error: any) {
+    console.error('DOCX extraction error:', error);
+    throw new Error(`Failed to extract text from DOCX: ${error.message}`);
+  }
 }
 
 /**
@@ -216,7 +256,26 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 /**
- * Main OCR function that handles both images and PDFs
+ * Determine file format category for routing to appropriate parser
+ */
+function getFileFormatCategory(mimeType: string): 'docx' | 'pdf' | 'image' {
+  if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    return 'docx';
+  }
+  if (mimeType === 'application/pdf') {
+    return 'pdf';
+  }
+  // Images: png, jpeg, jpg, webp
+  if (mimeType.startsWith('image/')) {
+    return 'image';
+  }
+  
+  throw new Error(`Unsupported file format: ${mimeType}`);
+}
+
+/**
+ * Main text extraction function that routes to appropriate parser based on file format
+ * Supports: DOCX, PDF, and images (PNG, JPG, WEBP)
  */
 export async function performOCR(
   fileBuffer: ArrayBuffer,
@@ -225,21 +284,39 @@ export async function performOCR(
 ): Promise<OCRResult> {
   // Check file size (Vision API has a 20MB limit for base64 encoded content)
   const fileSizeMB = fileBuffer.byteLength / (1024 * 1024);
-  if (fileSizeMB > 15) { // Leave some margin
-    throw new Error('File too large for OCR. Maximum size is 15MB.');
+  if (fileSizeMB > 15) { // Leave some margin for base64 encoding
+    throw new Error('File too large for processing. Maximum size is 15MB.');
   }
   
-  if (mimeType === 'application/pdf') {
-    try {
-      return await extractTextFromPDF(fileBuffer, apiKey);
-    } catch (error) {
-      // Fall back to standard vision API
-      console.log('PDF extraction failed, trying standard vision API');
-      return await extractTextWithVision(fileBuffer, mimeType, apiKey);
-    }
-  }
+  // Determine file format and route to appropriate extractor
+  const formatCategory = getFileFormatCategory(mimeType);
   
-  // For images and DOCX (converted to image), use standard vision API
-  return await extractTextWithVision(fileBuffer, mimeType, apiKey);
+  console.log(`File format detected: ${formatCategory} (${mimeType})`);
+  
+  // Route to appropriate extraction method
+  switch (formatCategory) {
+    case 'docx':
+      // DOCX: Use mammoth for direct text extraction (no OCR needed)
+      return await extractTextFromDOCX(fileBuffer);
+      
+    case 'pdf':
+      // PDF: Use Google Cloud Vision OCR
+      try {
+        const result = await extractTextFromPDF(fileBuffer, apiKey);
+        return { ...result, extractionMethod: 'pdf' };
+      } catch (error) {
+        // Fall back to standard vision API
+        console.log('PDF extraction failed, trying standard vision API');
+        const result = await extractTextWithVision(fileBuffer, mimeType, apiKey);
+        return { ...result, extractionMethod: 'pdf' };
+      }
+      
+    case 'image':
+      // Images: Use Google Cloud Vision OCR
+      const result = await extractTextWithVision(fileBuffer, mimeType, apiKey);
+      return { ...result, extractionMethod: 'ocr' };
+      
+    default:
+      throw new Error(`Unsupported file format: ${mimeType}`);
+  }
 }
-

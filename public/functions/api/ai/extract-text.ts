@@ -1,5 +1,5 @@
 // AI Text Extraction endpoint - uses Google Cloud Vision OCR
-import { performOCR } from '../../lib/ocr';
+import { performOCR } from '../../../lib/ocr';
 
 interface Env {
   GOOGLE_CLOUD_API_KEY: string;
@@ -72,11 +72,11 @@ export async function onRequest(context: { request: Request; env: Env }) {
     // Read file content for OCR
     const fileBuffer = await file.arrayBuffer();
 
-    // Extract text using Google Cloud Vision OCR
-    console.log(`Starting OCR extraction for ${file.name} (${file.type})...`);
+    // Extract text using appropriate method based on file format
+    console.log(`Starting text extraction for ${file.name} (${file.type})...`);
     const ocrResult = await performOCR(fileBuffer, file.type, env.GOOGLE_CLOUD_API_KEY);
     
-    console.log(`OCR completed: ${ocrResult.text.length} chars, ${ocrResult.pages} pages, ${(ocrResult.confidence * 100).toFixed(1)}% confidence`);
+    console.log(`Extraction completed: ${ocrResult.text.length} chars, ${ocrResult.pages} pages, ${(ocrResult.confidence * 100).toFixed(1)}% confidence, method: ${ocrResult.extractionMethod}`);
 
     return new Response(JSON.stringify({
       success: true,
@@ -101,7 +101,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
     });
 
   } catch (error: any) {
-    console.error('OCR extraction error:', error);
+    console.error('Text extraction error:', error);
     return new Response(JSON.stringify({
       error: error.message || 'Failed to extract text from file',
       success: false,
@@ -111,4 +111,3 @@ export async function onRequest(context: { request: Request; env: Env }) {
     });
   }
 }
-
