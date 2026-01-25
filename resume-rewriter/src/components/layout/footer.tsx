@@ -1,14 +1,12 @@
 import { Link } from 'react-router-dom';
-import { Github, Twitter, Linkedin, Mail } from 'lucide-react';
+import { Github, Twitter, Linkedin, Mail, Sparkles } from 'lucide-react';
 
 function Logo() {
   return (
     <div className="flex items-center gap-2">
-      <img 
-        src="/images/pixelpear-logo.png" 
-        alt="PixelPear Logo" 
-        className="h-8 w-8 object-contain"
-      />
+      <div className="p-1.5 bg-primary/10 rounded-lg">
+        <Sparkles className="h-4 w-4 text-primary" />
+      </div>
       <span className="font-display text-lg font-bold">
         Pixel<span className="text-primary">Pear</span>
       </span>

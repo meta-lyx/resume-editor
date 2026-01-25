@@ -146,7 +146,7 @@ function ResumePreview({
           </div>
         </div>
         
-        {/* Mosaic logo overlay for bottom 80% - completely hides content */}
+        {/* Solid mosaic logo overlay for bottom 80% - completely hides content */}
         <div 
           className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white"
           style={{
@@ -154,16 +154,18 @@ function ResumePreview({
             backgroundRepeat: 'repeat',
             backgroundSize: '120px 120px',
             backgroundPosition: '0 0',
-            opacity: 0.15,
+            opacity: 0.3,
             maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
           }}
         />
-        {/* Solid white overlay on top for better coverage */}
+        {/* Solid white overlay on top for complete coverage */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20"
+          className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white"
           style={{
-            background: 'linear-gradient(to top, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0) 100%)',
+            opacity: 0.85,
+            maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
           }}
         />
       </div>
@@ -354,7 +356,7 @@ function ResumePreview({
         )}
       </div>
       
-      {/* Mosaic logo overlay for bottom 80% - completely hides content */}
+      {/* Solid mosaic logo overlay for bottom 80% - completely hides content */}
       <div 
         className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white"
         style={{
@@ -362,16 +364,18 @@ function ResumePreview({
           backgroundRepeat: 'repeat',
           backgroundSize: '120px 120px',
           backgroundPosition: '0 0',
-          opacity: 0.15,
+          opacity: 0.3,
           maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
         }}
       />
-      {/* Solid white overlay on top for better coverage */}
+      {/* Solid white overlay on top for complete coverage */}
       <div 
-        className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20"
+        className="absolute bottom-0 left-0 right-0 h-[80%] pointer-events-none z-20 bg-white"
         style={{
-          background: 'linear-gradient(to top, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0) 100%)',
+          opacity: 0.85,
+          maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
         }}
       />
     </div>
