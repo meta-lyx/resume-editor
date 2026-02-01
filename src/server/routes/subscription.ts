@@ -34,6 +34,7 @@ subscriptionRoutes.get('/current', authMiddleware, async (c) => {
     const user = getCurrentUser(c);
     const db = createDb(c.env.DB);
     
+    // Look for active OR trial subscriptions
     const subscription = await db
       .select({
         subscription: userSubscriptions,
@@ -41,17 +42,40 @@ subscriptionRoutes.get('/current', authMiddleware, async (c) => {
       })
       .from(userSubscriptions)
       .leftJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
-      .where(and(
-        eq(userSubscriptions.userId, user.id),
-        eq(userSubscriptions.status, 'active')
-      ))
+      .where(eq(userSubscriptions.userId, user.id))
       .limit(1);
     
     if (subscription.length === 0) {
       return c.json({ subscription: null });
     }
     
-    return c.json({ subscription: subscription[0] });
+    const { subscription: sub, plan } = subscription[0];
+    const now = Math.floor(Date.now() / 1000);
+    
+    // Check trial status
+    const isTrial = sub.status === 'trial';
+    const trialEndsAt = sub.trialEndsAt ? Number(sub.trialEndsAt) : null;
+    const trialExpired = isTrial && trialEndsAt && now > trialEndsAt;
+    const creditsRemaining = plan ? Math.max(0, plan.monthlyLimit - (sub.usageCount || 0)) : 0;
+    const trialCreditsExhausted = isTrial && creditsRemaining <= 0;
+    
+    // Calculate days remaining for trial
+    let trialDaysRemaining = null;
+    if (isTrial && trialEndsAt && !trialExpired) {
+      trialDaysRemaining = Math.max(0, Math.ceil((trialEndsAt - now) / (60 * 60 * 24)));
+    }
+    
+    return c.json({ 
+      subscription: subscription[0],
+      trial: isTrial ? {
+        isActive: !trialExpired && !trialCreditsExhausted,
+        expired: trialExpired,
+        creditsExhausted: trialCreditsExhausted,
+        creditsRemaining,
+        daysRemaining: trialDaysRemaining,
+        endsAt: trialEndsAt,
+      } : null,
+    });
   } catch (error: any) {
     console.error('Get subscription error:', error);
     return c.json({ error: 'Failed to retrieve subscription' }, 500);
@@ -235,6 +259,7 @@ subscriptionRoutes.get('/usage', authMiddleware, async (c) => {
     }
     const db = createDb(c.env.DB);
     
+    // Look for active OR trial subscriptions
     const subscription = await db
       .select({
         sub: userSubscriptions,
@@ -242,10 +267,7 @@ subscriptionRoutes.get('/usage', authMiddleware, async (c) => {
       })
       .from(userSubscriptions)
       .leftJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
-      .where(and(
-        eq(userSubscriptions.userId, user.id),
-        eq(userSubscriptions.status, 'active')
-      ))
+      .where(eq(userSubscriptions.userId, user.id))
       .limit(1);
     
     if (subscription.length === 0 || !subscription[0].plan) {
@@ -260,17 +282,41 @@ subscriptionRoutes.get('/usage', authMiddleware, async (c) => {
     const { sub, plan } = subscription[0];
     const limit = Number(plan.monthlyLimit || 0);
     const currentUsage = Number(sub.usageCount || 0);
+    const now = Math.floor(Date.now() / 1000);
+    
+    // Check trial status
+    const isTrial = sub.status === 'trial';
+    const trialEndsAt = sub.trialEndsAt ? Number(sub.trialEndsAt) : null;
+    const trialExpired = isTrial && trialEndsAt && now > trialEndsAt;
+    const creditsRemaining = Math.max(0, limit - currentUsage);
+    const trialCreditsExhausted = isTrial && creditsRemaining <= 0;
+    
+    // For trial: check if still valid
+    const trialActive = isTrial && !trialExpired && !trialCreditsExhausted;
+    
+    // Calculate days remaining for trial
+    let trialDaysRemaining = null;
+    if (isTrial && trialEndsAt && !trialExpired) {
+      trialDaysRemaining = Math.max(0, Math.ceil((trialEndsAt - now) / (60 * 60 * 24)));
+    }
 
     const remaining = plan.interval === 'lifetime' 
       ? 999 
-      : Math.max(0, limit - currentUsage);
+      : creditsRemaining;
 
     return safeJson(c, {
-      hasSubscription: true,
+      hasSubscription: sub.status === 'active' || trialActive,
       planName: plan.name,
       remaining,
       monthlyLimit: limit,
       usageCount: currentUsage,
+      // Trial-specific info
+      isTrial,
+      trialActive,
+      trialExpired,
+      trialCreditsExhausted,
+      trialDaysRemaining,
+      trialEndsAt,
     });
   } catch (error: any) {
     console.error('Get usage error:', error);
@@ -282,7 +328,6 @@ subscriptionRoutes.get('/usage', authMiddleware, async (c) => {
 subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
   try {
     const user = getCurrentUser(c);
-    // console.log('[Consume] Request for user:', user?.id);
 
     if (!c.env.DB) {
       console.error('[Consume] Database binding missing');
@@ -290,8 +335,7 @@ subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
     }
     const db = createDb(c.env.DB);
     
-    // Get user's subscription and plan
-    console.log('[Consume] Querying subscription...');
+    // Get user's subscription and plan (include trial status)
     const subscription = await db
       .select({
         sub: userSubscriptions,
@@ -299,44 +343,67 @@ subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
       })
       .from(userSubscriptions)
       .leftJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
-      .where(and(
-        eq(userSubscriptions.userId, user.id),
-        eq(userSubscriptions.status, 'active')
-      ))
+      .where(eq(userSubscriptions.userId, user.id))
       .limit(1);
-    
-    console.log('[Consume] Subscription query result count:', subscription.length);
 
     if (subscription.length === 0) {
-      console.warn('[Consume] No active subscription found');
-      return safeJson(c, { error: 'No active subscription found' }, 403);
+      console.warn('[Consume] No subscription found');
+      return safeJson(c, { error: 'No subscription found. Please purchase a plan.' }, 403);
     }
     
     const { sub, plan } = subscription[0];
     
     if (!plan) {
-       // console.warn('[Consume] Subscription plan not found for sub:', sub.id);
        return safeJson(c, { error: 'Subscription plan not found' }, 403);
     }
 
-    // Check if user has credits remaining
-    // For lifetime plans, we might want to skip this check or have a different limit
-    if (plan.interval !== 'lifetime' && sub.usageCount >= plan.monthlyLimit) {
-      // console.warn('[Consume] No credits remaining. Usage:', sub.usageCount, 'Limit:', plan.monthlyLimit);
+    const now = Math.floor(Date.now() / 1000);
+    const currentUsage = Number(sub.usageCount || 0);
+    const limit = Number(plan.monthlyLimit || 0);
+    const creditsRemaining = Math.max(0, limit - currentUsage);
+    
+    // Check trial status
+    const isTrial = sub.status === 'trial';
+    const trialEndsAt = sub.trialEndsAt ? Number(sub.trialEndsAt) : null;
+    
+    if (isTrial) {
+      // Check if trial has expired
+      if (trialEndsAt && now > trialEndsAt) {
+        return safeJson(c, { 
+          error: 'Your free trial has expired. Please purchase a plan to continue.',
+          trialExpired: true,
+          requiresPurchase: true,
+        }, 403);
+      }
+      
+      // Check if trial credits are exhausted
+      if (creditsRemaining <= 0) {
+        return safeJson(c, { 
+          error: 'You have used all 3 free trial credits. Please purchase a plan to continue.',
+          trialCreditsExhausted: true,
+          requiresPurchase: true,
+        }, 403);
+      }
+    } else if (sub.status !== 'active') {
+      // Not trial and not active - subscription is expired/cancelled
+      return safeJson(c, { 
+        error: 'Your subscription is not active. Please purchase a plan.',
+        requiresPurchase: true,
+      }, 403);
+    }
+
+    // Check if user has credits remaining (for non-lifetime plans)
+    if (plan.interval !== 'lifetime' && creditsRemaining <= 0) {
       return safeJson(c, { 
         error: 'No credits remaining',
-        usageCount: Number(sub.usageCount),
-        monthlyLimit: Number(plan.monthlyLimit),
+        usageCount: currentUsage,
+        monthlyLimit: limit,
         remaining: 0
       }, 403);
     }
     
     // Increment usage count
-    const currentUsage = Number(sub.usageCount || 0);
-    const limit = Number(plan.monthlyLimit || 0);
     const newUsageCount = currentUsage + 1;
-    
-    console.log('[Consume] Incrementing usage count to:', newUsageCount);
     
     await db
       .update(userSubscriptions)
@@ -345,8 +412,6 @@ subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
         updatedAt: new Date()
       })
       .where(eq(userSubscriptions.id, sub.id));
-    
-    console.log('[Consume] Credit consumed successfully');
     
     const remaining = plan.interval === 'lifetime' 
       ? null 
@@ -357,7 +422,8 @@ subscriptionRoutes.post('/consume', authMiddleware, async (c) => {
       usageCount: newUsageCount,
       monthlyLimit: limit,
       remaining: remaining,
-      planName: plan.name
+      planName: plan.name,
+      isTrial,
     });
     
   } catch (error: any) {

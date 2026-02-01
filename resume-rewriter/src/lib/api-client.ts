@@ -12,6 +12,10 @@ interface ApiResponse<T> {
   error?: {
     message: string;
     code?: string;
+    // Trial-specific error fields
+    trialExpired?: boolean;
+    trialCreditsExhausted?: boolean;
+    requiresPurchase?: boolean;
   };
 }
 
@@ -94,6 +98,10 @@ class ApiClient {
           error: {
             message: data?.message || data?.error || 'An error occurred',
             code: data?.code,
+            // Include trial-specific error fields
+            trialExpired: data?.trialExpired,
+            trialCreditsExhausted: data?.trialCreditsExhausted,
+            requiresPurchase: data?.requiresPurchase,
           },
         };
       }
@@ -440,6 +448,13 @@ class ApiClient {
       remaining: number;
       resetDate?: string;
       planName?: string;
+      // Trial-specific fields
+      isTrial?: boolean;
+      trialActive?: boolean;
+      trialExpired?: boolean;
+      trialCreditsExhausted?: boolean;
+      trialDaysRemaining?: number | null;
+      trialEndsAt?: number | null;
     }>('/subscriptions/usage');
   }
 

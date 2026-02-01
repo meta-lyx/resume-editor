@@ -81,6 +81,23 @@ authRoutes.post('/register', async (c) => {
       createdAt: now,
     });
     
+    // Create trial subscription for new user (3 credits, 3 days)
+    const trialSubscriptionId = crypto.randomUUID();
+    const trialEndsAt = now + (60 * 60 * 24 * 3); // 3 days from now
+    
+    await db.insert(schema.userSubscriptions).values({
+      id: trialSubscriptionId,
+      userId,
+      planId: 'trial-plan',
+      status: 'trial',
+      currentPeriodStart: now,
+      currentPeriodEnd: trialEndsAt,
+      trialEndsAt: trialEndsAt,
+      usageCount: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+    
     return c.json({
       message: 'Registration successful',
       user: {
@@ -92,6 +109,10 @@ authRoutes.post('/register', async (c) => {
       session: {
         token,
         expiresAt,
+      },
+      trial: {
+        creditsRemaining: 3,
+        endsAt: trialEndsAt,
       },
     });
   } catch (error: any) {

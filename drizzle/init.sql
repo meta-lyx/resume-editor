@@ -159,6 +159,7 @@ CREATE INDEX IF NOT EXISTS idx_file_uploads_user_id ON file_uploads(user_id);
 -- Insert default subscription plans
 INSERT OR IGNORE INTO subscription_plans (id, name, description, plan_type, price, currency, interval, monthly_limit, features, active)
 VALUES 
+  ('trial-plan', 'Free Trial', '3-day free trial with 3 credits', 'trial', 0.00, 'USD', 'trial', 3, '["3 Free Credits","3-Day Trial Period","ATS Optimization","Job Matching"]', 1),
   ('starter-plan', 'Starter', 'Perfect for quick job applications', 'starter', 9.00, 'USD', 'lifetime', 3, '["3 Custom Resumes","ATS Optimization","Job Matching","Email Support"]', 1),
   ('professional-plan', 'Professional', 'Best value for active job seekers', 'professional', 19.00, 'USD', 'lifetime', 10, '["10 Custom Resumes","Advanced ATS Optimization","AI-Powered Job Matching","Priority Support","LinkedIn Optimization Tips"]', 1),
   ('lifetime-plan', 'Lifetime', 'Unlimited resumes for your career', 'lifetime', 49.00, 'USD', 'lifetime', 999999, '["Unlimited Custom Resumes","All Professional Features","Lifetime Updates","VIP Support","Early Access to New Features"]', 1);

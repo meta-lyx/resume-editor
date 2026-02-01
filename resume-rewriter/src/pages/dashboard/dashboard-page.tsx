@@ -613,7 +613,27 @@ export function DashboardPage() {
           console.warn('Backend unavailable, proceeding with download (dev mode)');
           toast.success('Generating resume...', { duration: 2000 });
         } else {
-          toast.error(consumeError.message || 'Failed to use a credit');
+          // Check for trial-specific errors
+          const requiresPurchase = consumeError.requiresPurchase || 
+                                   consumeError.trialExpired || 
+                                   consumeError.trialCreditsExhausted;
+          
+          if (requiresPurchase) {
+            toast.error(
+              consumeError.trialExpired 
+                ? 'Your free trial has expired. Please purchase a plan to continue.' 
+                : consumeError.trialCreditsExhausted
+                  ? 'You have used all 3 trial credits. Please purchase a plan to continue.'
+                  : consumeError.message || 'Please purchase a plan to continue.',
+              { duration: 5000 }
+            );
+            // Optionally redirect to pricing
+            setTimeout(() => {
+              window.location.href = '/pricing';
+            }, 2000);
+          } else {
+            toast.error(consumeError.message || 'Failed to use a credit');
+          }
           setIsGeneratingPDF(false);
           return;
         }

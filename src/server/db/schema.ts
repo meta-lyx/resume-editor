@@ -99,6 +99,7 @@ export const userSubscriptions = sqliteTable('user_subscriptions', {
   cancelAtPeriodEnd: integer('cancel_at_period_end', { mode: 'boolean' }).default(false),
   usageCount: integer('usage_count', { mode: 'number' }).notNull().default(0), // Monthly usage counter
   usageResetAt: integer('usage_reset_at', { mode: 'timestamp' }),
+  trialEndsAt: integer('trial_ends_at', { mode: 'timestamp' }), // When trial expires (null for paid plans)
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
