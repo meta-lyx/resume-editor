@@ -91,7 +91,7 @@ export function OnboardingPage() {
           </div>
           
           <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-            Transform your resume for each job with <span className="gradient-text">ATS keyword enhancement</span> and professional PDF templates
+            Make every job application <span className="gradient-text">a match</span>
           </h1>
           
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
