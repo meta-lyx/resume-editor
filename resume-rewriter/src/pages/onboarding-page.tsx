@@ -91,14 +91,12 @@ export function OnboardingPage() {
           </div>
           
           <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-            Transform Your Resume
-            <br />
-            <span className="gradient-text">Into a Job Magnet</span>
+            Transform your resume for each job with <span className="gradient-text">ATS keyword enhancement</span> and professional PDF templates
           </h1>
           
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Upload your resume, paste the job description, and let our AI 
-            customize it to maximize your chances of getting hired.
+            Job description-specific editing powered by AI that enhances your resume with ATS-optimized keywords 
+            and delivers it in a wide array of professional PDF templates.
           </p>
           
           {/* Stats */}

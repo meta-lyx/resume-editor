@@ -25,8 +25,8 @@ export function Footer() {
           <div className="md:col-span-2">
             <Logo />
             <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-relaxed">
-              AI-powered resume optimization that helps you land your dream job. 
-              Transform your resume to match any job description perfectly.
+              AI-powered resume optimization with job description-specific editing, 
+              ATS keyword enhancement, and a wide array of professional PDF templates.
             </p>
             
             {/* Social links */}
