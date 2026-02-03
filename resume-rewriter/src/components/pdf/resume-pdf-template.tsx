@@ -8,13 +8,19 @@ import {
   Link,
 } from '@react-pdf/renderer';
 
-// Register Helvetica as fallback - it's built into react-pdf
-// We'll use system fonts that are guaranteed to work
+// Register Noto Sans SC for Chinese character support
+// This font supports Latin, Chinese, Japanese, and Korean characters
 Font.register({
-  family: 'Helvetica',
+  family: 'NotoSansSC',
   fonts: [
-    { src: 'Helvetica', fontWeight: 400 },
-    { src: 'Helvetica-Bold', fontWeight: 700 },
+    {
+      src: 'https://fonts.gstatic.com/s/notosanssc/v36/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYk.ttf',
+      fontWeight: 400,
+    },
+    {
+      src: 'https://fonts.gstatic.com/s/notosanssc/v36/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG-PEnYk.ttf',
+      fontWeight: 700,
+    },
   ],
 });
 
@@ -32,13 +38,13 @@ const colors = {
   accent: '#059669',
 };
 
-// Styles - using Helvetica (built-in, guaranteed to work)
+// Styles - using Noto Sans SC (supports Chinese characters)
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: colors.background,
     padding: 40,
-    fontFamily: 'Helvetica',
+    fontFamily: 'NotoSansSC',
   },
   // Header section
   header: {
@@ -49,14 +55,16 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 26,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: colors.dark,
     marginBottom: 4,
   },
   title: {
     fontSize: 13,
     color: colors.primary,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     marginBottom: 8,
   },
   contactRow: {
@@ -87,7 +95,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: colors.dark,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -111,13 +120,15 @@ const styles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: colors.dark,
   },
   entryCompany: {
     fontSize: 10,
     color: colors.primary,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
   },
   entryDate: {
     fontSize: 9,
@@ -160,7 +171,8 @@ const styles = StyleSheet.create({
   },
   skillCategoryTitle: {
     fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: colors.dark,
     marginBottom: 4,
   },
@@ -192,7 +204,8 @@ const styles = StyleSheet.create({
   },
   degree: {
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: colors.dark,
   },
   school: {

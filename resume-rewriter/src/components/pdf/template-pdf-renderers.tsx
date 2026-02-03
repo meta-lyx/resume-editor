@@ -9,6 +9,21 @@ import {
 } from '@react-pdf/renderer';
 import type { ResumeData } from './resume-pdf-template';
 
+// Register Noto Sans SC for Chinese character support
+Font.register({
+  family: 'NotoSansSC',
+  fonts: [
+    {
+      src: 'https://fonts.gstatic.com/s/notosanssc/v36/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYk.ttf',
+      fontWeight: 400,
+    },
+    {
+      src: 'https://fonts.gstatic.com/s/notosanssc/v36/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG-PEnYk.ttf',
+      fontWeight: 700,
+    },
+  ],
+});
+
 // Disable hyphenation
 Font.registerHyphenationCallback((word: string) => [word]);
 
@@ -30,7 +45,7 @@ const classicStyles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: classicColors.background,
     padding: 40,
-    fontFamily: 'Times-Roman',
+    fontFamily: 'NotoSansSC',
   },
   header: {
     marginBottom: 16,
@@ -41,7 +56,8 @@ const classicStyles = StyleSheet.create({
   },
   name: {
     fontSize: 24,
-    fontFamily: 'Times-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: classicColors.primary,
     marginBottom: 4,
     letterSpacing: 1,
@@ -80,7 +96,8 @@ const classicStyles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 10,
-    fontFamily: 'Times-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: classicColors.primary,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -95,12 +112,13 @@ const classicStyles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 10,
-    fontFamily: 'Times-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: classicColors.text,
   },
   entryCompany: {
     fontSize: 9,
-    fontFamily: 'Times-Italic',
+    fontFamily: 'NotoSansSC',
     color: classicColors.accent,
   },
   entryDate: {
@@ -132,7 +150,7 @@ const classicStyles = StyleSheet.create({
     color: classicColors.text,
     lineHeight: 1.5,
     textAlign: 'justify',
-    fontFamily: 'Times-Italic',
+    fontFamily: 'NotoSansSC',
   },
   skillsContainer: {
     flexDirection: 'row',
@@ -281,7 +299,7 @@ const modernStyles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: modernColors.background,
     padding: 40,
-    fontFamily: 'Helvetica',
+    fontFamily: 'NotoSansSC',
   },
   header: {
     marginBottom: 24,
@@ -291,14 +309,16 @@ const modernStyles = StyleSheet.create({
   },
   name: {
     fontSize: 32,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: modernColors.primary,
     marginBottom: 4,
   },
   title: {
     fontSize: 14,
     color: modernColors.accent,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     marginBottom: 12,
   },
   contactRow: {
@@ -332,7 +352,8 @@ const modernStyles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 12,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: modernColors.primary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -348,13 +369,15 @@ const modernStyles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: modernColors.primary,
   },
   entryCompany: {
     fontSize: 10,
     color: modernColors.accent,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
   },
   entryDate: {
     fontSize: 9,
@@ -539,7 +562,7 @@ const creativeStyles = StyleSheet.create({
   page: {
     flexDirection: 'row',
     backgroundColor: creativeColors.background,
-    fontFamily: 'Helvetica',
+    fontFamily: 'NotoSansSC',
   },
   sidebar: {
     width: '35%',
@@ -553,7 +576,8 @@ const creativeStyles = StyleSheet.create({
   },
   sidebarName: {
     fontSize: 22,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: '#FFFFFF',
     marginBottom: 4,
   },
@@ -569,7 +593,8 @@ const creativeStyles = StyleSheet.create({
   },
   sidebarSectionTitle: {
     fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: creativeColors.accent,
     marginBottom: 10,
     textTransform: 'uppercase',
@@ -603,7 +628,8 @@ const creativeStyles = StyleSheet.create({
   },
   mainSectionTitle: {
     fontSize: 14,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: creativeColors.primary,
     marginBottom: 12,
     borderBottomWidth: 2,
@@ -620,7 +646,8 @@ const creativeStyles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: creativeColors.text,
   },
   entryCompany: {
@@ -710,7 +737,7 @@ export function CreativeSidebarPDF({ data, showBranding = true }: { data: Resume
               <Text style={creativeStyles.sidebarSectionTitle}>Education</Text>
               {data.education.map((edu, idx) => (
                 <View key={idx} style={{ marginBottom: 8 }}>
-                  <Text style={{ fontSize: 9, color: '#FFFFFF', fontFamily: 'Helvetica-Bold' }}>{edu.degree}</Text>
+                  <Text style={{ fontSize: 9, color: '#FFFFFF', fontFamily: 'NotoSansSC', fontWeight: 700 }}>{edu.degree}</Text>
                   <Text style={{ fontSize: 8, color: creativeColors.accent }}>{edu.school}</Text>
                   <Text style={{ fontSize: 8, color: creativeColors.textOnDark, opacity: 0.8 }}>{edu.graduationDate}</Text>
                 </View>
@@ -794,7 +821,7 @@ const techStyles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: techColors.background,
     padding: 35,
-    fontFamily: 'Helvetica',
+    fontFamily: 'NotoSansSC',
   },
   header: {
     marginBottom: 14,
@@ -818,14 +845,15 @@ const techStyles = StyleSheet.create({
   },
   name: {
     fontSize: 22,
-    fontFamily: 'Courier-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: techColors.primary,
     marginBottom: 2,
   },
   title: {
     fontSize: 10,
     color: techColors.accent,
-    fontFamily: 'Courier',
+    fontFamily: 'NotoSansSC',
     marginBottom: 8,
   },
   contactRow: {
@@ -836,13 +864,13 @@ const techStyles = StyleSheet.create({
   contactItem: {
     fontSize: 8,
     color: techColors.textLight,
-    fontFamily: 'Courier',
+    fontFamily: 'NotoSansSC',
   },
   contactLink: {
     fontSize: 8,
     color: techColors.accentSecondary,
     textDecoration: 'none',
-    fontFamily: 'Courier',
+    fontFamily: 'NotoSansSC',
   },
   section: {
     marginBottom: 10,
@@ -855,12 +883,14 @@ const techStyles = StyleSheet.create({
   sectionPrefix: {
     fontSize: 9,
     color: techColors.accent,
-    fontFamily: 'Courier-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     marginRight: 6,
   },
   sectionTitle: {
     fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: techColors.primary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -879,7 +909,8 @@ const techStyles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSansSC',
+    fontWeight: 700,
     color: techColors.primary,
   },
   entryCompany: {
@@ -889,7 +920,7 @@ const techStyles = StyleSheet.create({
   entryDate: {
     fontSize: 7,
     color: techColors.textLight,
-    fontFamily: 'Courier',
+    fontFamily: 'NotoSansSC',
     backgroundColor: techColors.codeBg,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -906,7 +937,7 @@ const techStyles = StyleSheet.create({
     width: 14,
     fontSize: 8,
     color: techColors.accent,
-    fontFamily: 'Courier',
+    fontFamily: 'NotoSansSC',
   },
   bulletText: {
     flex: 1,
@@ -934,7 +965,7 @@ const techStyles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 3,
-    fontFamily: 'Courier',
+    fontFamily: 'NotoSansSC',
   },
   footer: {
     position: 'absolute',
@@ -950,7 +981,7 @@ const techStyles = StyleSheet.create({
   footerText: {
     fontSize: 6,
     color: techColors.textLight,
-    fontFamily: 'Courier',
+    fontFamily: 'NotoSansSC',
   },
 });
 
