@@ -1,6 +1,6 @@
 // Mock Provider for AI Resume Processing (for testing without API calls)
 
-import { AIProvider, ResumeProcessingInput, ResumeProcessingOutput } from './types';
+import { AIProvider, ResumeProcessingInput, ResumeProcessingOutput, StructuredResume } from './types';
 
 export class MockProvider implements AIProvider {
   name = 'mock';
@@ -41,8 +41,25 @@ ${jobKeywords.map(k => `- "${k}"`).join('\n')}
 This resume has been optimized for Applicant Tracking Systems with proper formatting and keyword density.
 `;
 
+    // Build structured resume from the input text (parse first few lines for name/title)
+    const lines = input.resumeText.split('\n').filter(l => l.trim());
+    const nameLine = lines.find(l => l.trim().length > 2 && !l.includes('@') && !l.includes('://'))?.trim() || 'Resume';
+    
+    const structuredResume: StructuredResume = {
+      personalInfo: {
+        name: nameLine.slice(0, 50),
+      },
+      summary: `Professional with experience in ${jobKeywords.slice(0, 3).join(', ')}.`,
+      experience: [],
+      education: [],
+      skills: jobKeywords.length > 0 
+        ? [{ category: 'Skills', items: jobKeywords.slice(0, 8) }]
+        : [],
+    };
+
     return {
       customizedResume,
+      structuredResume,
       suggestions: [
         'Add quantifiable achievements to strengthen impact',
         'Include relevant certifications and skills',
