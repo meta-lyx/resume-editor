@@ -57,7 +57,7 @@ authRoutes.post('/register', async (c) => {
     
     // Create user
     const userId = crypto.randomUUID();
-    const now = Math.floor(Date.now() / 1000);
+    const now = new Date();
     
     await db.insert(schema.users).values({
       id: userId,
@@ -71,7 +71,7 @@ authRoutes.post('/register', async (c) => {
     // Create session
     const sessionId = crypto.randomUUID();
     const token = crypto.randomUUID();
-    const expiresAt = now + (60 * 60 * 24 * 7); // 7 days
+    const expiresAt = new Date(Date.now() + (60 * 60 * 24 * 7 * 1000)); // 7 days
     
     await db.insert(schema.sessions).values({
       id: sessionId,
@@ -83,7 +83,7 @@ authRoutes.post('/register', async (c) => {
     
     // Create trial subscription for new user (3 credits, 3 days)
     const trialSubscriptionId = crypto.randomUUID();
-    const trialEndsAt = now + (60 * 60 * 24 * 3); // 3 days from now
+    const trialEndsAt = new Date(Date.now() + (60 * 60 * 24 * 3 * 1000)); // 3 days from now
     
     await db.insert(schema.userSubscriptions).values({
       id: trialSubscriptionId,
@@ -156,8 +156,8 @@ authRoutes.post('/login', async (c) => {
     // Create new session
     const sessionId = crypto.randomUUID();
     const token = crypto.randomUUID();
-    const now = Math.floor(Date.now() / 1000);
-    const expiresAt = now + (60 * 60 * 24 * 7); // 7 days
+    const now = new Date();
+    const expiresAt = new Date(Date.now() + (60 * 60 * 24 * 7 * 1000)); // 7 days
     
     await db.insert(schema.sessions).values({
       id: sessionId,
@@ -176,7 +176,7 @@ authRoutes.post('/login', async (c) => {
       },
       session: {
         token,
-        expiresAt,
+        expiresAt: Math.floor(expiresAt.getTime() / 1000),
       },
     });
   } catch (error: any) {

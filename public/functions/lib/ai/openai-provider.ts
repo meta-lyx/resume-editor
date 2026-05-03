@@ -6,7 +6,7 @@ import {
   ResumeProcessingOutput, 
   StructuredResume,
   RESUME_OPTIMIZATION_PROMPT,
-  RESUME_OPTIMIZATION_PROMPT_FALLBACK 
+  buildResumeOptimizationUserPrompt,
 } from './types';
 
 export class OpenAIProvider implements AIProvider {
@@ -22,13 +22,7 @@ export class OpenAIProvider implements AIProvider {
   async processResume(input: ResumeProcessingInput): Promise<ResumeProcessingOutput> {
     const startTime = Date.now();
 
-    const userPrompt = `## Original Resume (may have OCR formatting issues):
-${input.resumeText}
-
-## Target Job Description:
-${input.jobDescription}
-
-Parse the resume, optimize the content for this job, and return the structured JSON as specified.`;
+    const userPrompt = buildResumeOptimizationUserPrompt(input.resumeText, input.jobDescription);
 
     try {
       // First attempt: Request structured JSON output
@@ -44,7 +38,7 @@ Parse the resume, optimize the content for this job, and return the structured J
             { role: 'system', content: RESUME_OPTIMIZATION_PROMPT },
             { role: 'user', content: userPrompt },
           ],
-          temperature: 0.5, // Lower temperature for more consistent JSON
+          temperature: 0.25,
           max_tokens: 4000,
           response_format: { type: "json_object" }, // Request JSON mode
         }),
@@ -86,13 +80,7 @@ Parse the resume, optimize the content for this job, and return the structured J
   }
 
   private async processResumeFallback(input: ResumeProcessingInput, startTime: number): Promise<ResumeProcessingOutput> {
-    const userPrompt = `## Original Resume:
-${input.resumeText}
-
-## Target Job Description:
-${input.jobDescription}
-
-Optimize this resume for the target job. Return a JSON object with the resume structure.`;
+    const userPrompt = buildResumeOptimizationUserPrompt(input.resumeText, input.jobDescription);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -106,7 +94,7 @@ Optimize this resume for the target job. Return a JSON object with the resume st
           { role: 'system', content: RESUME_OPTIMIZATION_PROMPT },
           { role: 'user', content: userPrompt },
         ],
-        temperature: 0.5,
+        temperature: 0.25,
         max_tokens: 4000,
       }),
     });

@@ -1,6 +1,12 @@
 // Anthropic Claude Provider for AI Resume Processing
 
-import { AIProvider, ResumeProcessingInput, ResumeProcessingOutput, RESUME_OPTIMIZATION_PROMPT } from './types';
+import {
+  AIProvider,
+  ResumeProcessingInput,
+  ResumeProcessingOutput,
+  RESUME_OPTIMIZATION_PROMPT,
+  buildResumeOptimizationUserPrompt,
+} from './types';
 
 export class AnthropicProvider implements AIProvider {
   name = 'anthropic';
@@ -15,13 +21,7 @@ export class AnthropicProvider implements AIProvider {
   async processResume(input: ResumeProcessingInput): Promise<ResumeProcessingOutput> {
     const startTime = Date.now();
 
-    const userPrompt = `## Original Resume:
-${input.resumeText}
-
-## Target Job Description:
-${input.jobDescription}
-
-Please optimize this resume for the target job.`;
+    const userPrompt = buildResumeOptimizationUserPrompt(input.resumeText, input.jobDescription);
 
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {

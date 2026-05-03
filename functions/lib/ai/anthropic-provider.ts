@@ -4,6 +4,7 @@ import {
   AIProvider,
   ResumeProcessingInput,
   ResumeProcessingOutput,
+  StructuredResume,
   RESUME_OPTIMIZATION_PROMPT,
   buildResumeOptimizationUserPrompt,
 } from './types';
@@ -52,8 +53,16 @@ export class AnthropicProvider implements AIProvider {
       // Parse the response to extract structured data
       const { customizedResume, suggestions, keywordsMatched, atsScore } = this.parseResponse(content);
 
+      // Try to extract structured JSON data from the response
+      let structuredResume: StructuredResume | undefined;
+      const parsedStructured = this.parseStructuredData(content);
+      if (parsedStructured) {
+        structuredResume = parsedStructured;
+      }
+
       return {
         customizedResume,
+        structuredResume,
         suggestions,
         keywordsMatched,
         atsScore,
@@ -62,6 +71,52 @@ export class AnthropicProvider implements AIProvider {
     } catch (error: any) {
       console.error('Anthropic processing error:', error);
       throw new Error(`Failed to process resume with Anthropic: ${error.message}`);
+    }
+  }
+
+  // Try to extract structured JSON data from the response if it's embedded
+  private parseStructuredData(content: string): StructuredResume | null {
+    try {
+      // Look for a JSON object in the response (the prompt asks to return one JSON object)
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) return null;
+
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      // Check if it has the expected structure
+      if (!parsed.personalInfo && !parsed.experience) {
+        // This might be a plain text response, not structured JSON
+        return null;
+      }
+
+      return {
+        personalInfo: parsed.personalInfo || { name: 'Resume' },
+        summary: parsed.summary || '',
+        experience: (parsed.experience || []).map((exp: any) => ({
+          title: exp.title || 'Position',
+          company: exp.company || '',
+          location: exp.location,
+          startDate: exp.startDate || '',
+          endDate: exp.endDate || 'Present',
+          bullets: Array.isArray(exp.bullets) ? exp.bullets : [],
+        })),
+        education: (parsed.education || []).map((edu: any) => ({
+          degree: edu.degree || 'Degree',
+          school: edu.school || '',
+          location: edu.location,
+          graduationDate: edu.graduationDate || '',
+          gpa: edu.gpa,
+          highlights: edu.highlights,
+        })),
+        skills: (parsed.skills || []).map((skill: any) => ({
+          category: skill.category,
+          items: Array.isArray(skill.items) ? skill.items : [],
+        })),
+        certifications: parsed.certifications,
+        projects: parsed.projects,
+      };
+    } catch {
+      return null;
     }
   }
 
@@ -115,4 +170,3 @@ export class AnthropicProvider implements AIProvider {
     };
   }
 }
-

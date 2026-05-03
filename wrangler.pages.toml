@@ -26,4 +26,6 @@ AI_PROVIDER = "openai"  # Using OpenAI GPT (OPENAI_API_KEY configured as secret)
 #   wrangler pages secret put OPENAI_API_KEY
 #   OR
 #   wrangler pages secret put ANTHROPIC_API_KEY
+#   OR
+#   wrangler pages secret put DEEPSEEK_API_KEY
 

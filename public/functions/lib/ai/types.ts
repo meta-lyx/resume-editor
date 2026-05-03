@@ -65,117 +65,60 @@ export interface AIProvider {
 }
 
 export interface AIServiceConfig {
-  provider: 'openai' | 'anthropic' | 'mock';
+  provider: 'openai' | 'anthropic' | 'deepseek' | 'mock';
   apiKey?: string;
   model?: string;
 }
 
-// Updated prompt that requests structured JSON output
-export const RESUME_OPTIMIZATION_PROMPT = `You are an expert resume writer and ATS optimization specialist. Your task is to:
-1. Parse the provided resume text (which may be messy from OCR extraction)
-2. Optimize the content for the target job description
-3. Return a properly structured JSON response
+// Structured JSON prompt with strict grounding (no invented schools, majors, employers, etc.)
+export const RESUME_OPTIMIZATION_PROMPT = `You are an expert resume editor and ATS-aware writer. Parse the candidate resume from the user message and return ONE JSON object.
 
-## CRITICAL RULES:
-1. **PRESERVE FACTS**: Keep all job titles, company names, dates, schools, degrees EXACTLY as they appear
-2. **ONLY ENHANCE DESCRIPTIONS**: Improve bullet points to be more impactful and keyword-rich
-3. **MAINTAIN TRUTHFULNESS**: Do not add experiences or skills the candidate doesn't have
-4. **UNDERSTAND OCR NOISE**: The text may have formatting issues from OCR - use context to understand the correct structure
-5. **EXTRACT NAME FIRST**: The person's name is typically at the TOP of the resume. Look for it in the first few lines. It is NOT "Your Name" - find the ACTUAL name!
+## Grounding (highest priority — prevents hallucination)
+1. **Single source of truth**: The section titled "Original Resume" in the user message is the ONLY authority for every factual claim: identity, contact info, employers, titles, dates, locations, education (institution, degree level, major/field, honors, GPA), certifications, projects, languages, and skills.
+2. **Job description is non-factual**: The "Target job description" may ONLY steer tone, emphasis, and which existing accomplishments to highlight. You MUST NOT import schools, majors, employers, stacks, tools, certifications, or credentials from the job description unless the same fact already appears in the Original Resume (or is an obvious spelling variant of the same token).
+3. **No plausible fill-ins**: Never replace garbled OCR with a well-known university, never "normalize" a school name you were not given, and never infer a major or degree from job title, city, or industry. If a token is ambiguous, keep the ambiguous substring or omit that field — do not guess.
+4. **Education**: Emit one object per distinct education block found in the Original Resume. If there is no education section, use an empty array. Copy institution and degree/major strings from the resume; only trim duplicated whitespace or stray punctuation from OCR.
+5. **Experience**: Every employer, title, and date range must come from the Original Resume. You may rewrite bullet text for clarity and impact, but do not add roles, promotions, employers, or date ranges not supported by the resume.
+6. **Skills**: Include a skill or tool only if it appears in the resume (skills section or clearly in experience/projects). You may group or use a standard spelling of the SAME item (e.g. JS → JavaScript) when obviously identical; do not add technologies never mentioned.
+7. **Projects and certifications**: Only include items explicitly present in the Original Resume; otherwise omit or use empty arrays.
+8. **Summary**: Summarize only what the resume supports. Do not state degrees, employers, or domains that are not evidenced.
+9. **metadata.suggestionsForImprovement**: Give honest, non-deceptive feedback (e.g. quantify where the resume already has numbers). Do not suggest adding credentials or employers that are not in the resume.
 
-## What to OPTIMIZE:
-- Bullet point descriptions under each work experience (make them achievement-focused with metrics)
-- Professional summary (if present)
-- Skills phrasing (align with job description keywords)
+## Allowed improvements
+- Rewrite experience bullets to be clearer, stronger, and better aligned with keywords that reflect work the candidate already described.
+- Tighten summary wording and ATS phrasing using overlap between resume content and the job description.
 
-## What to PRESERVE EXACTLY:
-- Person's name
-- Contact information (email, phone, LinkedIn, GitHub)
-- Job titles
-- Company names
-- Employment dates
-- School names
-- Degree names
-- Graduation dates
+## JSON shape (use real values from the resume only; omit unknown optional fields)
+Return ONLY valid JSON (no markdown fences). Required top-level keys:
+- "personalInfo" with required "name" (from resume header); optional: title, email, phone, location, linkedin, github, website.
+- "experience": array of objects with title, company, startDate, endDate, bullets (array of strings); optional location per role.
+- "education": array of objects with degree, school, graduationDate; optional location, gpa, highlights (string array). Use [] if no education in the resume.
+- "skills": array of objects each with "items" (string array) and optional "category".
+- Optional: "summary" (string), "certifications" (string array), "projects" (array of { name, description, bullets? }).
+- "metadata" with "keywordsIncorporated" (string array) and "suggestionsForImprovement" (string array); optional numeric "atsScore".
 
-## OUTPUT FORMAT:
-Return a JSON object with this EXACT structure:
-{
-  "personalInfo": {
-    "name": "ACTUAL Full Name from resume - EXTRACT THE REAL NAME, NEVER use placeholders!",
-    "title": "Professional Title from resume",
-    "email": "REAL EMAIL from the resume",
-    "phone": "REAL PHONE from the resume in its exact format",
-    "location": "REAL LOCATION from the resume",
-    "linkedin": "REAL linkedin URL from resume if present",
-    "github": "REAL github URL from resume if present",
-    "website": "REAL website URL from resume if present"
-  },
-  "summary": "Professional summary paragraph optimized for the target role...",
-  "experience": [
-    {
-      "title": "Job Title (UNCHANGED from original)",
-      "company": "Company Name (UNCHANGED from original)",
-      "location": "City, State",
-      "startDate": "Jan 2020",
-      "endDate": "Present",
-      "bullets": [
-        "Achievement-focused bullet with metrics and keywords from job description",
-        "Another impactful bullet point..."
-      ]
-    }
-  ],
-  "education": [
-    {
-      "degree": "Degree Name (UNCHANGED)",
-      "school": "University Name (UNCHANGED)",
-      "location": "City, State",
-      "graduationDate": "2020",
-      "gpa": "3.8",
-      "highlights": ["Relevant coursework", "Honors"]
-    }
-  ],
-  "skills": [
-    {
-      "category": "Technical Skills",
-      "items": ["Skill1", "Skill2", "Skill3"]
-    },
-    {
-      "category": "Tools & Technologies", 
-      "items": ["Tool1", "Tool2"]
-    }
-  ],
-  "certifications": ["Certification 1", "Certification 2"],
-  "projects": [
-    {
-      "name": "Project Name",
-      "description": "Brief description",
-      "bullets": ["Achievement 1", "Achievement 2"]
-    }
-  ],
-  "metadata": {
-    "atsScore": 85,
-    "keywordsIncorporated": ["keyword1", "keyword2"],
-    "suggestionsForImprovement": ["Add more metrics", "Consider adding..."]
-  }
+## Output rules
+- Chronological order: most recent first for experience and education.
+- Omit optional keys entirely when unknown; prefer omission over invention.
+- Return ONLY the JSON object.
+`;
+
+export function buildResumeOptimizationUserPrompt(resumeText: string, jobDescription: string): string {
+  return `## Original Resume
+${resumeText}
+
+## Target job description
+${jobDescription}
+
+Extract every factual field only from the Original Resume. Use the job description for wording and emphasis only. Return one JSON object as specified in the system message.`;
 }
 
-## IMPORTANT:
-- Return ONLY the JSON object, no markdown code blocks or extra text
-- Ensure all JSON is valid and properly escaped
-- If a field is not found in the resume, omit it or use null
-- Keep experience and education in chronological order (most recent first)
-- The NAME field is REQUIRED - always extract the actual person's name from the resume header, NEVER use placeholders like "Your Name" or "Full Name"
-`;
-
 // Simpler fallback prompt for when JSON parsing fails
-export const RESUME_OPTIMIZATION_PROMPT_FALLBACK = `You are an expert resume writer. Optimize this resume for the target job description.
+export const RESUME_OPTIMIZATION_PROMPT_FALLBACK = `You are an expert resume editor. You will receive an Original Resume and a Target job description in the user message.
 
-RULES:
-1. Keep job titles, company names, dates, schools UNCHANGED
-2. Only improve bullet point descriptions to be more impactful
-3. Add relevant keywords from the job description naturally
-4. Use action verbs and quantify achievements
+STRICT RULES:
+1. Every employer, title, date, school, degree, major, certification, and skill must come from the Original Resume only. Do not take biographical facts from the job description.
+2. If OCR text is unclear, keep the unclear text or omit — never invent a university or major.
+3. Improve bullet wording and section flow only; do not add experiences or credentials.
 
-Return the optimized resume in plain text format with clear sections.
-`;
+Return the optimized resume in plain text with clear section headings.`;
