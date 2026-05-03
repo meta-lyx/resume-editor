@@ -68,6 +68,10 @@ export interface AIServiceConfig {
   provider: 'openai' | 'anthropic' | 'deepseek' | 'mock';
   apiKey?: string;
   model?: string;
+  /** Keys for automatic fallback providers */
+  OPENAI_API_KEY?: string;
+  ANTHROPIC_API_KEY?: string;
+  DEEPSEEK_API_KEY?: string;
 }
 
 // Structured JSON prompt with strict grounding (no invented schools, majors, employers, etc.)
