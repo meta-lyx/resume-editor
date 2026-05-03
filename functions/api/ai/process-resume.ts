@@ -8,6 +8,7 @@ interface Env {
   AI_PROVIDER?: string;
   OPENAI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
+  DEEPSEEK_API_KEY?: string;
   AI_MODEL?: string;
 }
 
@@ -74,6 +75,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       AI_PROVIDER: env.AI_PROVIDER,
       OPENAI_API_KEY: env.OPENAI_API_KEY,
       ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+      DEEPSEEK_API_KEY: env.DEEPSEEK_API_KEY,
       AI_MODEL: env.AI_MODEL,
     });
 

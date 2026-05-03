@@ -72,7 +72,38 @@ export async function deleteResume(resumeId: string) {
   }
 }
 
+// Client-side PDF text extraction
+async function extractPdfText(file: File): Promise<string> {
+  try {
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/build/pdf.worker.min.mjs';
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items.map((item: any) => 'str' in item ? item.str : '').join(' ');
+      fullText += pageText + '\n';
+    }
+    return fullText.trim();
+  } catch (err) {
+    console.error('PDF extraction error:', err);
+    console.error('PDF extraction error details:', err instanceof Error ? err.message : JSON.stringify(err, null, 2));
+    throw new Error('Failed to extract text from PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
+  }
+}
+
 export async function extractResumeText(file: File) {
+  // Handle PDF files client-side
+  if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+    const text = await extractPdfText(file);
+    return { extractedText: text };
+  }
+  
+  // For other file types (images, docx, txt), send to backend
   const { data, error } = await apiClient.extractResumeText(file);
   
   if (error) {

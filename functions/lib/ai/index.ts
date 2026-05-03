@@ -3,6 +3,7 @@
 import { AIProvider, AIServiceConfig, ResumeProcessingInput, ResumeProcessingOutput } from './types';
 import { OpenAIProvider } from './openai-provider';
 import { AnthropicProvider } from './anthropic-provider';
+import { DeepSeekProvider } from './deepseek-provider';
 import { MockProvider } from './mock-provider';
 
 export * from './types';
@@ -28,6 +29,12 @@ export class AIService {
         }
         return new AnthropicProvider(config.apiKey, config.model || 'claude-3-5-sonnet-20241022');
 
+      case 'deepseek':
+        if (!config.apiKey) {
+          throw new Error('DeepSeek API key is required');
+        }
+        return new DeepSeekProvider(config.apiKey, config.model || 'deepseek-chat');
+
       case 'mock':
         return new MockProvider();
 
@@ -50,9 +57,10 @@ export function createAIService(env: {
   AI_PROVIDER?: string;
   OPENAI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
+  DEEPSEEK_API_KEY?: string;
   AI_MODEL?: string;
 }): AIService {
-  const provider = (env.AI_PROVIDER || 'mock') as 'openai' | 'anthropic' | 'mock';
+  const provider = (env.AI_PROVIDER || 'mock') as 'openai' | 'anthropic' | 'deepseek' | 'mock';
 
   let apiKey: string | undefined;
   
@@ -62,6 +70,9 @@ export function createAIService(env: {
       break;
     case 'anthropic':
       apiKey = env.ANTHROPIC_API_KEY;
+      break;
+    case 'deepseek':
+      apiKey = env.DEEPSEEK_API_KEY;
       break;
   }
 

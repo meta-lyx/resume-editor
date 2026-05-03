@@ -1,4 +1,5 @@
-// OpenAI Provider for AI Resume Processing
+// DeepSeek Provider for AI Resume Processing
+// Uses OpenAI-compatible API at https://api.deepseek.com
 
 import { 
   AIProvider, 
@@ -9,14 +10,16 @@ import {
   buildResumeOptimizationUserPrompt,
 } from './types';
 
-export class OpenAIProvider implements AIProvider {
-  name = 'openai';
+export class DeepSeekProvider implements AIProvider {
+  name = 'deepseek';
   private apiKey: string;
   private model: string;
+  private baseUrl: string;
 
-  constructor(apiKey: string, model: string = 'gpt-4o-mini') {
+  constructor(apiKey: string, model: string = 'deepseek-chat') {
     this.apiKey = apiKey;
     this.model = model;
+    this.baseUrl = 'https://api.deepseek.com/v1';
   }
 
   async processResume(input: ResumeProcessingInput): Promise<ResumeProcessingOutput> {
@@ -25,8 +28,7 @@ export class OpenAIProvider implements AIProvider {
     const userPrompt = buildResumeOptimizationUserPrompt(input.resumeText, input.jobDescription);
 
     try {
-      // First attempt: Request structured JSON output
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,21 +42,20 @@ export class OpenAIProvider implements AIProvider {
           ],
           temperature: 0.25,
           max_tokens: 4000,
-          response_format: { type: "json_object" }, // Request JSON mode
+          response_format: { type: 'json_object' },
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+        throw new Error(`DeepSeek API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
       }
 
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || '';
 
-      console.log('OpenAI raw response length:', content.length);
+      console.log('DeepSeek raw response length:', content.length);
 
-      // Parse the JSON response
       const parsed = this.parseStructuredResponse(content);
 
       return {
@@ -66,15 +67,14 @@ export class OpenAIProvider implements AIProvider {
         processingTime: Date.now() - startTime,
       };
     } catch (error: any) {
-      console.error('OpenAI processing error:', error);
-      
-      // Fallback: Try without JSON mode
+      console.error('DeepSeek processing error:', error);
+
       try {
-        console.log('Attempting fallback without JSON mode...');
+        console.log('Attempting DeepSeek fallback without JSON mode...');
         return await this.processResumeFallback(input, startTime);
       } catch (fallbackError) {
         console.error('Fallback also failed:', fallbackError);
-        throw new Error(`Failed to process resume with OpenAI: ${error.message}`);
+        throw new Error(`Failed to process resume with DeepSeek: ${error.message}`);
       }
     }
   }
@@ -82,7 +82,7 @@ export class OpenAIProvider implements AIProvider {
   private async processResumeFallback(input: ResumeProcessingInput, startTime: number): Promise<ResumeProcessingOutput> {
     const userPrompt = buildResumeOptimizationUserPrompt(input.resumeText, input.jobDescription);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -101,13 +101,12 @@ export class OpenAIProvider implements AIProvider {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+      throw new Error(`DeepSeek API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '';
 
-    // Try to extract JSON from the response
     const parsed = this.parseStructuredResponse(content);
 
     return {
@@ -128,18 +127,14 @@ export class OpenAIProvider implements AIProvider {
   } {
     let jsonContent = content.trim();
     
-    // Remove markdown code blocks if present
     if (jsonContent.startsWith('```')) {
       jsonContent = jsonContent.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
     }
 
     try {
       const parsed = JSON.parse(jsonContent);
-      
-      // Extract metadata
       const metadata = parsed.metadata || {};
       
-      // Build structured resume
       const structuredResume: StructuredResume = {
         personalInfo: parsed.personalInfo || { name: 'Resume' },
         summary: parsed.summary || '',
@@ -177,11 +172,10 @@ export class OpenAIProvider implements AIProvider {
       console.error('JSON parse error:', parseError);
       console.log('Raw content that failed to parse:', jsonContent.substring(0, 500));
       
-      // Return a minimal structure - try to extract name from first line
       const firstLine = content.split('\n').find(l => l.trim().length > 2 && !l.includes('@'))?.trim() || 'Resume';
       return {
         structuredResume: {
-          personalInfo: { name: firstLine.slice(0, 50) }, // Use first meaningful line as name
+          personalInfo: { name: firstLine.slice(0, 50) },
           summary: content,
           experience: [],
           education: [],
@@ -194,111 +188,73 @@ export class OpenAIProvider implements AIProvider {
     }
   }
 
-  // Convert structured resume back to plain text for preview
   private convertToPlainText(resume: StructuredResume): string {
     const lines: string[] = [];
 
-    // Personal info
-    if (resume.personalInfo.name) {
-      lines.push(resume.personalInfo.name);
-    }
-    if (resume.personalInfo.title) {
-      lines.push(resume.personalInfo.title);
-    }
+    if (resume.personalInfo.name) lines.push(resume.personalInfo.name);
+    if (resume.personalInfo.title) lines.push(resume.personalInfo.title);
     
     const contactParts: string[] = [];
     if (resume.personalInfo.email) contactParts.push(resume.personalInfo.email);
     if (resume.personalInfo.phone) contactParts.push(resume.personalInfo.phone);
     if (resume.personalInfo.location) contactParts.push(resume.personalInfo.location);
-    if (contactParts.length > 0) {
-      lines.push(contactParts.join(' | '));
-    }
+    if (contactParts.length > 0) lines.push(contactParts.join(' | '));
     
     const linkParts: string[] = [];
     if (resume.personalInfo.linkedin) linkParts.push(resume.personalInfo.linkedin);
     if (resume.personalInfo.github) linkParts.push(resume.personalInfo.github);
     if (resume.personalInfo.website) linkParts.push(resume.personalInfo.website);
-    if (linkParts.length > 0) {
-      lines.push(linkParts.join(' | '));
-    }
+    if (linkParts.length > 0) lines.push(linkParts.join(' | '));
     
     lines.push('');
 
-    // Summary
     if (resume.summary) {
       lines.push('PROFESSIONAL SUMMARY');
       lines.push(resume.summary);
       lines.push('');
     }
 
-    // Experience
     if (resume.experience.length > 0) {
       lines.push('EXPERIENCE');
       for (const exp of resume.experience) {
         lines.push(`${exp.title} at ${exp.company}`);
-        if (exp.location) {
-          lines.push(`${exp.location} | ${exp.startDate} - ${exp.endDate}`);
-        } else {
-          lines.push(`${exp.startDate} - ${exp.endDate}`);
-        }
-        for (const bullet of exp.bullets) {
-          lines.push(`• ${bullet}`);
-        }
+        lines.push(exp.location ? `${exp.location} | ${exp.startDate} - ${exp.endDate}` : `${exp.startDate} - ${exp.endDate}`);
+        for (const bullet of exp.bullets) lines.push(`• ${bullet}`);
         lines.push('');
       }
     }
 
-    // Education
     if (resume.education.length > 0) {
       lines.push('EDUCATION');
       for (const edu of resume.education) {
-        lines.push(`${edu.degree}`);
+        lines.push(edu.degree);
         lines.push(`${edu.school}${edu.gpa ? ` | GPA: ${edu.gpa}` : ''}`);
-        if (edu.graduationDate) {
-          lines.push(edu.graduationDate);
-        }
-        if (edu.highlights) {
-          for (const h of edu.highlights) {
-            lines.push(`• ${h}`);
-          }
-        }
+        if (edu.graduationDate) lines.push(edu.graduationDate);
+        if (edu.highlights) for (const h of edu.highlights) lines.push(`• ${h}`);
         lines.push('');
       }
     }
 
-    // Skills
     if (resume.skills.length > 0) {
       lines.push('SKILLS');
-      for (const skillGroup of resume.skills) {
-        if (skillGroup.category) {
-          lines.push(`${skillGroup.category}: ${skillGroup.items.join(', ')}`);
-        } else {
-          lines.push(skillGroup.items.join(', '));
-        }
+      for (const s of resume.skills) {
+        lines.push(s.category ? `${s.category}: ${s.items.join(', ')}` : s.items.join(', '));
       }
       lines.push('');
     }
 
-    // Certifications
-    if (resume.certifications && resume.certifications.length > 0) {
+    if (resume.certifications?.length) {
       lines.push('CERTIFICATIONS');
-      for (const cert of resume.certifications) {
-        lines.push(`• ${cert}`);
-      }
+      for (const cert of resume.certifications) lines.push(`• ${cert}`);
       lines.push('');
     }
 
-    // Projects
-    if (resume.projects && resume.projects.length > 0) {
+    if (resume.projects?.length) {
       lines.push('PROJECTS');
       for (const proj of resume.projects) {
         lines.push(proj.name);
         lines.push(proj.description);
-        if (proj.bullets) {
-          for (const bullet of proj.bullets) {
-            lines.push(`• ${bullet}`);
-          }
-        }
+        if (proj.bullets) for (const b of proj.bullets) lines.push(`• ${b}`);
         lines.push('');
       }
     }
