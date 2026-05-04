@@ -101,68 +101,45 @@ export function FeaturesPage() {
       <div className="orb orb-cyan w-[400px] h-[400px] top-1/3 -right-32 opacity-10" />
       <div className="orb orb-pink w-[300px] h-[300px] bottom-1/4 left-1/4 opacity-10" />
       
-      <div className="container mx-auto px-4 py-16 relative">
-        {/* Header */}
-        <div className="text-center mb-20 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-pear-400/10 border border-pear-400/20 text-pear-400 text-sm font-medium mb-6">
+      <div className="container mx-auto px-4 py-8 md:py-12 relative">
+        {/* Header — compact */}
+        <div className="text-center mb-8 animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-pear-400/10 border border-pear-400/20 text-pear-400 text-sm font-medium mb-4">
             <Zap className="w-4 h-4" />
             Powered by Advanced AI
           </div>
-          <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-3 leading-tight">
             Features That
             <br />
             <span className="gradient-text">Transform Careers</span>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
             Explore our AI-powered resume optimization tools designed to help you stand out in a competitive job market.
           </p>
         </div>
 
-        {/* Core features section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-24">
-          {features.map((feature, index) => (
-            <div 
-              key={feature.title}
-              className="glass-card-hover p-8 animate-fade-in-up"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className={`w-14 h-14 rounded-2xl ${getIconBg(feature.color)} border flex items-center justify-center mb-6`}>
-                <feature.icon className={`h-7 w-7 ${getIconColor(feature.color)}`} />
-          </div>
-              <h2 className="font-display text-xl font-bold mb-3">{feature.title}</h2>
-              <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-                {feature.description}
-          </p>
-              <ul className="space-y-2">
-                {feature.benefits.map((benefit, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-muted-foreground">{benefit}</span>
-            </li>
-                ))}
-          </ul>
-        </div>
-          ))}
-      </div>
+        {/* Core features — 3 columns, tighter */}
 
-      {/* Workflow section */}
-        <div className="mb-24">
-          <div className="text-center mb-16">
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
+        {/* Desktop: scrollable row; Mobile: stacked */}
+
+        {/* Workflow section — compact */}
+        <div className="mb-10">
+          <div className="text-center mb-8">
+            <h2 className="font-display text-2xl md:text-3xl font-bold mb-2">
               Three Simple Steps
             </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <p className="text-muted-foreground text-sm max-w-xl mx-auto">
               Our platform is designed to be intuitive, requiring just a few easy steps to get a professionally optimized resume.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {[
               {
                 step: 1,
                 icon: Upload,
                 title: "Upload Resume",
-                description: "Simply upload your current resume (PDF or Word format), or input your content directly.",
+                description: "Upload your current resume (PDF or Word), or input your content directly.",
               },
               {
                 step: 2,
@@ -179,56 +156,82 @@ export function FeaturesPage() {
             ].map((item, index) => (
               <div 
                 key={item.step}
-                className="glass-card p-8 relative animate-fade-in-up"
+                className="glass-card p-6 relative animate-fade-in-up"
                 style={{ animationDelay: `${index * 0.15}s` }}
               >
-                <div className="step-indicator absolute -top-5 -left-5">
+                <div className="step-indicator absolute -top-4 -left-4 text-sm">
                   {item.step}
-            </div>
-                <div className="text-center pt-4">
-                  <div className="w-16 h-16 rounded-2xl bg-pear-400/10 border border-pear-400/20 flex items-center justify-center mx-auto mb-6">
-                    <item.icon className="h-8 w-8 text-pear-400" />
-            </div>
-                  <h3 className="font-display text-lg font-semibold mb-3">{item.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
+                </div>
+                <div className="text-center pt-2">
+                  <div className="w-12 h-12 rounded-2xl bg-pear-400/10 border border-pear-400/20 flex items-center justify-center mx-auto mb-4">
+                    <item.icon className="h-6 w-6 text-pear-400" />
+                  </div>
+                  <h3 className="font-display text-base font-semibold mb-2">{item.title}</h3>
+                  <p className="text-muted-foreground text-xs leading-relaxed">
                     {item.description}
-            </p>
-          </div>
-            </div>
+                  </p>
+                </div>
+              </div>
             ))}
+          </div>
         </div>
-      </div>
 
-      {/* Call to action */}
-        <div className="relative glass-card p-12 md:p-16 text-center overflow-hidden animate-fade-in-up">
-          {/* Background glow */}
+        {/* Features grid — compact cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+          {features.map((feature, index) => (
+            <div 
+              key={feature.title}
+              className="glass-card-hover p-6 animate-fade-in-up"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <div className={`w-10 h-10 rounded-xl ${getIconBg(feature.color)} border flex items-center justify-center mb-4`}>
+                <feature.icon className={`h-5 w-5 ${getIconColor(feature.color)}`} />
+              </div>
+              <h2 className="font-display text-base font-bold mb-2">{feature.title}</h2>
+              <p className="text-muted-foreground text-xs mb-4 leading-relaxed">
+                {feature.description}
+              </p>
+              <ul className="space-y-1.5">
+                {feature.benefits.map((benefit, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs">
+                    <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA — compact */}
+        <div className="relative glass-card p-8 md:p-10 text-center overflow-hidden animate-fade-in-up">
           <div className="absolute inset-0 bg-gradient-to-br from-pear-400/10 via-transparent to-cyan-400/10" />
           
           <div className="relative">
-            <div className="w-20 h-20 rounded-3xl bg-pear-400/10 border border-pear-400/20 flex items-center justify-center mx-auto mb-8">
-              <Sparkles className="h-10 w-10 text-pear-400" />
+            <div className="w-12 h-12 rounded-2xl bg-pear-400/10 border border-pear-400/20 flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="h-6 w-6 text-pear-400" />
             </div>
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="font-display text-2xl md:text-3xl font-bold mb-2">
               Ready to Transform Your Resume?
             </h2>
-            <p className="text-xl text-muted-foreground mb-8 max-w-xl mx-auto">
+            <p className="text-base text-muted-foreground mb-5 max-w-xl mx-auto">
               Start using our AI-powered tools today and boost your job search success.
-        </p>
-        {user ? (
-          <Link to="/dashboard">
-                <Button size="xl" className="px-10 group">
+            </p>
+            {user ? (
+              <Link to="/dashboard">
+                <Button size="default" className="px-8 group">
                   Start Optimizing 
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-        ) : (
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            ) : (
               <Link to="/">
-                <Button size="xl" className="px-10 group">
+                <Button size="default" className="px-8 group">
                   Try for Free 
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-        )}
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>

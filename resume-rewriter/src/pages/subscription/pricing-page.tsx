@@ -118,17 +118,17 @@ export function PricingPage() {
       <div className="orb orb-pear w-[500px] h-[500px] -top-32 left-1/4 opacity-20" />
       <div className="orb orb-pink w-[400px] h-[400px] bottom-0 right-0 opacity-15" />
       
-      <div className="container mx-auto px-4 py-12 relative">
-        {/* Show onboarding context if coming from onboarding */}
+      <div className="container mx-auto px-4 py-6 md:py-8 relative">
+        {/* Onboarding banner — compact */}
         {isOnboarding && (
-          <div className="mb-8 glass-card p-6 max-w-4xl mx-auto border-green-500/30 animate-fade-in">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                <Check className="h-5 w-5 text-green-400" />
+          <div className="mb-6 glass-card p-4 max-w-4xl mx-auto border-green-500/30 animate-fade-in">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                <Check className="h-4 w-4 text-green-400" />
               </div>
               <div>
-                <h3 className="font-display font-semibold text-green-400 mb-1">Resume Ready!</h3>
-                <p className="text-muted-foreground text-sm">
+                <h3 className="font-display font-semibold text-green-400 text-sm mb-0.5">Resume Ready!</h3>
+                <p className="text-muted-foreground text-xs">
                   Your resume is ready to be customized. Choose a plan below to get your AI-optimized resume.
                   {!user && ' You\'ll create an account after selecting a plan.'}
                 </p>
@@ -255,70 +255,70 @@ export function PricingPage() {
           </div>
         )}
 
-        {/* Header */}
-        <div className="text-center mb-16 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-pear-400/10 border border-pear-400/20 text-pear-400 text-sm font-medium mb-6">
+        {/* Header — compact */}
+        <div className="text-center mb-6 animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-pear-400/10 border border-pear-400/20 text-pear-400 text-sm font-medium mb-4">
             <Zap className="w-4 h-4" />
             Simple, One-Time Pricing
           </div>
-          <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
+          <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">
             Choose Your Plan
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
             Get AI-powered resume customization with our flexible pricing options. 
             No subscriptions, no hidden fees.
           </p>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="glass-card p-8 animate-pulse">
-                <div className="h-12 w-12 bg-white/10 rounded-xl mb-6"></div>
-                <div className="h-8 bg-white/10 rounded w-1/2 mb-4"></div>
-                <div className="h-12 bg-white/10 rounded w-3/4 mb-6"></div>
-                <div className="space-y-3">
+              <div key={i} className="glass-card p-6 animate-pulse">
+                <div className="h-10 w-10 bg-white/10 rounded-xl mb-4"></div>
+                <div className="h-6 bg-white/10 rounded w-1/2 mb-3"></div>
+                <div className="h-10 bg-white/10 rounded w-3/4 mb-4"></div>
+                <div className="space-y-2">
                   {[1, 2, 3, 4].map((j) => (
-                    <div key={j} className="h-4 bg-white/10 rounded w-full"></div>
+                    <div key={j} className="h-3 bg-white/10 rounded w-full"></div>
                   ))}
                 </div>
               </div>
             ))}
           </div>
         ) : plans.length === 0 ? (
-          <div className="glass-card p-12 text-center max-w-md mx-auto">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h2 className="font-display text-xl font-semibold mb-2">No plans available</h2>
-            <p className="text-muted-foreground">Please check back later.</p>
+          <div className="glass-card p-10 text-center max-w-md mx-auto">
+            <AlertCircle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <h2 className="font-display text-xl font-semibold mb-1">No plans available</h2>
+            <p className="text-muted-foreground text-sm">Please check back later.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto animate-fade-in-up">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-fade-in-up">
             {/* Starter Plan */}
-            <div className="glass-card-hover p-8 relative">
-              <div className="w-12 h-12 rounded-xl bg-pear-400/10 flex items-center justify-center mb-6">
-                <Rocket className="h-6 w-6 text-pear-400" />
+            <div className="glass-card-hover p-6 relative">
+              <div className="w-10 h-10 rounded-xl bg-pear-400/10 flex items-center justify-center mb-4">
+                <Rocket className="h-5 w-5 text-pear-400" />
               </div>
-              <h2 className="font-display text-2xl font-bold mb-2">Starter</h2>
-              <div className="mb-6">
-                <span className="font-mono text-4xl font-bold text-pear-400">$9</span>
-                <span className="text-muted-foreground"> one-time</span>
+              <h2 className="font-display text-xl font-bold mb-1">Starter</h2>
+              <div className="mb-4">
+                <span className="font-mono text-3xl font-bold text-pear-400">$9</span>
+                <span className="text-muted-foreground text-sm"> one-time</span>
               </div>
               
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">3 Custom Resumes</span>
                 </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">ATS Optimization</span>
                 </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">Job Matching</span>
                 </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">Email Support</span>
                 </li>
               </ul>
@@ -337,41 +337,41 @@ export function PricingPage() {
               </Button>
             </div>
 
-            {/* Professional Plan - Most Popular */}
-            <div className="glass-card p-8 relative border-pear-400/30 shadow-glow">
+            {/* Professional Plan */}
+            <div className="glass-card p-6 relative border-pear-400/30 shadow-glow">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <span className="px-4 py-1 bg-gradient-pear text-background text-xs font-semibold rounded-full">
                   Most Popular
                 </span>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-pear-400/20 flex items-center justify-center mb-6">
-                <Star className="h-6 w-6 text-pear-400" />
+              <div className="w-10 h-10 rounded-xl bg-pear-400/20 flex items-center justify-center mb-4">
+                <Star className="h-5 w-5 text-pear-400" />
               </div>
-              <h2 className="font-display text-2xl font-bold mb-2">Professional</h2>
-              <div className="mb-6">
-                <span className="font-mono text-4xl font-bold text-pear-400">$19</span>
-                <span className="text-muted-foreground"> one-time</span>
+              <h2 className="font-display text-xl font-bold mb-1">Professional</h2>
+              <div className="mb-4">
+                <span className="font-mono text-3xl font-bold text-pear-400">$19</span>
+                <span className="text-muted-foreground text-sm"> one-time</span>
               </div>
               
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-foreground font-medium">10 Custom Resumes</span>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground font-medium text-xs">10 Custom Resumes</span>
                 </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">Advanced ATS Optimization</span>
                 </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">AI-Powered Job Matching</span>
                 </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">Priority Support</span>
                 </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">LinkedIn Tips</span>
                 </li>
               </ul>
@@ -390,35 +390,35 @@ export function PricingPage() {
             </div>
 
             {/* Lifetime Plan */}
-            <div className="glass-card-hover p-8 relative">
-              <div className="w-12 h-12 rounded-xl bg-pink-400/10 flex items-center justify-center mb-6">
-                <Crown className="h-6 w-6 text-pink-400" />
+            <div className="glass-card-hover p-6 relative">
+              <div className="w-10 h-10 rounded-xl bg-pink-400/10 flex items-center justify-center mb-4">
+                <Crown className="h-5 w-5 text-pink-400" />
               </div>
-              <h2 className="font-display text-2xl font-bold mb-2">Lifetime</h2>
-              <div className="mb-6">
-                <span className="font-mono text-4xl font-bold text-pink-400">$49</span>
-                <span className="text-muted-foreground"> one-time</span>
+              <h2 className="font-display text-xl font-bold mb-1">Lifetime</h2>
+              <div className="mb-4">
+                <span className="font-mono text-3xl font-bold text-pink-400">$49</span>
+                <span className="text-muted-foreground text-sm"> one-time</span>
               </div>
               
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-foreground font-semibold">Unlimited Resumes</span>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground font-semibold text-xs">Unlimited Resumes</span>
                 </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">All Pro Features</span>
                 </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">Lifetime Updates</span>
                 </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">VIP Support</span>
                 </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <li className="flex items-start gap-2 text-xs">
+                  <Check className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
                   <span className="text-muted-foreground">Early Access</span>
                 </li>
               </ul>
@@ -439,25 +439,25 @@ export function PricingPage() {
           </div>
         )}
 
-        {/* FAQ Section */}
-        <div className="mt-20 glass-card p-8 max-w-3xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-          <h2 className="font-display text-2xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
-          <div className="space-y-6">
+        {/* FAQ — compact */}
+        <div className="mt-10 glass-card p-6 max-w-3xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <h2 className="font-display text-lg font-bold mb-6 text-center">Frequently Asked Questions</h2>
+          <div className="space-y-4 text-sm">
             <div>
-              <h3 className="font-medium text-foreground mb-2">Are these one-time payments?</h3>
-              <p className="text-muted-foreground text-sm">Yes! All plans are one-time purchases. Pay once and use your credits whenever you need them. No recurring charges.</p>
+              <h3 className="font-medium text-foreground mb-1">Are these one-time payments?</h3>
+              <p className="text-muted-foreground text-xs">Yes! All plans are one-time purchases. Pay once and use your credits whenever you need them. No recurring charges.</p>
             </div>
-            <div className="border-t border-white/5 pt-6">
-              <h3 className="font-medium text-foreground mb-2">What happens if I use up all my custom resumes?</h3>
-              <p className="text-muted-foreground text-sm">You can purchase additional credits by selecting another plan, or upgrade to the Lifetime plan for unlimited resumes.</p>
+            <div className="border-t border-white/5 pt-4">
+              <h3 className="font-medium text-foreground mb-1">What happens if I use up all my custom resumes?</h3>
+              <p className="text-muted-foreground text-xs">You can purchase additional credits by selecting another plan, or upgrade to the Lifetime plan for unlimited resumes.</p>
             </div>
-            <div className="border-t border-white/5 pt-6">
-              <h3 className="font-medium text-foreground mb-2">Do the credits expire?</h3>
-              <p className="text-muted-foreground text-sm">No! Your credits never expire. Use them at your own pace.</p>
+            <div className="border-t border-white/5 pt-4">
+              <h3 className="font-medium text-foreground mb-1">Do the credits expire?</h3>
+              <p className="text-muted-foreground text-xs">No! Your credits never expire. Use them at your own pace.</p>
             </div>
-            <div className="border-t border-white/5 pt-6">
-              <h3 className="font-medium text-foreground mb-2">What payment methods are supported?</h3>
-              <p className="text-muted-foreground text-sm">We support all major credit and debit cards. All payments are securely processed through Stripe.</p>
+            <div className="border-t border-white/5 pt-4">
+              <h3 className="font-medium text-foreground mb-1">What payment methods are supported?</h3>
+              <p className="text-muted-foreground text-xs">We support all major credit and debit cards. All payments are securely processed through Stripe.</p>
             </div>
           </div>
         </div>
