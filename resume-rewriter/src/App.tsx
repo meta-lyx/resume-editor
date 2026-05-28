@@ -22,6 +22,7 @@ import { PricingPage } from '@/pages/subscription/pricing-page';
 import { TemplatesPage } from '@/pages/templates-page';
 import { ProfilePage } from '@/pages/profile-page';
 import { SubscriptionPage } from '@/pages/subscription/subscription-page';
+import { ResumeHistoryPage } from '@/pages/history-page';
 
 // 保护路由组件
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -33,7 +34,7 @@ export default function App() {
         <Router>
           <div className="flex flex-col min-h-screen">
             <NavBar />
-            <main className="flex-grow">
+            <main className="flex-grow flex flex-col">
               <Routes>
                 <Route path="/" element={<OnboardingPage />} />
                 <Route path="/home" element={<HomePage />} />
@@ -46,6 +47,7 @@ export default function App() {
                 
                 {/* Dashboard is accessible without login (users can upload and process, but need login to download) */}
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/history" element={<ResumeHistoryPage />} />
                 
                 {/* 受保护路由 */}
                 <Route path="/profile" element={

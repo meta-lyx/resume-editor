@@ -13,6 +13,13 @@ import { toast } from 'react-hot-toast';
 import { extractResumeText } from '@/services/resume-service';
 import { apiClient } from '@/lib/api-client';
 import { saveResumeData, loadResumeData, clearResumeData } from '@/lib/resume-storage';
+import {
+  addResumeHistoryEntry,
+  getResumeHistoryEntry,
+  recordDownload,
+  type ResumeHistoryEntry,
+} from '@/lib/resume-history';
+import { ResumeHistorySection } from '@/components/dashboard/resume-history-section';
 import { pdf } from '@react-pdf/renderer';
 import { ResumePDF, type ResumeData as PDFResumeData } from '@/components/pdf/resume-pdf-template';
 import {
@@ -105,6 +112,10 @@ export function DashboardPage() {
   // Template selector modal state
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  // Tracks the active history entry id, when one was loaded into the workspace.
+  // Used to record downloads against that entry without creating a duplicate.
+  const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
 
   const showPaymentModalSafely = () => {
     if (authLoading) return;
@@ -202,7 +213,95 @@ export function DashboardPage() {
     }
   };
 
+  const loadHistoryEntryIntoState = (entry: ResumeHistoryEntry, options: { duplicate?: boolean } = {}) => {
+    const duplicate = options.duplicate === true;
+
+    setExtractedText(entry.extractedText);
+    setResumeTitle(entry.resumeTitle);
+    setJobDescription(entry.jobDescription);
+    setResumeFile(null);
+
+    if (duplicate) {
+      // Restore inputs only, let the user re-process with adjustments.
+      setCustomizedResume('');
+      setStructuredResume(null);
+      setResumeProcessed(false);
+      setShowOptimizedComparison(false);
+      setShowInitialReport(false);
+      setIsAnalyzing(false);
+      setAiProcessingTime(0);
+      setAiAtsScore(0);
+      setAiKeywordsMatched([]);
+      setAiSuggestions([]);
+      setActiveHistoryId(null);
+
+      clearResumeData();
+      saveResumeData({
+        extractedText: entry.extractedText,
+        resumeTitle: entry.resumeTitle,
+        jobDescription: entry.jobDescription,
+        resumeFileName: entry.resumeFileName,
+      });
+    } else {
+      setCustomizedResume(entry.customizedResume);
+      setStructuredResume(entry.structuredResume ?? null);
+      setResumeProcessed(true);
+      setShowOptimizedComparison(true);
+      setShowInitialReport(false);
+      setIsAnalyzing(false);
+      setAiProcessingTime(entry.aiProcessingTime ?? 0);
+      setAiAtsScore(entry.aiAtsScore ?? 0);
+      setAiKeywordsMatched(entry.aiKeywordsMatched ?? []);
+      setAiSuggestions(entry.aiSuggestions ?? []);
+      setActiveHistoryId(entry.id);
+
+      clearResumeData();
+      saveResumeData({
+        extractedText: entry.extractedText,
+        resumeTitle: entry.resumeTitle,
+        jobDescription: entry.jobDescription,
+        customizedResume: entry.customizedResume,
+        structuredResume: entry.structuredResume,
+        resumeProcessed: true,
+        resumeFileName: entry.resumeFileName,
+        aiProcessingTime: entry.aiProcessingTime,
+        aiAtsScore: entry.aiAtsScore,
+        aiKeywordsMatched: entry.aiKeywordsMatched,
+        aiSuggestions: entry.aiSuggestions,
+      });
+    }
+
+    setHasPreviousWork(false);
+  };
+
   useEffect(() => {
+    const historyId = searchParams.get('historyId');
+    if (historyId) {
+      const entry = getResumeHistoryEntry(historyId);
+      if (entry) {
+        const mode = searchParams.get('mode');
+        const action = searchParams.get('action');
+        const duplicate = mode === 'duplicate';
+        loadHistoryEntryIntoState(entry, { duplicate });
+        if (!duplicate && action === 'download') {
+          setTimeout(() => setShowTemplateSelector(true), 200);
+        }
+        const clearedParams = new URLSearchParams(searchParams);
+        clearedParams.delete('historyId');
+        clearedParams.delete('mode');
+        clearedParams.delete('action');
+        setSearchParams(clearedParams, { replace: true });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      toast.error('That history entry is no longer available');
+      const clearedParams = new URLSearchParams(searchParams);
+      clearedParams.delete('historyId');
+      clearedParams.delete('mode');
+      clearedParams.delete('action');
+      setSearchParams(clearedParams, { replace: true });
+    }
+
     const onboardingFile = sessionStorage.getItem('onboarding_resume_file');
     const onboardingJob = sessionStorage.getItem('onboarding_job_description');
     const onboardingText = sessionStorage.getItem('onboarding_resume_text');
@@ -382,8 +481,9 @@ export function DashboardPage() {
         setAiAtsScore(0);
         setAiKeywordsMatched([]);
         setAiSuggestions([]);
+        setActiveHistoryId(null);
         
-        // Clear everything from localStorage and save only new resume data
+        // Clear active workflow state — resume history is preserved separately.
         clearResumeData();
         saveResumeData({
           extractedText: text,
@@ -523,7 +623,27 @@ export function DashboardPage() {
         aiKeywordsMatched: data.result.keywordsMatched,
         aiSuggestions: data.result.suggestions,
       });
-      
+
+      // Record this customization in local resume history (auto-named from the JD).
+      try {
+        const savedFileName = loadResumeData().resumeFileName;
+        const entry = addResumeHistoryEntry({
+          resumeFileName: resumeFile?.name || savedFileName,
+          resumeTitle,
+          extractedText,
+          jobDescription,
+          customizedResume: cleanResume,
+          structuredResume: pdfResumeData || undefined,
+          aiAtsScore: data.result.atsScore,
+          aiKeywordsMatched: data.result.keywordsMatched,
+          aiSuggestions: data.result.suggestions,
+          aiProcessingTime: data.result.processingTime,
+        });
+        setActiveHistoryId(entry.id);
+      } catch (historyError) {
+        console.error('Failed to save resume history entry:', historyError);
+      }
+
       // Analysis complete - stop analyzing animation but keep showing report
       setIsAnalyzing(false);
       setHasPreviousWork(false); // Clear the "resume previous work" state since we just processed
@@ -651,6 +771,9 @@ export function DashboardPage() {
       }
       
       await downloadResumeFileWithTemplate(templateId);
+      if (activeHistoryId) {
+        recordDownload(activeHistoryId, templateId);
+      }
       setShowTemplateSelector(false);
     } catch (err: any) {
       console.error('Error during template download:', err);
@@ -947,6 +1070,7 @@ export function DashboardPage() {
     setAiKeywordsMatched([]);
     setAiSuggestions([]);
     setHasPreviousWork(false);
+    setActiveHistoryId(null);
     clearResumeData();
   };
   
@@ -1021,7 +1145,7 @@ export function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Area */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             <div className="glass-card p-6 md:p-8 animate-fade-in-up">
               
               {/* Show Initial ATS Report (intermediate step) */}
@@ -1317,6 +1441,28 @@ export function DashboardPage() {
                 </>
               )}
             </div>
+
+            {/* Resume History — auto-saved local list, named from job description */}
+            <ResumeHistorySection
+              variant="dashboard"
+              limit={3}
+              hideWhenEmpty
+              className="animate-fade-in-up"
+              onOpen={(entry) => {
+                loadHistoryEntryIntoState(entry);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onDuplicate={(entry) => {
+                loadHistoryEntryIntoState(entry, { duplicate: true });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                toast.success('Loaded — adjust the job description and reprocess');
+              }}
+              onDownload={(entry) => {
+                loadHistoryEntryIntoState(entry);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setTimeout(() => setShowTemplateSelector(true), 150);
+              }}
+            />
           </div>
 
           {/* Sidebar */}

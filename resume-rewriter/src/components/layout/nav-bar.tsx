@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
-import { LogIn, Menu, User, X, ChevronDown } from 'lucide-react';
+import { LogIn, Menu, User, X, ChevronDown, History } from 'lucide-react';
 import { useState } from 'react';
 
 function Logo() {
@@ -55,6 +55,13 @@ export function NavBar() {
             className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
           >
             Pricing
+          </Link>
+          <Link 
+            to="/history" 
+            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted inline-flex items-center gap-1.5"
+          >
+            <History className="h-3.5 w-3.5" />
+            History
           </Link>
           
           <div className="w-px h-6 bg-border mx-2" />
@@ -172,6 +179,14 @@ export function NavBar() {
                 onClick={() => setMenuOpen(false)}
               >
                 Pricing
+              </Link>
+              <Link
+                to="/history"
+                className="px-4 py-3 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors inline-flex items-center gap-2"
+                onClick={() => setMenuOpen(false)}
+              >
+                <History className="h-4 w-4" />
+                History
               </Link>
               
               <div className="h-px bg-border my-2" />

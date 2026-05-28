@@ -112,7 +112,7 @@ export function PricingPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative flex-1 flex flex-col overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 grid-pattern opacity-30" />
       <div className="orb orb-pear w-[500px] h-[500px] -top-32 left-1/4 opacity-20" />

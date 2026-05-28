@@ -61,7 +61,7 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-center py-12 px-4 overflow-hidden">
+    <div className="relative flex-1 flex flex-col justify-center py-12 px-4 overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 grid-pattern opacity-30" />
       <div className="orb orb-pear w-[400px] h-[400px] -top-32 -left-32 opacity-20" />
