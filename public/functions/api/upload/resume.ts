@@ -129,7 +129,12 @@ export async function onRequest(context: EventContext<Env, any, any>) {
     if (env.GOOGLE_CLOUD_API_KEY) {
       try {
         console.log('Starting OCR extraction...');
-        const ocrResult = await performOCR(fileBuffer, file.type, env.GOOGLE_CLOUD_API_KEY);
+        const ocrResult = await performOCR(
+          fileBuffer,
+          file.type,
+          env.GOOGLE_CLOUD_API_KEY,
+          file.name
+        );
         extractedText = ocrResult.text;
         ocrConfidence = ocrResult.confidence;
         ocrPages = ocrResult.pages;

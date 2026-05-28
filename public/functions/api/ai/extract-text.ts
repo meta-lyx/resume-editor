@@ -2,7 +2,7 @@
 import { performOCR } from '../../../lib/ocr';
 
 interface Env {
-  GOOGLE_CLOUD_API_KEY: string;
+  GOOGLE_CLOUD_API_KEY?: string;
 }
 
 export async function onRequest(context: { request: Request; env: Env }) {
@@ -58,23 +58,17 @@ export async function onRequest(context: { request: Request; env: Env }) {
       });
     }
 
-    // Check for Google Cloud API key
-    if (!env.GOOGLE_CLOUD_API_KEY) {
-      return new Response(JSON.stringify({
-        error: 'OCR service not configured. Please add GOOGLE_CLOUD_API_KEY.',
-        success: false,
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    }
-
     // Read file content for OCR
     const fileBuffer = await file.arrayBuffer();
 
     // Extract text using appropriate method based on file format
     console.log(`Starting text extraction for ${file.name} (${file.type})...`);
-    const ocrResult = await performOCR(fileBuffer, file.type, env.GOOGLE_CLOUD_API_KEY);
+    const ocrResult = await performOCR(
+      fileBuffer,
+      file.type,
+      env.GOOGLE_CLOUD_API_KEY ?? '',
+      file.name
+    );
     
     console.log(`Extraction completed: ${ocrResult.text.length} chars, ${ocrResult.pages} pages, ${(ocrResult.confidence * 100).toFixed(1)}% confidence, method: ${ocrResult.extractionMethod}`);
 

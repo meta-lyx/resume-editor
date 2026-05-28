@@ -341,7 +341,7 @@ class ApiClient {
       if (!response.ok) {
         return {
           error: {
-            message: data?.message || 'Failed to extract text',
+            message: data?.error || data?.message || 'Failed to extract text',
           },
         };
       }

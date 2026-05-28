@@ -9,6 +9,7 @@ import { resumeRoutes } from './routes/resume';
 import { subscriptionRoutes } from './routes/subscription';
 import { uploadRoutes } from './routes/upload';
 import { aiRoutes } from './routes/ai';
+import { extractTextRoutes } from './routes/extract-text';
 
 // Define Cloudflare Worker environment bindings
 export type Env = {
@@ -27,6 +28,7 @@ export type Env = {
   BETTER_AUTH_SECRET: string;
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
+  GOOGLE_CLOUD_API_KEY?: string;
   
   // Environment variables
   NODE_ENV: string;
@@ -75,6 +77,7 @@ app.route('/api/resumes', resumeRoutes);
 app.route('/api/subscriptions', subscriptionRoutes);
 app.route('/api/upload', uploadRoutes);
 app.route('/api/ai', aiRoutes);
+app.route('/api/ai/extract-text', extractTextRoutes);
 
 // 404 handler
 app.notFound((c) => {
