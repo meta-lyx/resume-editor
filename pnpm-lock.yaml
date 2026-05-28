@@ -59,6 +59,9 @@ importers:
       mammoth:
         specifier: ^1.8.0
         version: 1.11.0
+      unpdf:
+        specifier: ^1.4.0
+        version: 1.6.2
       openai:
         specifier: ^4.76.0
         version: 4.104.0(ws@8.18.3)(zod@3.25.76)
@@ -3003,6 +3006,9 @@ packages:
   unenv@2.0.0-rc.14:
     resolution: {integrity: sha512-od496pShMen7nOy5VmVJCnq8rptd45vh6Nx/r2iPbrba6pa6p+tS2ywuIHRZ/OBvSbQZB0kWvpO9XBNVFXHD3Q==}
 
+  unpdf@1.6.2:
+    resolution: {integrity: sha512-zQ80ySoPuPHOsvIoRp/nJyQt8TOUoTh1+WBCGcBvlddQNgKDLRwm0AY3x8Q35I7+kIiRSgqMx+Ma2pl9McIp7A==}
+
   update-browserslist-db@1.1.4:
     resolution: {integrity: sha512-q0SPT4xyU84saUX+tomz1WLkxUbuaJnR1xWt17M7fJtEJigJeWUNGUqrauFXsHnqev9y9JTRGwk13tFBuKby4A==}
     hasBin: true
@@ -5693,6 +5699,8 @@ snapshots:
       ohash: 2.0.11
       pathe: 2.0.3
       ufo: 1.6.1
+
+  unpdf@1.6.2: {}
 
   update-browserslist-db@1.1.4(browserslist@4.28.0):
     dependencies:
