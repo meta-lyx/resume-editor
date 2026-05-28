@@ -261,11 +261,47 @@ export const extractTextFromPDF = extractTextFromPDFWithVision;
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  const globalWithBuffer = globalThis as typeof globalThis & {
+    Buffer?: { from(input: Uint8Array): { toString(encoding: string): string } };
+  };
+
+  if (globalWithBuffer.Buffer) {
+    return globalWithBuffer.Buffer.from(bytes).toString('base64');
   }
-  return btoa(binary);
+
+  if (typeof btoa === 'function') {
+    let binary = '';
+    const CHUNK_SIZE = 0x8000;
+    for (let i = 0; i < bytes.byteLength; i += CHUNK_SIZE) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK_SIZE));
+    }
+    return btoa(binary);
+  }
+
+  // Final fallback for environments with neither Buffer nor btoa.
+  const base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let output = '';
+  let i = 0;
+
+  while (i + 2 < bytes.length) {
+    const triplet = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
+    output += base64Chars[(triplet >> 18) & 0x3f];
+    output += base64Chars[(triplet >> 12) & 0x3f];
+    output += base64Chars[(triplet >> 6) & 0x3f];
+    output += base64Chars[triplet & 0x3f];
+    i += 3;
+  }
+
+  if (i < bytes.length) {
+    const remaining = bytes.length - i;
+    const triplet = (bytes[i] << 16) | (remaining === 2 ? bytes[i + 1] << 8 : 0);
+    output += base64Chars[(triplet >> 18) & 0x3f];
+    output += base64Chars[(triplet >> 12) & 0x3f];
+    output += remaining === 2 ? base64Chars[(triplet >> 6) & 0x3f] : '=';
+    output += '=';
+  }
+
+  return output;
 }
 
 async function loadMammoth() {
