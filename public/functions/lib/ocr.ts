@@ -282,8 +282,18 @@ export async function extractTextFromDOCX(fileBuffer: ArrayBuffer): Promise<OCRR
     console.log('Extracting text from DOCX using mammoth...');
 
     const mammoth = await loadMammoth();
-    const buffer = new Uint8Array(fileBuffer);
-    const result = await mammoth.extractRawText({ buffer });
+    // In Workers/browser-like runtimes mammoth expects "arrayBuffer".
+    // Keep a fallback to "buffer" for environments using Node-style options.
+    let result: { value: string; messages?: unknown[] };
+    try {
+      result = await mammoth.extractRawText({ arrayBuffer: fileBuffer } as unknown as Record<string, unknown>);
+    } catch (error) {
+      if (!getErrorMessage(error).includes('Could not find file in options')) {
+        throw error;
+      }
+      const buffer = new Uint8Array(fileBuffer);
+      result = await mammoth.extractRawText({ buffer } as unknown as Record<string, unknown>);
+    }
 
     if (!result.value || result.value.trim().length === 0) {
       throw new Error('DOCX file appears to be empty or could not be parsed');
