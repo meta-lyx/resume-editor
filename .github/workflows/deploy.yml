@@ -47,13 +47,6 @@ jobs:
           # package.json is required so Pages can bundle function dependencies (mammoth, unpdf)
           cp package.json pnpm-lock.yaml resume-rewriter/dist/
       
-      - name: Apply D1 migrations
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: d1 migrations apply ai-resume-editor-db --remote --config wrangler.workers.toml
-
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
