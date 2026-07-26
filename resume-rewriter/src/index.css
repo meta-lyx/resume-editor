@@ -118,6 +118,25 @@
     background-image: linear-gradient(135deg, #10B981 0%, #059669 100%);
   }
   
+  /* Decorative background orbs (absolute so they never take layout space) */
+  .orb {
+    @apply absolute rounded-full pointer-events-none;
+    filter: blur(90px);
+    z-index: 0;
+  }
+
+  .orb-pear {
+    background: radial-gradient(circle, rgba(163, 230, 53, 0.45) 0%, transparent 70%);
+  }
+
+  .orb-cyan {
+    background: radial-gradient(circle, rgba(34, 211, 238, 0.4) 0%, transparent 70%);
+  }
+
+  .orb-pink {
+    background: radial-gradient(circle, rgba(244, 114, 182, 0.4) 0%, transparent 70%);
+  }
+
   /* Subtle grid pattern */
   .grid-pattern {
     background-image: 

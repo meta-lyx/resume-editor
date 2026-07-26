@@ -115,8 +115,10 @@ function updateMetadata(pathname: string) {
   canonical.href = canonicalUrl;
 }
 
+const GA_MEASUREMENT_ID = 'G-GRHXEYN0RR';
+
 function trackPageView(path: string) {
-  const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+  const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID || GA_MEASUREMENT_ID;
   if (!measurementId) return;
 
   if (typeof window.gtag !== 'function') {
