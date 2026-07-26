@@ -7,6 +7,7 @@ import { queryClient } from '@/lib/query-client';
 // 布局组件
 import { NavBar } from '@/components/layout/nav-bar';
 import { Footer } from '@/components/layout/footer';
+import { SiteRouterEffects } from '@/components/site/site-router-effects';
 
 // 页面
 import { HomePage } from '@/pages/home-page';
@@ -32,9 +33,10 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
+          <SiteRouterEffects />
           <div className="flex flex-col min-h-screen">
             <NavBar />
-            <main className="flex-grow flex flex-col">
+            <main className="flex-grow flex flex-col min-h-[calc(100svh-65px)]">
               <Routes>
                 <Route path="/" element={<OnboardingPage />} />
                 <Route path="/home" element={<HomePage />} />

@@ -46,12 +46,20 @@ app.use('*', secureHeaders());
 // CORS
 app.use('*', cors({
   origin: (origin) => {
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return origin;
+    try {
+      const hostname = new URL(origin).hostname;
+      const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+      const isProduction = hostname === 'pixelpear.io' || hostname === 'www.pixelpear.io';
+      const isCloudflarePreview =
+        hostname.endsWith('.pages.dev') || hostname.endsWith('.workers.dev');
+
+      if (isLocal || isProduction || isCloudflarePreview) {
+        return origin;
+      }
+    } catch {
+      return null;
     }
-    if (origin.includes('pages.dev') || origin.includes('workers.dev')) {
-      return origin;
-    }
+
     return null;
   },
   credentials: true,

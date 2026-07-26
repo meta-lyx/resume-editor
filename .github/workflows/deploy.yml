@@ -37,6 +37,8 @@ jobs:
       - name: Build React app
         working-directory: ./resume-rewriter
         run: pnpm run build
+        env:
+          VITE_GA_MEASUREMENT_ID: G-GRHXEYN0RR
       
       - name: Prepare Pages deploy bundle
         run: |

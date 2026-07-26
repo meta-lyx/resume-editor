@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /history
+Disallow: /login
+Disallow: /my-resumes
+Disallow: /optimize/
+Disallow: /profile
+Disallow: /register
+Disallow: /subscription
+
+Sitemap: https://pixelpear.io/sitemap.xml

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Mail, Lock, Loader2, X, Sparkles } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { apiClient } from '@/lib/api-client';
+import { ModalPortal } from '@/components/ui/modal-portal';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -101,8 +102,9 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="glass-card max-w-md w-full p-8 relative animate-scale-in">
+    <ModalPortal>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start sm:items-center justify-center z-[100] p-4 overflow-y-auto overscroll-contain animate-fade-in">
+        <div className="glass-card max-w-md w-full max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 sm:p-8 my-auto relative animate-scale-in">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 hover:bg-white/5 rounded-lg transition-colors"
@@ -348,7 +350,8 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
             <a href="/privacy" className="text-pear-400 hover:underline">Privacy Policy</a>
           </p>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
