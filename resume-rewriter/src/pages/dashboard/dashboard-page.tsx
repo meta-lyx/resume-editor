@@ -99,6 +99,7 @@ export function DashboardPage() {
     usageCount: number;
   } | null>(null);
   const [hasPreviousWork, setHasPreviousWork] = useState(false); // Track if there's previous work to resume
+  const [autoProcessQueued, setAutoProcessQueued] = useState(false); // Start AI processing automatically after onboarding handoff
 
   // AI processing results
   const [aiProcessingTime, setAiProcessingTime] = useState<number>(0);
@@ -327,6 +328,9 @@ export function DashboardPage() {
       sessionStorage.removeItem('onboarding_resume_text');
       
       setHasPreviousWork(false); // New onboarding data, no previous work banner
+      // The user already clicked "Customize My Resume" on the onboarding page,
+      // so kick off AI processing without requiring a second click.
+      setAutoProcessQueued(true);
     } else {
       // Check for previous work but don't auto-load it
       loadPersistedData(false);
@@ -468,6 +472,13 @@ export function DashboardPage() {
       try {
         const result = await extractResumeText(file);
         const text = result.extractedText || result.text || '';
+
+        if (text.trim().length < 30) {
+          throw new Error(
+            'We could not read any text from this file. If it is a scanned or image-based PDF, try exporting it again from your editor, or upload it as a PNG/JPG image instead.'
+          );
+        }
+
         setExtractedText(text);
         
         // Clear ALL old state when new resume is uploaded - force fresh evaluation
@@ -493,6 +504,8 @@ export function DashboardPage() {
         
         toast.success('Resume uploaded and text extracted successfully');
       } catch (error: any) {
+        setResumeFile(null);
+        setResumeTitle('');
         toast.error(error.message || 'File upload failed');
         console.error('File upload error:', error);
       } finally {
@@ -658,6 +671,18 @@ export function DashboardPage() {
       setLoading(false);
     }
   };
+
+  // Start processing automatically after the onboarding handoff, once the
+  // extracted text and job description have been loaded into state.
+  useEffect(() => {
+    if (!autoProcessQueued) return;
+    if (authLoading || loading) return;
+    if (!extractedText || jobDescription.trim().length < 50) return;
+
+    setAutoProcessQueued(false);
+    handleProcessResume();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoProcessQueued, authLoading, loading, extractedText, jobDescription]);
 
   // Handle "View My AI-Optimized Resume" button click
   const handleViewOptimized = () => {

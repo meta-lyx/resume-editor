@@ -21,6 +21,9 @@ export function OnboardingPage() {
     accept: {
       'application/pdf': ['.pdf'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'image/png': ['.png'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/webp': ['.webp'],
     },
     maxFiles: 1,
     disabled: loading,
@@ -29,33 +32,33 @@ export function OnboardingPage() {
 
       const file = acceptedFiles[0];
       setResumeFile(file);
-      
+      setExtractedText('');
+
       setLoading(true);
       try {
-        // Actually extract text from the resume file
         const result = await extractResumeText(file);
-        
-        if (result?.extractedText || result?.text) {
-          const text = result.extractedText || result.text;
-          setExtractedText(text);
-          toast.success('Resume uploaded and text extracted successfully!');
-        } else {
-          // Fallback if extraction fails but file is uploaded
-          setExtractedText(`Resume file uploaded: ${file.name}\n\nText extraction pending...`);
-          toast.success('Resume uploaded! Text will be extracted when processing.');
+        const text = result?.extractedText || result?.text || '';
+
+        if (text.trim().length < 30) {
+          throw new Error(
+            'We could not read any text from this file. If it is a scanned or image-based PDF, try exporting it again from your editor, or upload it as a PNG/JPG image instead.'
+          );
         }
+
+        setExtractedText(text);
+        toast.success('Resume uploaded and text extracted successfully!');
       } catch (error: any) {
         console.error('Text extraction error:', error);
-        // Still keep the file, just note extraction failed
-        setExtractedText(`Resume file uploaded: ${file.name}\n\nText extraction pending...`);
-        toast.success('Resume uploaded!');
+        setResumeFile(null);
+        setExtractedText('');
+        toast.error(error?.message || 'Failed to extract text from your resume. Please try another file.');
       } finally {
         setLoading(false);
       }
     },
   });
 
-  const canProceed = resumeFile && jobDescription.trim().length > 50;
+  const canProceed = resumeFile && extractedText && jobDescription.trim().length > 50;
 
   const handleCustomizeResume = () => {
     if (!canProceed) {
@@ -129,7 +132,7 @@ export function OnboardingPage() {
                 </div>
                 <div>
                   <h2 className="font-display text-xl font-semibold text-foreground">Upload Your Resume</h2>
-                  <p className="text-sm text-muted-foreground">PDF or Word documents accepted</p>
+                  <p className="text-sm text-muted-foreground">PDF, Word, or image files accepted</p>
                 </div>
               </div>
 
@@ -169,7 +172,7 @@ export function OnboardingPage() {
                 ) : (
                   <>
                     <p className="text-foreground font-medium mb-2">Drag and drop your resume, or click to browse</p>
-                    <p className="text-muted-foreground text-sm">Supports PDF and Word documents</p>
+                    <p className="text-muted-foreground text-sm">Supports PDF, Word, and image files</p>
                   </>
                 )}
               </div>
@@ -257,9 +260,11 @@ export function OnboardingPage() {
 
               {!canProceed && (
                 <p className="text-muted-foreground text-sm mt-4">
-                  {!resumeFile 
-                    ? 'Upload your resume to continue' 
-                    : `Add ${50 - jobDescription.length} more characters to the job description`
+                  {!resumeFile || !extractedText
+                    ? 'Upload your resume to continue'
+                    : jobDescription.length <= 50
+                      ? `Add ${Math.max(51 - jobDescription.length, 1)} more characters to the job description`
+                      : 'Almost there...'
                   }
                 </p>
               )}

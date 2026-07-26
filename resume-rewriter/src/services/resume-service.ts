@@ -72,43 +72,57 @@ export async function deleteResume(resumeId: string) {
   }
 }
 
-// Client-side PDF text extraction
+// Client-side PDF text extraction (only works for PDFs with a selectable text layer)
 async function extractPdfText(file: File): Promise<string> {
-  try {
-    const pdfjsLib = await import('pdfjs-dist');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/build/pdf.worker.min.mjs';
-    
-    const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-    const pdf = await loadingTask.promise;
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      const pageText = content.items.map((item: any) => 'str' in item ? item.str : '').join(' ');
-      fullText += pageText + '\n';
-    }
-    return fullText.trim();
-  } catch (err) {
-    console.error('PDF extraction error:', err);
-    console.error('PDF extraction error details:', err instanceof Error ? err.message : JSON.stringify(err, null, 2));
-    throw new Error('Failed to extract text from PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
+  const pdfjsLib = await import('pdfjs-dist');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/build/pdf.worker.min.mjs';
+
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  const pdf = await loadingTask.promise;
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items.map((item: any) => 'str' in item ? item.str : '').join(' ');
+    fullText += pageText + '\n';
   }
+  return fullText.trim();
 }
 
-export async function extractResumeText(file: File) {
-  // Handle PDF files client-side
-  if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-    const text = await extractPdfText(file);
-    return { extractedText: text };
-  }
-  
-  // For other file types (images, docx, txt), send to backend
+async function extractViaBackend(file: File) {
   const { data, error } = await apiClient.extractResumeText(file);
-  
+
   if (error) {
     throw new Error(error.message);
   }
-  
+
   return data;
+}
+
+// Below this many characters we assume the PDF is image-based (scanned or
+// exported from a design tool) and needs server-side OCR instead.
+const MIN_EXTRACTED_TEXT_LENGTH = 50;
+
+export async function extractResumeText(file: File) {
+  // For PDFs, try fast client-side extraction of the text layer first.
+  if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+    let clientText = '';
+    try {
+      clientText = await extractPdfText(file);
+    } catch (err) {
+      console.warn('Client-side PDF extraction failed, falling back to server OCR:', err);
+    }
+
+    if (clientText.length >= MIN_EXTRACTED_TEXT_LENGTH) {
+      return { extractedText: clientText };
+    }
+
+    // No usable text layer (e.g. scanned or image-based PDF): use the
+    // backend, which parses PDFs server-side and falls back to Vision OCR.
+    return extractViaBackend(file);
+  }
+
+  // Other file types (images, docx) are always handled by the backend.
+  return extractViaBackend(file);
 }
