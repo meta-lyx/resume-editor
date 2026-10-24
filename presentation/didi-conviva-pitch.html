@@ -1,0 +1,1685 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1280, initial-scale=1" />
+  <title>Didi Global — Yingxuan Li · Conviva Case Study</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg: #08080f;
+      --bg-2: #0c0c16;
+      --surface: #13131e;
+      --surface-light: #1a1a28;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --text: #f2f2f5;
+      --muted: rgba(255, 255, 255, 0.62);
+      --faint: rgba(255, 255, 255, 0.4);
+      --pear: #a3e635;
+      --pear-soft: rgba(163, 230, 53, 0.14);
+      --pear-line: rgba(163, 230, 53, 0.4);
+      --cyan: #22d3ee;
+      --cyan-soft: rgba(34, 211, 238, 0.14);
+      --pink: #f472b6;
+      --pink-soft: rgba(244, 114, 182, 0.14);
+      --amber: #fbbf24;
+      --red: #f87171;
+      --green: #4ade80;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    .display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Background ambience */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(80px);
+      opacity: 0.45;
+    }
+    body::before {
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, var(--pear-soft), transparent 70%);
+      top: -300px; left: -200px;
+    }
+    body::after {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, var(--cyan-soft), transparent 70%);
+      bottom: -200px; right: -200px;
+    }
+
+    .grid-overlay {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 64px 64px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 5vh 6vw 7vh;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateX(48px);
+      transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    .slide.prev {
+      transform: translateX(-48px);
+    }
+
+    /* Headers */
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--pear-soft);
+      border: 1px solid var(--pear-line);
+      color: var(--pear);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow.cyan {
+      background: var(--cyan-soft);
+      border-color: rgba(34, 211, 238, 0.4);
+      color: var(--cyan);
+    }
+    .eyebrow.pink {
+      background: var(--pink-soft);
+      border-color: rgba(244, 114, 182, 0.4);
+      color: var(--pink);
+    }
+
+    h1.slide-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(28px, 3.5vw, 48px);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.05;
+      margin-bottom: 8px;
+    }
+
+    h1.slide-title .accent { color: var(--pear); }
+    h1.slide-title .accent-cyan { color: var(--cyan); }
+    h1.slide-title .accent-pink { color: var(--pink); }
+
+    .slide-subtitle {
+      color: var(--muted);
+      font-size: clamp(17px, 1.4vw, 21px);
+      line-height: 1.5;
+      max-width: 880px;
+      margin-bottom: 36px;
+    }
+
+    .gradient-text {
+      background: linear-gradient(120deg, var(--pear), var(--cyan));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Cards */
+    .card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 22px 24px;
+      backdrop-filter: blur(20px);
+    }
+
+    .card-hover {
+      transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    }
+    .card-hover:hover {
+      border-color: var(--pear-line);
+      background: rgba(163, 230, 53, 0.04);
+    }
+
+    /* ----- SLIDE 1 — Title ----- */
+    .slide-title-card {
+      text-align: center;
+      justify-content: center;
+      align-items: center;
+    }
+    .slide-title-card .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .slide-title-card .brand-dot {
+      width: 36px; height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--pear), var(--cyan));
+      display: grid; place-items: center;
+      color: var(--bg);
+      font-weight: 800;
+      font-family: 'Space Grotesk';
+      font-size: 20px;
+    }
+    .slide-title-card .brand-name {
+      font-family: 'Space Grotesk';
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .slide-title-card h1 {
+      font-family: 'Space Grotesk';
+      font-size: clamp(48px, 6vw, 96px);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      margin-bottom: 22px;
+    }
+    .slide-title-card .tagline {
+      color: var(--muted);
+      font-size: clamp(18px, 1.6vw, 22px);
+      max-width: 760px;
+      margin: 0 auto 64px;
+      line-height: 1.45;
+    }
+    .slide-title-card .speaker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 16px;
+      flex-wrap: wrap;
+    }
+    .slide-title-card .speaker .name {
+      color: var(--text);
+      font-weight: 600;
+    }
+    .slide-title-card .speaker .dot {
+      width: 4px; height: 4px;
+      border-radius: 999px;
+      background: var(--faint);
+    }
+
+    /* ----- SLIDE 2 — Problem ----- */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .stat {
+      padding: 28px 24px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border: 1px solid var(--border);
+    }
+    .stat-number {
+      font-family: 'Space Grotesk';
+      font-size: clamp(36px, 4.2vw, 56px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .stat-label {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .stat .stat-number.pear { color: var(--pear); }
+    .stat .stat-number.cyan { color: var(--cyan); }
+    .stat .stat-number.pink { color: var(--pink); }
+    .quote-card {
+      padding: 24px 28px;
+      border-radius: var(--radius-lg);
+      background: rgba(163, 230, 53, 0.05);
+      border-left: 3px solid var(--pear);
+      font-size: clamp(15px, 1.2vw, 18px);
+      line-height: 1.55;
+      color: var(--text);
+    }
+
+    /* ----- SLIDE 3 — User ----- */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+    .col-card { padding: 26px 28px; }
+    .col-card h3 {
+      font-family: 'Space Grotesk';
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .bullet-list { list-style: none; }
+    .bullet-list li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 7px 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.5;
+    }
+    .bullet-list li::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 999px;
+      background: var(--pear);
+      flex-shrink: 0;
+      margin-top: 8px;
+    }
+    .bullet-list.cyan li::before { background: var(--cyan); }
+    .bullet-list.pink li::before { background: var(--pink); }
+
+    /* ----- SLIDE 4 / 5 — Flow ----- */
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 8px;
+    }
+    .flow-step {
+      position: relative;
+      padding: 28px 24px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border: 1px solid var(--border);
+    }
+    .flow-step .step-num {
+      position: absolute;
+      top: -14px; left: 24px;
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      background: var(--pear);
+      color: var(--bg);
+      font-weight: 700;
+      display: grid; place-items: center;
+      font-family: 'Space Grotesk';
+      font-size: 14px;
+    }
+    .flow-step h3 {
+      font-family: 'Space Grotesk';
+      font-size: 20px;
+      font-weight: 600;
+      margin: 6px 0 10px;
+    }
+    .flow-step p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+    .chip.pear { background: var(--pear-soft); border-color: var(--pear-line); color: var(--pear); }
+    .chip.cyan { background: var(--cyan-soft); border-color: rgba(34,211,238,0.4); color: var(--cyan); }
+
+    /* ----- SLIDE 6 — Feature grid ----- */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .feature {
+      padding: 22px 22px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      transition: border-color 0.2s;
+    }
+    .feature:hover { border-color: var(--pear-line); }
+    .feature .icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: grid; place-items: center;
+      background: var(--pear-soft);
+      color: var(--pear);
+      margin-bottom: 14px;
+      font-size: 20px;
+    }
+    .feature .icon.cyan { background: var(--cyan-soft); color: var(--cyan); }
+    .feature .icon.pink { background: var(--pink-soft); color: var(--pink); }
+    .feature h4 {
+      font-family: 'Space Grotesk';
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .feature p { color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+    /* ----- SLIDE 7 — Architecture ----- */
+    .arch {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .arch-row {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(var(--cols, 4), 1fr);
+    }
+    .arch-node {
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .arch-node .label {
+      font-family: 'Space Grotesk';
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .arch-node .sub {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .arch-node.primary {
+      border-color: var(--pear-line);
+      background: var(--pear-soft);
+    }
+    .arch-node.primary .label { color: var(--pear); }
+    .arch-node.cyan {
+      border-color: rgba(34,211,238,0.3);
+      background: var(--cyan-soft);
+    }
+    .arch-node.cyan .label { color: var(--cyan); }
+    .arch-pipe {
+      text-align: center;
+      color: var(--faint);
+      font-size: 18px;
+      margin: -4px 0;
+    }
+    .arch-notes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .arch-note {
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .arch-note strong { color: var(--text); font-weight: 600; }
+
+    /* ----- SLIDE 8 — Strategy / North Star ----- */
+    .nsm-hero {
+      padding: 26px 30px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(120deg, var(--pear-soft), var(--cyan-soft));
+      border: 1px solid var(--pear-line);
+      margin-bottom: 20px;
+    }
+    .nsm-hero .label {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--pear);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .nsm-hero h2 {
+      font-family: 'Space Grotesk';
+      font-size: clamp(22px, 2vw, 32px);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 8px;
+    }
+    .nsm-hero .formula {
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      opacity: 0.7;
+    }
+    .nsm-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 20px;
+    }
+    .nsm-tree {
+      padding: 22px;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+    }
+    .nsm-tree h4 {
+      font-family: 'Space Grotesk';
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .tree {
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .tree-root {
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--pear-soft);
+      border: 1px solid var(--pear-line);
+      color: var(--pear);
+      font-weight: 600;
+      font-size: 14px;
+      width: fit-content;
+    }
+    .tree-children {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding-left: 24px;
+      border-left: 1px solid var(--border);
+    }
+    .tree-child {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .tree-child strong { color: var(--text); font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px; }
+
+    .counters {
+      padding: 22px;
+      border-radius: var(--radius-lg);
+      background: rgba(244,114,182,0.04);
+      border: 1px solid rgba(244,114,182,0.18);
+    }
+    .counters h4 {
+      font-family: 'Space Grotesk';
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--pink);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ----- SLIDE 9 — Funnel ----- */
+    .funnel-page {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 24px;
+      flex: 1;
+      min-height: 0;
+    }
+    .funnel {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .funnel-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+    }
+    .funnel-bar {
+      height: 30px;
+      background: linear-gradient(90deg, var(--pear-soft), rgba(163,230,53,0.04));
+      border: 1px solid var(--pear-line);
+      border-radius: 6px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 500;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .funnel-bar .pct {
+      margin-left: auto;
+      color: var(--pear);
+      font-weight: 600;
+    }
+    .funnel-drop {
+      font-size: 11px;
+      color: var(--faint);
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+    }
+    .funnel-bar.warn {
+      background: linear-gradient(90deg, rgba(251,191,36,0.18), rgba(251,191,36,0.04));
+      border-color: rgba(251,191,36,0.4);
+    }
+    .funnel-bar.warn .pct { color: var(--amber); }
+    .funnel-bar.alert {
+      background: linear-gradient(90deg, rgba(248,113,113,0.18), rgba(248,113,113,0.04));
+      border-color: rgba(248,113,113,0.4);
+    }
+    .funnel-bar.alert .pct { color: var(--red); }
+
+    .schema {
+      padding: 22px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--muted);
+      overflow: auto;
+    }
+    .schema .k { color: var(--cyan); }
+    .schema .s { color: var(--pear); }
+    .schema .n { color: var(--pink); }
+    .schema .c { color: var(--faint); font-style: italic; }
+
+    .where-events {
+      padding: 16px 18px;
+      border-radius: var(--radius-md);
+      background: rgba(34,211,238,0.04);
+      border: 1px solid rgba(34,211,238,0.18);
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .where-events strong { color: var(--text); }
+
+    /* ----- SLIDE 10 — QoE bridge ----- */
+    .qoe-bridge {
+      display: grid;
+      grid-template-columns: 1fr 28px 1fr;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+    .qoe-col {
+      padding: 18px 20px;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+    }
+    .qoe-col.left { border-color: rgba(34,211,238,0.25); }
+    .qoe-col.right { border-color: var(--pear-line); }
+    .qoe-col h3 {
+      font-family: 'Space Grotesk';
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+    .qoe-col.left h3 { color: var(--cyan); }
+    .qoe-col.right h3 { color: var(--pear); }
+    .qoe-list { list-style: none; }
+    .qoe-list li {
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .qoe-list li:last-child { border-bottom: 0; }
+    .qoe-list li strong { color: var(--text); font-weight: 600; }
+    .qoe-arrow {
+      display: grid; place-items: center;
+      color: var(--faint);
+      font-size: 18px;
+      margin-top: 100px;
+    }
+    .qoe-errors {
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+      background: rgba(248,113,113,0.05);
+      border: 1px solid rgba(248,113,113,0.2);
+    }
+    .qoe-errors h4 {
+      font-family: 'Space Grotesk';
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--red);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .qoe-errors-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+    .qoe-err {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.3;
+    }
+    .qoe-err strong { color: var(--text); display: block; font-size: 12px; }
+
+    /* ----- SLIDE 11 — wrap up ----- */
+    .quad {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+    .quad .card { padding: 18px 20px; overflow: auto; }
+    .quad h3 {
+      font-family: 'Space Grotesk';
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--pear);
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .quad.cyan h3 { color: var(--cyan); }
+    .quad ul li {
+      font-size: 13px;
+      color: var(--muted);
+      padding: 6px 0;
+      line-height: 1.45;
+      display: flex; gap: 8px; align-items: flex-start;
+    }
+    .quad ul li::before {
+      content: '→';
+      color: var(--pear);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .quad .card.privacy h3 { color: var(--pink); }
+    .quad .card.privacy ul li::before { color: var(--pink); }
+    .quad .card.tools h3 { color: var(--cyan); }
+    .quad .card.tools ul li::before { color: var(--cyan); }
+    .quad .card.roadmap h3 { color: var(--amber); }
+    .quad .card.roadmap ul li::before { color: var(--amber); }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(74,222,128,0.15);
+      border: 1px solid rgba(74,222,128,0.3);
+      color: var(--green);
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    /* ===== Footer / Navigation ===== */
+    .deck-chrome {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+      pointer-events: none;
+      font-size: 12px;
+      color: var(--faint);
+    }
+    .deck-chrome > * { pointer-events: auto; }
+    .section-name {
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .progress-track {
+      flex: 1;
+      max-width: 360px;
+      height: 2px;
+      background: rgba(255,255,255,0.08);
+      margin: 0 24px;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--pear), var(--cyan));
+      transition: width 0.3s ease;
+    }
+    .deck-nav-buttons {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .nav-btn {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      display: grid; place-items: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); border-color: var(--border-strong); }
+    .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .indicator {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      min-width: 50px;
+      text-align: center;
+    }
+    .indicator .total { color: var(--faint); }
+
+    .help-hint {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: var(--faint);
+      font-family: 'JetBrains Mono', monospace;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 9;
+    }
+    .help-hint.show { opacity: 1; }
+
+    kbd {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      margin: 0 2px;
+    }
+
+    /* Print */
+    @media print {
+      body { background: white; color: black; overflow: visible; }
+      body::before, body::after, .grid-overlay, .deck-chrome, .help-hint { display: none !important; }
+      .deck { width: 100%; height: auto; }
+      .slide {
+        position: relative;
+        opacity: 1 !important;
+        transform: none !important;
+        height: auto;
+        page-break-after: always;
+        padding: 24px 32px;
+        color: black;
+      }
+      .card, .feature, .arch-node, .flow-step, .stat, .schema, .qoe-col, .nsm-tree, .nsm-hero, .quad .card {
+        background: white !important;
+        color: black !important;
+        border: 1px solid #aaa !important;
+      }
+      .muted, .stat-label, .feature p, .arch-node .sub, .funnel-drop {
+        color: #555 !important;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .slide { padding: 4vh 4vw 7vh; }
+    }
+
+    /* ----- Didi deck extras ----- */
+    .agenda-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+      justify-content: center;
+    }
+    .agenda-list li {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 18px 22px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border: 1px solid var(--border);
+      font-size: clamp(17px, 1.4vw, 20px);
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .agenda-list li .num {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: var(--pear-soft);
+      border: 1px solid var(--pear-line);
+      color: var(--pear);
+      font-family: 'Space Grotesk';
+      font-weight: 700;
+      font-size: 14px;
+      display: grid; place-items: center;
+      flex-shrink: 0;
+    }
+    .example-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .example-chip {
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 15px;
+      font-style: italic;
+    }
+    .role-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+    .role-card {
+      padding: 18px 20px;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      overflow: auto;
+    }
+    .role-card .role-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px; height: 26px;
+      border-radius: 8px;
+      background: var(--pear);
+      color: var(--bg);
+      font-family: 'Space Grotesk';
+      font-weight: 700;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+    .role-card h3 {
+      font-family: 'Space Grotesk';
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+    .role-card p, .role-card li {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .role-card ul { list-style: none; margin-top: 8px; }
+    .role-card li {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      padding: 4px 0;
+    }
+    .role-card li::before {
+      content: '→';
+      color: var(--pear);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .role-card .sub-label {
+      font-size: 11px;
+      color: var(--faint);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+    .score-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .score-pill {
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .score-pill .val {
+      font-family: 'Space Grotesk';
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .score-pill .lbl { font-size: 14px; color: var(--muted); line-height: 1.4; }
+    .score-pill.perfect { background: var(--pear-soft); border-color: var(--pear-line); }
+    .score-pill.perfect .val { color: var(--pear); }
+    .score-pill.ux { background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.3); }
+    .score-pill.ux .val { color: var(--amber); }
+    .score-pill.bad { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.3); }
+    .score-pill.bad .val { color: var(--red); }
+    .orchestration {
+      display: grid;
+      grid-template-columns: minmax(0, 2.5fr) minmax(220px, 0.75fr);
+      gap: 20px;
+      flex: 1;
+      min-height: 0;
+    }
+    .orchestration .memory-card {
+      align-self: start;
+    }
+    .flow-chain {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .flow-chain-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      font-size: 16px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .flow-chain-item strong { color: var(--text); font-weight: 600; }
+    .flow-chain-arrow {
+      text-align: center;
+      color: var(--faint);
+      font-size: 14px;
+      margin: -2px 0;
+    }
+    .query-bar {
+      height: 36px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      border: 1px solid var(--border);
+    }
+    .query-bar.station {
+      width: 6%;
+      background: linear-gradient(90deg, var(--cyan-soft), rgba(34,211,238,0.04));
+      border-color: rgba(34,211,238,0.35);
+      color: var(--cyan);
+    }
+    .query-bar.personal {
+      width: 70%;
+      background: linear-gradient(90deg, var(--pear-soft), rgba(163,230,53,0.04));
+      border-color: var(--pear-line);
+      color: var(--pear);
+    }
+    .query-bar.other {
+      width: 24%;
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+    }
+    .query-mix-row {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 24px;
+      flex-shrink: 0;
+    }
+    .query-mix-row .query-bar {
+      height: 44px;
+      font-size: 15px;
+      width: auto;
+    }
+    .query-mix-row .query-bar.station { flex: 6; }
+    .query-mix-row .query-bar.personal { flex: 70; }
+    .query-mix-row .query-bar.other { flex: 24; }
+    .role-full {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .role-full .card {
+      flex: 1;
+      padding: 36px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .role-full .role-num-lg {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: var(--pear);
+      color: var(--bg);
+      font-family: 'Space Grotesk';
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .role-full h3 {
+      font-family: 'Space Grotesk';
+      font-size: clamp(24px, 2.2vw, 32px);
+      font-weight: 600;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .role-full p {
+      color: var(--muted);
+      font-size: clamp(17px, 1.5vw, 20px);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .role-full .sub-label {
+      font-size: 13px;
+      color: var(--faint);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    .role-full .bullet-list li {
+      font-size: clamp(16px, 1.4vw, 18px);
+      padding: 10px 0;
+    }
+    .role-full .bullet-list li.expandable {
+      display: block;
+    }
+    .role-full .bullet-list li.expandable::before {
+      float: left;
+      margin-top: 16px;
+    }
+    .role-full .bullet-list li.expandable .sub-label {
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+    .role-full .bullet-list.nested {
+      margin: 4px 0 8px 16px;
+    }
+    .role-full .bullet-list.nested li {
+      font-size: clamp(15px, 1.3vw, 17px);
+      padding: 6px 0;
+    }
+    .muted-body {
+      color: var(--muted);
+      font-size: clamp(16px, 1.3vw, 18px);
+      line-height: 1.55;
+    }
+    .muted-body-sm {
+      color: var(--muted);
+      font-size: clamp(15px, 1.2vw, 17px);
+      line-height: 1.5;
+    }
+    .flow-chain-item .subagent-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .results-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+      min-height: 0;
+    }
+    .results-split .section-card {
+      padding: 28px 30px;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    .results-split .section-card h3 {
+      font-family: 'Space Grotesk';
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .results-split .stat-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .results-split .stat {
+      padding: 20px 22px;
+    }
+    .results-split .stat-number {
+      font-size: clamp(32px, 3.5vw, 44px);
+    }
+    .challenge-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+      align-items: stretch;
+    }
+    .challenge-grid .col-card {
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .challenge-grid .col-card h3 {
+      font-family: 'Space Grotesk';
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+    .challenge-grid .col-card p {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.55;
+    }
+    .challenge-grid .bullet-list li {
+      font-size: 15px;
+      padding: 5px 0;
+    }
+    .challenge-grid .col-card .note-muted {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 10px;
+      line-height: 1.45;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-overlay"></div>
+
+  <main class="deck" id="deck">
+
+    <!-- SLIDE 1 — TITLE -->
+    <section class="slide slide-title-card active" data-section="Intro" data-notes="Open with context: Didi Global ride-hailing AI agents — a case study framed for Conviva PM.">
+      <h1>AI Agent for<br/>Ride Hailing</h1>
+      <p class="tagline">A Case Study</p>
+      <div class="speaker">
+        <span class="name">Yingxuan Li</span>
+        <span class="dot"></span>
+        <span>Conviva · 2026</span>
+      </div>
+    </section>
+
+    <!-- SLIDE 2 — AGENDA -->
+    <section class="slide" data-section="Intro" data-notes="Walk through the five sections — personalization intro, station use case, strategy, evaluation, future directions.">
+      <span class="eyebrow">Agenda</span>
+      <h1 class="slide-title">What we'll cover.</h1>
+      <p class="slide-subtitle">From hyper-personalized ride hailing to station-agent orchestration, evaluation, and what's next.</p>
+
+      <ol class="agenda-list">
+        <li><span class="num">1</span> Personalized Ride-Hailing Project: An Introduction</li>
+        <li><span class="num">2</span> Station Use Case (Airport / Railway) — Key Data &amp; My Role</li>
+        <li><span class="num">3</span> Station Agent Strategy (4 core responsibilities)</li>
+        <li><span class="num">4</span> Evaluation, Metrics &amp; Iteration</li>
+        <li><span class="num">5</span> Future Directions — On-Device AI Multi-Platform Comparison</li>
+      </ol>
+    </section>
+
+    <!-- SLIDE 3 — PERSONALIZED OVERVIEW -->
+    <section class="slide" data-section="Context" data-notes="Explain what personalized ride hailing is, the value prop, and the core tension with wait time.">
+      <span class="eyebrow">01 · Personalized Ride-Hailing</span>
+      <h1 class="slide-title">Hyper-personalization in <span class="accent">natural language</span>.</h1>
+      <p class="slide-subtitle">Users describe their ideal car in plain language — the agent matches preferences to available vehicles.</p>
+
+      <div class="two-col">
+        <div class="card col-card">
+          <h3><span style="color: var(--pear);">●</span> What it is</h3>
+          <p class="muted-body" style="margin-bottom: 12px;">Users describe their ideal car in natural language.</p>
+          <div class="example-row">
+            <span class="example-chip">"a yellow Xiaomi"</span>
+            <span class="example-chip">"new vehicle"</span>
+            <span class="example-chip">"spacious rear seats"</span>
+          </div>
+        </div>
+        <div class="card col-card">
+          <h3><span style="color: var(--cyan);">●</span> Value &amp; challenge</h3>
+          <ul class="bullet-list cyan">
+            <li><strong style="color: var(--text);">Value:</strong> Hyper-personalization, delight, better ride experience</li>
+            <li><strong style="color: var(--text);">Challenge:</strong> Balance personalization with longer wait time</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="quote-card" style="margin-top: 24px;">
+        The product promise is delight — but every extra constraint narrows the driver pool. Personalization and wait time pull in opposite directions.
+      </div>
+    </section>
+
+    <!-- SLIDE 4 — STATION AGENT DEFINITION -->
+    <section class="slide" data-section="Station Agent" data-notes="Three distinct challenges: unclear boundary with personalization, time inference across flight/train types, and 3rd-party API input standardization.">
+      <span class="eyebrow cyan">02 · Station Agent</span>
+      <h1 class="slide-title">Station Agent – Definition &amp; <span class="accent-cyan">Key Insight</span></h1>
+      <p class="slide-subtitle">Airport/railway use case is highly complex — boundary ambiguity, time inference, and vendor API constraints.</p>
+
+      <div class="challenge-grid">
+        <div class="card col-card">
+          <h3><span style="color: var(--pink);">1 ·</span> Unclear boundary</h3>
+          <p style="margin-bottom: 12px;">Overlap with the Personalization Agent makes routing hard.</p>
+          <div class="quote-card" style="background: rgba(244,114,182,0.05); border-left-color: var(--pink); font-size: 15px; padding: 14px 16px; margin-top: 0;">
+            "I need to go to the Beijing International Airport tomorrow at 10 AM, book a 7-seat SUV"
+          </div>
+        </div>
+        <div class="card col-card">
+          <h3><span style="color: var(--cyan);">2 ·</span> Time inference logic</h3>
+          <p style="margin-bottom: 12px;">The station agent must cross-check ticket platforms for flight/train status — international vs. domestic flights demand different time-inference logics.</p>
+          <ul class="bullet-list cyan">
+            <li>International flight → arrive 2 hrs early from home</li>
+            <li>Domestic flight → arrive 1 hr early at the airport</li>
+            <li>Train → arrive half an hour early at the railway station</li>
+          </ul>
+          <p class="note-muted">All mean different set-off time from home.</p>
+        </div>
+        <div class="card col-card">
+          <h3><span style="color: var(--pear);">3 ·</span> Missing 3rd-party tool-calling capabilities</h3>
+          <p>Standardize user query to match Vendor's API input parameter.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5a — MY ROLE 1 -->
+    <section class="slide" data-section="Station Agent" data-notes="Intent boundary definition — separate station agent from traveler guide and cross-city pickups with example queries.">
+      <span class="eyebrow">03 · My Role · 1/4</span>
+      <h1 class="slide-title">Intent boundary <span class="accent">definition</span>.</h1>
+      <p class="slide-subtitle">Clearly separate Station Agent use cases from other sub-agents.</p>
+
+      <div class="role-full">
+        <div class="card">
+          <div class="role-num-lg">1</div>
+          <h3>Intent boundary definition</h3>
+          <p>Clearly separate Station Agent use cases from "traveler guide," "cross-city pickups," etc. Construct example query &amp; strategy per sub-agent.</p>
+          <div class="sub-label">Examples</div>
+          <ul class="bullet-list">
+            <li>Traveler guide: "Design a three-day travel plan for Beijing"</li>
+            <li>Cross-city pickups: "Get me a ride to go to Shanghai" (when user's IP is not in Shanghai)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5b — MY ROLE 2 -->
+    <section class="slide" data-section="Station Agent" data-notes="Station agent strategies for flights and trains, plus evaluation queries and 3-point scoring.">
+      <span class="eyebrow">03 · My Role · 2/4</span>
+      <h1 class="slide-title">Station Agent <span class="accent">strategies</span>.</h1>
+      <p class="slide-subtitle">Execution playbooks and evaluation framework.</p>
+
+      <div class="role-full">
+        <div class="card">
+          <div class="role-num-lg">2</div>
+          <h3>Station Agent strategies</h3>
+          <ul class="bullet-list">
+            <li><strong style="color: var(--text);">International / domestic flight</strong> → clarify takeoff time → tool-call → plan arrival 1 hr / 2 hr early → reservation</li>
+            <li><strong style="color: var(--text);">Railway stations</strong> → clarify set-off time → tool-call → plan arrival half an hour early → reservation</li>
+          </ul>
+          <div class="sub-label">Evaluation queries &amp; 3-point scoring</div>
+          <ul class="bullet-list">
+            <li>Built "perfect query" evaluation set for benchmarking</li>
+            <li>3 = perfect · 2 = UX issue · 1 = unusable</li>
+            <li>Led multi-round agent evaluation</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5c — MY ROLE 3 -->
+    <section class="slide" data-section="Station Agent" data-notes="3rd-party flight/train API integration and prompt wrapper adjustments.">
+      <span class="eyebrow">03 · My Role · 3/4</span>
+      <h1 class="slide-title">3rd-party API <span class="accent">integration</span>.</h1>
+      <p class="slide-subtitle">Connected vendor APIs and aligned prompts with API constraints.</p>
+
+      <div class="role-full">
+        <div class="card">
+          <div class="role-num-lg">3</div>
+          <h3>3rd-party API integration</h3>
+          <p>Connected flight/train vendor APIs. Adjusted API wrapper &amp; prompt strategy to fulfill user requests.</p>
+          <div class="sub-label">Example</div>
+          <ul class="bullet-list">
+            <li>When API only accepts "Beijing International Airport" as input, and the query says "Capital Airport"</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5d — MY ROLE 4 -->
+    <section class="slide" data-section="Station Agent" data-notes="Post-launch tuning: false positive analysis, new booking rule, decoupling station time inference to main ride-hailing agent.">
+      <span class="eyebrow">03 · My Role · 4/4</span>
+      <h1 class="slide-title">Post-launch tuning &amp; <span class="accent">boundary redefinition</span>.</h1>
+      <p class="slide-subtitle">Iterated on false positives/negatives and simplified agent boundaries.</p>
+
+      <div class="role-full">
+        <div class="card">
+          <div class="role-num-lg">4</div>
+          <h3>Post-launch tuning &amp; boundary redefinition</h3>
+          <ul class="bullet-list">
+            <li class="expandable">
+              Analyzed false positives and false negatives → prompt iteration
+              <div class="sub-label">Example queries</div>
+              <p class="muted-body" style="margin: 0 0 4px;"><strong style="color: var(--text);">False positives:</strong></p>
+              <ul class="bullet-list nested">
+                <li>Traveler guide: "Design a three-day travel plan for Beijing"</li>
+                <li>Cross-city pickups: "Get me a ride to go to Shanghai" (when user's IP is not in Shanghai)</li>
+              </ul>
+            </li>
+            <li>Decoupled Station Agent's time inference and tool-calling to the main ride-hailing agent — only queries containing a flight number trigger the station flow</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6 — ORCHESTRATION & MEMORY -->
+    <section class="slide" data-section="Architecture" data-notes="Agent2Agent flow and memory module for time preferences.">
+      <span class="eyebrow">04 · Orchestration</span>
+      <h1 class="slide-title">Agent2Agent flow &amp; <span class="accent">memory</span>.</h1>
+      <p class="slide-subtitle">Routing → sub-agent execution → personalization. Memory reduces repeated input for station trips.</p>
+
+      <div class="orchestration">
+        <div class="card col-card">
+          <h3><span style="color: var(--pear);">●</span> Agent2Agent flow</h3>
+          <div class="flow-chain">
+            <div class="flow-chain-item"><strong>Routing agent</strong> — intent recognition and routing</div>
+            <div class="flow-chain-arrow">↓</div>
+            <div class="flow-chain-item">
+              <strong>Sub-agent</strong> — executes domain strategies
+              <div class="subagent-chips">
+                <span class="chip">Traveler's guide</span>
+                <span class="chip pear">Cross-city ride</span>
+                <span class="chip cyan">Station Agent</span>
+              </div>
+            </div>
+            <div class="flow-chain-arrow">↓</div>
+            <div class="flow-chain-item"><strong>Personalization agent</strong> — vehicle matching &amp; booking</div>
+          </div>
+          <div class="arch-notes" style="grid-template-columns: 1fr; margin-top: 20px;">
+            <div class="arch-note"><strong>Handoff point.</strong> Sub-agent completes domain logic (e.g. Station Agent: time inference &amp; pickup/drop-off) → Personalization Agent handles vehicle preferences and booking.</div>
+          </div>
+        </div>
+        <div class="card col-card memory-card">
+          <h3><span style="color: var(--cyan);">●</span> Memory module</h3>
+          <ul class="bullet-list cyan" style="margin-top: 8px;">
+            <li>Stores time preferences for airport / train station trips</li>
+            <li>Reduces repeated user input across sessions</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7 — EVALUATION -->
+    <section class="slide" data-section="Evaluation" data-notes="Pre-ship benchmark target and post-ship iteration loop.">
+      <span class="eyebrow cyan">05 · Evaluation</span>
+      <h1 class="slide-title">Data-driven <span class="accent-cyan">iteration</span>.</h1>
+      <p class="slide-subtitle">Benchmark before ship. Monitor and refine boundaries after ship.</p>
+
+      <div class="two-col" style="margin-bottom: 20px;">
+        <div class="card col-card">
+          <h3><span style="color: var(--pear);">●</span> Before we ship</h3>
+          <p class="muted-body" style="margin-bottom: 8px;"><strong style="color: var(--text);">90% benchmark</strong> on the 3-point scale (3 / 2 / 1).</p>
+          <div class="score-row">
+            <div class="score-pill perfect"><div class="val">3</div><div class="lbl">Perfect completion</div></div>
+            <div class="score-pill ux"><div class="val">2</div><div class="lbl">UX friction</div></div>
+            <div class="score-pill bad"><div class="val">1</div><div class="lbl">Unusable</div></div>
+          </div>
+        </div>
+        <div class="card col-card">
+          <h3><span style="color: var(--cyan);">●</span> After we ship</h3>
+          <ul class="bullet-list cyan">
+            <li>Query analysis → routing prompt refinement</li>
+            <li>Online case monitoring → continuous redefinition of agent boundaries</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="quote-card">
+        The 3-point rate tracks perfect completions vs. UX friction vs. unusable — a simple scale that scales across eval rounds and post-launch monitoring.
+      </div>
+    </section>
+
+    <!-- SLIDE 11 — RESULTS (was 8) -->
+    <section class="slide" data-section="Results" data-notes="Two-part slide: launch metrics (6%, 70%, 30% FP) then remediation actions that drove false positives to ~0.">
+      <span class="eyebrow">06 · Results</span>
+      <h1 class="slide-title">Convergence &amp; <span class="accent">final results</span>.</h1>
+      <p class="slide-subtitle">Launch query mix and false-positive rate — then what we did to fix it.</p>
+
+      <div class="query-mix-row">
+        <div class="query-bar station">Station 6%</div>
+        <div class="query-bar personal">Personalization 70%</div>
+        <div class="query-bar other">Other 24%</div>
+      </div>
+
+      <div class="results-split">
+        <div class="section-card">
+          <h3><span style="color: var(--cyan);">●</span> Result analysis</h3>
+          <div class="stat-grid">
+            <div class="stat">
+              <div class="stat-number cyan">6%</div>
+              <div class="stat-label">Station agent share of total queries</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number pear">70%</div>
+              <div class="stat-label">Personalization agent share of total queries</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number pink">30%</div>
+              <div class="stat-label">False positive rate for Station agent at launch</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3><span style="color: var(--pear);">●</span> What we did to reduce the 30% false positive rate</h3>
+          <ul class="bullet-list">
+            <li>Query collection &amp; prompt rewriting → false positives reduced to almost zero</li>
+            <li>Adjusted boundary between Station and main ride-hailing agent</li>
+            <li>New rule: all three hailing elements present → skip tool-calling and book directly</li>
+            <li>Reduced unnecessary clarification and routing — session time reduced by 25%</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9 — FUTURE -->
+    <section class="slide" data-section="Future" data-notes="Open question on personalized ride hailing demand, then on-device multi-platform price comparison.">
+      <span class="eyebrow pink">07 · Future Directions</span>
+      <h1 class="slide-title">On-device AI <span class="accent-pink">ride hailing</span>.</h1>
+      <p class="slide-subtitle">Is personalized ride hailing a real user need? One proposed direction: compare prices across platforms on-device.</p>
+
+      <div class="nsm-hero" style="background: linear-gradient(120deg, rgba(244,114,182,0.08), var(--cyan-soft)); border-color: rgba(244,114,182,0.25);">
+        <div class="label" style="color: var(--pink);">Open question</div>
+        <h2>Is personalized ride hailing a real user need?</h2>
+      </div>
+
+      <div class="two-col">
+        <div class="card col-card">
+          <h3><span style="color: var(--pink);">●</span> Proposed solution</h3>
+          <p class="muted-body">On-device AI that compares prices across multiple platforms — real-time best price &amp; ETA.</p>
+        </div>
+        <div class="card col-card">
+          <h3><span style="color: var(--cyan);">●</span> Example</h3>
+          <div class="example-row">
+            <span class="example-chip">Uber vs. Lyft simultaneously</span>
+          </div>
+          <p class="muted-body-sm" style="margin-top: 14px;">Surface the best price and ETA without switching apps — privacy-preserving, low-latency comparison on device.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="deck-chrome">
+    <span class="section-name" id="section-name">Intro</span>
+    <div class="progress-track"><div class="progress-fill" id="progress"></div></div>
+    <div class="deck-nav-buttons">
+      <button class="nav-btn" id="prev" aria-label="Previous slide">←</button>
+      <span class="indicator"><span id="current">1</span> <span class="total">/ <span id="total">12</span></span></span>
+      <button class="nav-btn" id="next" aria-label="Next slide">→</button>
+    </div>
+  </div>
+  <div class="help-hint" id="help-hint">
+    <kbd>←</kbd><kbd>→</kbd> navigate · <kbd>1</kbd>–<kbd>9</kbd> jump · <kbd>f</kbd> fullscreen · <kbd>p</kbd> print · <kbd>?</kbd> hide · 12 slides
+  </div>
+
+  <script>
+    (function () {
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const total = slides.length;
+      let currentIndex = 0;
+
+      const elPrev = document.getElementById('prev');
+      const elNext = document.getElementById('next');
+      const elCurrent = document.getElementById('current');
+      const elTotal = document.getElementById('total');
+      const elSection = document.getElementById('section-name');
+      const elProgress = document.getElementById('progress');
+      const elHelp = document.getElementById('help-hint');
+
+      elTotal.textContent = total;
+
+      function goto(i) {
+        const next = Math.max(0, Math.min(total - 1, i));
+        if (next === currentIndex) return;
+        slides[currentIndex].classList.remove('active');
+        slides[currentIndex].classList.add(next > currentIndex ? 'prev' : '');
+        slides[next].classList.remove('prev');
+        slides[next].classList.add('active');
+        currentIndex = next;
+        update();
+      }
+
+      function update() {
+        elCurrent.textContent = currentIndex + 1;
+        elSection.textContent = slides[currentIndex].dataset.section || '';
+        elProgress.style.width = `${((currentIndex + 1) / total) * 100}%`;
+        elPrev.disabled = currentIndex === 0;
+        elNext.disabled = currentIndex === total - 1;
+      }
+
+      elPrev.addEventListener('click', () => goto(currentIndex - 1));
+      elNext.addEventListener('click', () => goto(currentIndex + 1));
+
+      document.addEventListener('keydown', (e) => {
+        if (e.target && e.target.tagName === 'INPUT') return;
+        switch (e.key) {
+          case 'ArrowRight':
+          case ' ':
+          case 'PageDown':
+            e.preventDefault();
+            goto(currentIndex + 1);
+            break;
+          case 'ArrowLeft':
+          case 'PageUp':
+            e.preventDefault();
+            goto(currentIndex - 1);
+            break;
+          case 'Home':
+            e.preventDefault();
+            goto(0);
+            break;
+          case 'End':
+            e.preventDefault();
+            goto(total - 1);
+            break;
+          case 'f':
+          case 'F':
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
+            break;
+          case 'p':
+          case 'P':
+            window.print();
+            break;
+          case '?':
+            elHelp.classList.toggle('show');
+            break;
+          default:
+            if (e.key >= '1' && e.key <= '9') {
+              const n = parseInt(e.key, 10) - 1;
+              if (n < total) goto(n);
+            }
+        }
+      });
+
+      setTimeout(() => {
+        elHelp.classList.add('show');
+        setTimeout(() => elHelp.classList.remove('show'), 4000);
+      }, 600);
+
+      update();
+    })();
+  </script>
+</body>
+</html>
