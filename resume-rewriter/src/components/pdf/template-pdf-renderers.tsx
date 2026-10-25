@@ -4,28 +4,12 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
   Link,
 } from '@react-pdf/renderer';
+import { PDF_FONT_FAMILY } from './pdf-fonts';
 import type { ResumeData } from './resume-pdf-template';
 
-// Register Noto Sans SC for Chinese character support
-Font.register({
-  family: 'NotoSansSC',
-  fonts: [
-    {
-      src: 'https://fonts.gstatic.com/s/notosanssc/v40/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.ttf',
-      fontWeight: 400,
-    },
-    {
-      src: 'https://fonts.gstatic.com/s/notosanssc/v40/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGzjCnYw.ttf',
-      fontWeight: 700,
-    },
-  ],
-});
 
-// Disable hyphenation
-Font.registerHyphenationCallback((word: string) => [word]);
 
 // ============================================================
 // TEMPLATE 1: CLASSIC EXECUTIVE
@@ -45,7 +29,7 @@ const classicStyles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: classicColors.background,
     padding: 40,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
   },
   header: {
     marginBottom: 16,
@@ -56,7 +40,7 @@ const classicStyles = StyleSheet.create({
   },
   name: {
     fontSize: 24,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: classicColors.primary,
     marginBottom: 4,
@@ -96,7 +80,7 @@ const classicStyles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 10,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: classicColors.primary,
     textTransform: 'uppercase',
@@ -112,13 +96,13 @@ const classicStyles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 10,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: classicColors.text,
   },
   entryCompany: {
     fontSize: 9,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     color: classicColors.accent,
   },
   entryDate: {
@@ -150,7 +134,7 @@ const classicStyles = StyleSheet.create({
     color: classicColors.text,
     lineHeight: 1.5,
     textAlign: 'justify',
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
   },
   skillsContainer: {
     flexDirection: 'row',
@@ -299,7 +283,7 @@ const modernStyles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: modernColors.background,
     padding: 40,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
   },
   header: {
     marginBottom: 24,
@@ -309,7 +293,7 @@ const modernStyles = StyleSheet.create({
   },
   name: {
     fontSize: 32,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: modernColors.primary,
     marginBottom: 4,
@@ -317,7 +301,7 @@ const modernStyles = StyleSheet.create({
   title: {
     fontSize: 14,
     color: modernColors.accent,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     marginBottom: 12,
   },
@@ -352,7 +336,7 @@ const modernStyles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 12,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: modernColors.primary,
     textTransform: 'uppercase',
@@ -369,14 +353,14 @@ const modernStyles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 11,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: modernColors.primary,
   },
   entryCompany: {
     fontSize: 10,
     color: modernColors.accent,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
   },
   entryDate: {
@@ -562,7 +546,7 @@ const creativeStyles = StyleSheet.create({
   page: {
     flexDirection: 'row',
     backgroundColor: creativeColors.background,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
   },
   sidebar: {
     width: '35%',
@@ -576,7 +560,7 @@ const creativeStyles = StyleSheet.create({
   },
   sidebarName: {
     fontSize: 22,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: '#FFFFFF',
     marginBottom: 4,
@@ -593,7 +577,7 @@ const creativeStyles = StyleSheet.create({
   },
   sidebarSectionTitle: {
     fontSize: 10,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: creativeColors.accent,
     marginBottom: 10,
@@ -628,7 +612,7 @@ const creativeStyles = StyleSheet.create({
   },
   mainSectionTitle: {
     fontSize: 14,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: creativeColors.primary,
     marginBottom: 12,
@@ -646,7 +630,7 @@ const creativeStyles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 11,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: creativeColors.text,
   },
@@ -737,7 +721,7 @@ export function CreativeSidebarPDF({ data, showBranding = true }: { data: Resume
               <Text style={creativeStyles.sidebarSectionTitle}>Education</Text>
               {data.education.map((edu, idx) => (
                 <View key={idx} style={{ marginBottom: 8 }}>
-                  <Text style={{ fontSize: 9, color: '#FFFFFF', fontFamily: 'NotoSansSC', fontWeight: 700 }}>{edu.degree}</Text>
+                  <Text style={{ fontSize: 9, color: '#FFFFFF', fontFamily: PDF_FONT_FAMILY, fontWeight: 700 }}>{edu.degree}</Text>
                   <Text style={{ fontSize: 8, color: creativeColors.accent }}>{edu.school}</Text>
                   <Text style={{ fontSize: 8, color: creativeColors.textOnDark, opacity: 0.8 }}>{edu.graduationDate}</Text>
                 </View>
@@ -821,7 +805,7 @@ const techStyles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: techColors.background,
     padding: 35,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
   },
   header: {
     marginBottom: 14,
@@ -845,7 +829,7 @@ const techStyles = StyleSheet.create({
   },
   name: {
     fontSize: 22,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: techColors.primary,
     marginBottom: 2,
@@ -853,7 +837,7 @@ const techStyles = StyleSheet.create({
   title: {
     fontSize: 10,
     color: techColors.accent,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     marginBottom: 8,
   },
   contactRow: {
@@ -864,13 +848,13 @@ const techStyles = StyleSheet.create({
   contactItem: {
     fontSize: 8,
     color: techColors.textLight,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
   },
   contactLink: {
     fontSize: 8,
     color: techColors.accentSecondary,
     textDecoration: 'none',
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
   },
   section: {
     marginBottom: 10,
@@ -883,13 +867,13 @@ const techStyles = StyleSheet.create({
   sectionPrefix: {
     fontSize: 9,
     color: techColors.accent,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     marginRight: 6,
   },
   sectionTitle: {
     fontSize: 10,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: techColors.primary,
     textTransform: 'uppercase',
@@ -909,7 +893,7 @@ const techStyles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 10,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: techColors.primary,
   },
@@ -920,7 +904,7 @@ const techStyles = StyleSheet.create({
   entryDate: {
     fontSize: 7,
     color: techColors.textLight,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     backgroundColor: techColors.codeBg,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -937,7 +921,7 @@ const techStyles = StyleSheet.create({
     width: 14,
     fontSize: 8,
     color: techColors.accent,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
   },
   bulletText: {
     flex: 1,
@@ -965,7 +949,7 @@ const techStyles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 3,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
   },
   footer: {
     position: 'absolute',
@@ -981,7 +965,7 @@ const techStyles = StyleSheet.create({
   footerText: {
     fontSize: 6,
     color: techColors.textLight,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
   },
 });
 

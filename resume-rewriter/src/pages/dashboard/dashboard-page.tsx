@@ -21,6 +21,7 @@ import {
 } from '@/lib/resume-history';
 import { ResumeHistorySection } from '@/components/dashboard/resume-history-section';
 import { pdf } from '@react-pdf/renderer';
+import { preparePdfFonts } from '@/components/pdf/pdf-fonts';
 import { ResumePDF, type ResumeData as PDFResumeData } from '@/components/pdf/resume-pdf-template';
 import {
   ClassicExecutivePDF,
@@ -915,8 +916,15 @@ export function DashboardPage() {
       const totalBullets = resumeDataForPDF.experience?.reduce((acc, e) => acc + (e.bullets?.length || 0), 0) || 0;
       console.log('Total experience bullets:', totalBullets);
       
+      // Pick the smallest font that covers this resume: Inter for Latin text,
+      // a trimmed Noto Sans SC for common Chinese, the full font only for rare characters.
+      const fontChoice = await preparePdfFonts(resumeDataForPDF);
+
       // Generate professional PDF using react-pdf with selected template
-      toast.loading('Generating professional PDF...', { id: toastId });
+      toast.loading(
+        fontChoice === 'latin' ? 'Generating professional PDF...' : 'Generating PDF (loading Chinese font)...',
+        { id: toastId },
+      );
       
       // Create the PDF document element based on selected template
       let pdfDocument;
@@ -942,7 +950,7 @@ export function DashboardPage() {
       const pdfBlob = await Promise.race([
         pdf(pdfDocument).toBlob(),
         new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('PDF generation timed out')), 30000)
+          setTimeout(() => reject(new Error('PDF generation timed out')), fontChoice === 'cjk-full' ? 120000 : 60000)
         )
       ]);
       

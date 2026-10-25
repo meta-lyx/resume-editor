@@ -4,28 +4,11 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
   Link,
 } from '@react-pdf/renderer';
+import { PDF_FONT_FAMILY } from './pdf-fonts';
 
-// Register Noto Sans SC for Chinese character support
-// This font supports Latin, Chinese, Japanese, and Korean characters
-Font.register({
-  family: 'NotoSansSC',
-  fonts: [
-    {
-      src: 'https://fonts.gstatic.com/s/notosanssc/v40/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.ttf',
-      fontWeight: 400,
-    },
-    {
-      src: 'https://fonts.gstatic.com/s/notosanssc/v40/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGzjCnYw.ttf',
-      fontWeight: 700,
-    },
-  ],
-});
 
-// Disable hyphenation to prevent layout issues
-Font.registerHyphenationCallback((word: string) => [word]);
 
 // Color palette
 const colors = {
@@ -44,7 +27,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: colors.background,
     padding: 40,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
   },
   // Header section
   header: {
@@ -55,7 +38,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 26,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: colors.dark,
     marginBottom: 4,
@@ -63,7 +46,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 13,
     color: colors.primary,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     marginBottom: 8,
   },
@@ -95,7 +78,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 11,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: colors.dark,
     textTransform: 'uppercase',
@@ -120,14 +103,14 @@ const styles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 11,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: colors.dark,
   },
   entryCompany: {
     fontSize: 10,
     color: colors.primary,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
   },
   entryDate: {
@@ -171,7 +154,7 @@ const styles = StyleSheet.create({
   },
   skillCategoryTitle: {
     fontSize: 10,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: colors.dark,
     marginBottom: 4,
@@ -204,7 +187,7 @@ const styles = StyleSheet.create({
   },
   degree: {
     fontSize: 11,
-    fontFamily: 'NotoSansSC',
+    fontFamily: PDF_FONT_FAMILY,
     fontWeight: 700,
     color: colors.dark,
   },
