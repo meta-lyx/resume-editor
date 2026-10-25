@@ -47,7 +47,12 @@ function trackPageView(path: string) {
 
   if (typeof window.gtag !== 'function') {
     window.dataLayer = window.dataLayer || [];
-    window.gtag = (...args: unknown[]) => window.dataLayer.push(args);
+    // gtag.js only processes the `arguments` object; pushing an array (e.g. from
+    // rest params) is silently ignored and no hits are sent.
+    window.gtag = function gtag() {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer.push(arguments);
+    };
     window.gtag('js', new Date());
     window.gtag('config', measurementId, {
       send_page_view: false,
