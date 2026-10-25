@@ -39,7 +39,7 @@ export function NavBar() {
             Get Started
           </Link>
           <Link 
-            to="/home" 
+            to="/about" 
             className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
           >
             About
@@ -160,7 +160,7 @@ export function NavBar() {
                 Get Started
               </Link>
               <Link
-                to="/home"
+                to="/about"
                 className="px-4 py-3 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                 onClick={() => setMenuOpen(false)}
               >

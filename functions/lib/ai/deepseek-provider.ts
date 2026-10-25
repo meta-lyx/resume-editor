@@ -9,6 +9,7 @@ import {
   RESUME_OPTIMIZATION_PROMPT,
   buildResumeOptimizationUserPrompt,
 } from './types';
+import { parseLooseJson } from './json-repair';
 
 export class DeepSeekProvider implements AIProvider {
   name = 'deepseek';
@@ -25,61 +26,46 @@ export class DeepSeekProvider implements AIProvider {
   async processResume(input: ResumeProcessingInput): Promise<ResumeProcessingOutput> {
     const startTime = Date.now();
 
-    const userPrompt = buildResumeOptimizationUserPrompt(input.resumeText, input.jobDescription);
-
+    let content: string;
     try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: this.model,
-          messages: [
-            { role: 'system', content: RESUME_OPTIMIZATION_PROMPT },
-            { role: 'user', content: userPrompt },
-          ],
-          temperature: 0.25,
-          max_tokens: 4000,
-          response_format: { type: 'json_object' },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`DeepSeek API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
-      }
-
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content || '';
-
-      console.log('DeepSeek raw response length:', content.length);
-
-      const parsed = this.parseStructuredResponse(content);
-
-      return {
-        customizedResume: this.convertToPlainText(parsed.structuredResume),
-        structuredResume: parsed.structuredResume,
-        suggestions: parsed.suggestions,
-        keywordsMatched: parsed.keywordsMatched,
-        atsScore: parsed.atsScore,
-        processingTime: Date.now() - startTime,
-      };
+      content = await this.requestCompletion(input, true);
     } catch (error: any) {
       console.error('DeepSeek processing error:', error);
-
       try {
         console.log('Attempting DeepSeek fallback without JSON mode...');
-        return await this.processResumeFallback(input, startTime);
+        content = await this.requestCompletion(input, false);
       } catch (fallbackError) {
         console.error('Fallback also failed:', fallbackError);
         throw new Error(`Failed to process resume with DeepSeek: ${error.message}`);
       }
     }
+
+    console.log('DeepSeek raw response length:', content.length);
+    let parsed = this.parseStructuredResponse(content);
+
+    // DeepSeek occasionally returns malformed JSON that even repair can't fix.
+    // Ask once more before falling back to the unstructured result.
+    if (!parsed.ok) {
+      console.log('DeepSeek returned unparseable JSON, retrying once...');
+      try {
+        const retryParsed = this.parseStructuredResponse(await this.requestCompletion(input, true));
+        if (retryParsed.ok) parsed = retryParsed;
+      } catch (retryError) {
+        console.error('DeepSeek retry failed:', retryError);
+      }
+    }
+
+    return {
+      customizedResume: this.convertToPlainText(parsed.structuredResume),
+      structuredResume: parsed.structuredResume,
+      suggestions: parsed.suggestions,
+      keywordsMatched: parsed.keywordsMatched,
+      atsScore: parsed.atsScore,
+      processingTime: Date.now() - startTime,
+    };
   }
 
-  private async processResumeFallback(input: ResumeProcessingInput, startTime: number): Promise<ResumeProcessingOutput> {
+  private async requestCompletion(input: ResumeProcessingInput, jsonMode: boolean): Promise<string> {
     const userPrompt = buildResumeOptimizationUserPrompt(input.resumeText, input.jobDescription);
 
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -96,6 +82,7 @@ export class DeepSeekProvider implements AIProvider {
         ],
         temperature: 0.25,
         max_tokens: 4000,
+        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
       }),
     });
 
@@ -105,34 +92,18 @@ export class DeepSeekProvider implements AIProvider {
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
-
-    const parsed = this.parseStructuredResponse(content);
-
-    return {
-      customizedResume: this.convertToPlainText(parsed.structuredResume),
-      structuredResume: parsed.structuredResume,
-      suggestions: parsed.suggestions,
-      keywordsMatched: parsed.keywordsMatched,
-      atsScore: parsed.atsScore,
-      processingTime: Date.now() - startTime,
-    };
+    return data.choices?.[0]?.message?.content || '';
   }
 
   private parseStructuredResponse(content: string): {
+    ok: boolean;
     structuredResume: StructuredResume;
     suggestions: string[];
     keywordsMatched: string[];
     atsScore?: number;
   } {
-    let jsonContent = content.trim();
-    
-    if (jsonContent.startsWith('```')) {
-      jsonContent = jsonContent.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-    }
-
     try {
-      const parsed = JSON.parse(jsonContent);
+      const parsed = parseLooseJson(content);
       const metadata = parsed.metadata || {};
       
       const structuredResume: StructuredResume = {
@@ -163,6 +134,7 @@ export class DeepSeekProvider implements AIProvider {
       };
 
       return {
+        ok: true,
         structuredResume,
         suggestions: metadata.suggestionsForImprovement || ['Resume optimized for target job'],
         keywordsMatched: metadata.keywordsIncorporated || [],
@@ -170,10 +142,11 @@ export class DeepSeekProvider implements AIProvider {
       };
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
-      console.log('Raw content that failed to parse:', jsonContent.substring(0, 500));
+      console.log('Raw content that failed to parse:', content.substring(0, 500));
       
       const firstLine = content.split('\n').find(l => l.trim().length > 2 && !l.includes('@'))?.trim() || 'Resume';
       return {
+        ok: false,
         structuredResume: {
           personalInfo: { name: firstLine.slice(0, 50) },
           summary: content,

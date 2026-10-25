@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "setup": "pnpm install && pnpm --dir resume-rewriter install",
-    "dev": "wrangler pages dev public --port 8787 --compatibility-date 2024-12-18 --compatibility-flags nodejs_compat --d1 DB=afb1de3b-3cb7-48b6-a54b-662ac35f0a80 --r2 RESUME_BUCKET=ai-resume-bucket",
+    "dev": "pnpm --dir resume-rewriter run build && wrangler pages dev resume-rewriter/dist --port 8787 --compatibility-date 2024-12-18 --compatibility-flags nodejs_compat --d1 DB=afb1de3b-3cb7-48b6-a54b-662ac35f0a80 --r2 RESUME_BUCKET=ai-resume-bucket",
     "dev:client": "pnpm --dir resume-rewriter exec vite --port 5173",
     "dev:worker": "npm run build:worker && wrangler dev -c wrangler.workers.toml",
     "build": "npm run build:worker",

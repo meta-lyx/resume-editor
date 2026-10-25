@@ -1,0 +1,17 @@
+# Cloudflare Pages redirects and rewrites.
+# Public pages are prerendered to static files (scripts/prerender.mjs).
+# Unknown paths get dist/404.html with a real 404 status.
+
+# Permanent redirects
+/home /about 301
+
+# App routes: serve the app shell; the React router takes over in the browser.
+/dashboard /app-shell 200
+/history /app-shell 200
+/login /app-shell 200
+/register /app-shell 200
+/profile /app-shell 200
+/subscription /app-shell 200
+/my-resumes /app-shell 200
+/optimize/* /app-shell 200
+/auth/* /app-shell 200

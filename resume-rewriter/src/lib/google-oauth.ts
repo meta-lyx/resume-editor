@@ -1,7 +1,10 @@
 // Google OAuth Configuration and Utilities
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-const GOOGLE_REDIRECT_URI = import.meta.env.VITE_GOOGLE_REDIRECT_URI || `${window.location.origin}/auth/google/callback`;
+// typeof guard: this module is also loaded at build time (scripts/prerender.mjs), where window doesn't exist.
+const GOOGLE_REDIRECT_URI =
+  import.meta.env.VITE_GOOGLE_REDIRECT_URI ||
+  `${typeof window !== 'undefined' ? window.location.origin : 'https://pixelpear.io'}/auth/google/callback`;
 
 export interface GoogleOAuthConfig {
   clientId: string;

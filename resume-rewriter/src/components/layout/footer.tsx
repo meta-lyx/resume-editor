@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Github, Twitter, Linkedin, Mail } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 function Logo() {
   return (
@@ -29,39 +29,13 @@ export function Footer() {
               ATS keyword enhancement, and a wide array of professional PDF templates.
             </p>
             
-            {/* Social links */}
-            <div className="flex items-center gap-2 mt-5">
-              <a 
-                href="https://twitter.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-              >
-                <Twitter className="w-4 h-4" />
-              </a>
-              <a 
-                href="https://github.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-              >
-                <Github className="w-4 h-4" />
-              </a>
-              <a 
-                href="https://linkedin.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-              >
-                <Linkedin className="w-4 h-4" />
-              </a>
-              <a 
-                href="mailto:hello@pixelpear.io" 
-                className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-              >
-                <Mail className="w-4 h-4" />
-              </a>
-            </div>
+            <a
+              href="mailto:hello@pixelpear.io"
+              className="inline-flex items-center gap-2 mt-5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Mail className="w-4 h-4" />
+              hello@pixelpear.io
+            </a>
           </div>
           
           {/* Product */}
@@ -91,28 +65,18 @@ export function Footer() {
             </ul>
           </div>
           
-          {/* Resources */}
+          {/* Company */}
           <div>
-            <h3 className="text-sm font-medium mb-4">Resources</h3>
+            <h3 className="text-sm font-medium mb-4">Company</h3>
             <ul className="space-y-2.5">
               <li>
-                <Link to="/blog" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                  Blog
+                <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  About
                 </Link>
               </li>
               <li>
-                <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                  FAQ
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                  API Docs
+                <a href="mailto:hello@pixelpear.io" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Contact
                 </a>
               </li>
             </ul>
@@ -131,11 +95,6 @@ export function Footer() {
                 <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                   Privacy Policy
                 </Link>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                  Cookie Policy
-                </a>
               </li>
             </ul>
           </div>

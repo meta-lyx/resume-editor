@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm install && vite",
     "build:preview": "pnpm install && tsc -b && vite build",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs",
     "lint": "pnpm install && eslint .",
     "preview": "pnpm install && vite preview"
   },
