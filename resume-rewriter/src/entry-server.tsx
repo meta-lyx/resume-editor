@@ -5,7 +5,7 @@ import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import App from './App';
 
-export { resolveMetadata, PRERENDER_ROUTES, SITE_URL, SHARE_IMAGE_URL } from './lib/seo-metadata';
+export { resolveMetadata, PRERENDER_ROUTES, SITE_URL, SHARE_IMAGE_URL, lastModified } from './lib/seo-metadata';
 
 export function render(url: string): string {
   const Router = ({ children }: { children: ReactNode }) => (

@@ -28,6 +28,8 @@ import { ResumeHistoryPage } from '@/pages/history-page';
 import { PrivacyPage } from '@/pages/legal/privacy-page';
 import { TermsPage } from '@/pages/legal/terms-page';
 import { NotFoundPage } from '@/pages/not-found-page';
+import { BlogIndexPage } from '@/pages/blog/blog-index-page';
+import { BlogPostPage } from '@/pages/blog/blog-post-page';
 
 // 保护路由组件
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -53,6 +55,8 @@ export default function App({ Router = BrowserRouter }: AppProps) {
                 <Route path="/features" element={<FeaturesPage />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/templates" element={<TemplatesPage />} />
+                <Route path="/blog" element={<BlogIndexPage />} />
+                <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/login" element={<LoginPage />} />

@@ -75,6 +75,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/blog" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Blog
+                </Link>
+              </li>
+              <li>
                 <a href="mailto:hello@pixelpear.io" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                   Contact
                 </a>

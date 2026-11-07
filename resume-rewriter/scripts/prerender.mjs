@@ -8,7 +8,7 @@
 //   app-shell.html                               empty shell for app routes (see public/_redirects)
 //   sitemap.xml                                  generated from PRERENDER_ROUTES
 
-import { readFile, writeFile, rm } from 'node:fs/promises';
+import { readFile, writeFile, rm, mkdir } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
@@ -18,7 +18,7 @@ const ssrDir = path.join(root, 'dist-ssr');
 
 installBrowserStubs();
 
-const { render, resolveMetadata, PRERENDER_ROUTES, SITE_URL, SHARE_IMAGE_URL } = await import(
+const { render, resolveMetadata, PRERENDER_ROUTES, SITE_URL, SHARE_IMAGE_URL, lastModified } = await import(
   pathToFileURL(path.join(ssrDir, 'entry-server.js')).href
 );
 
@@ -40,7 +40,9 @@ await writeFile(
 
 for (const route of PRERENDER_ROUTES) {
   const html = withBody(withHead(template, resolveMetadata(route)), render(route));
+  // /features -> features.html, /blog/x -> blog/x.html (Cloudflare Pages serves both without .html)
   const file = route === '/' ? 'index.html' : `${route.slice(1)}.html`;
+  await mkdir(path.dirname(path.join(dist, file)), { recursive: true });
   await writeFile(path.join(dist, file), html);
   console.log(`prerendered ${route} -> dist/${file}`);
 }
@@ -57,7 +59,8 @@ const sitemap = [
   '<?xml version="1.0" encoding="UTF-8"?>',
   '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
   ...PRERENDER_ROUTES.map(
-    (route) => `  <url>\n    <loc>${SITE_URL}${route}</loc>\n    <lastmod>${today}</lastmod>\n  </url>`,
+    (route) =>
+      `  <url>\n    <loc>${SITE_URL}${route}</loc>\n    <lastmod>${lastModified(route) ?? today}</lastmod>\n  </url>`,
   ),
   '</urlset>',
   '',
