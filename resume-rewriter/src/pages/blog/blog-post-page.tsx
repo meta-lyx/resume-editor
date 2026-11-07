@@ -58,7 +58,7 @@ export function BlogPostPage() {
         </header>
 
         <div
-          className="prose prose-neutral dark:prose-invert mt-10 max-w-none prose-headings:scroll-mt-24"
+          className="prose prose-neutral mt-10 max-w-none prose-headings:scroll-mt-24"
           dangerouslySetInnerHTML={{ __html: post.html }}
         />
 

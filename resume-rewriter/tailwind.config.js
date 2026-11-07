@@ -145,6 +145,39 @@ module.exports = {
               fontFamily: 'Outfit, system-ui, sans-serif',
               color: 'hsl(var(--foreground))',
             },
+            blockquote: {
+              color: 'hsl(var(--foreground) / 0.85)',
+              borderLeftColor: 'hsl(var(--primary))',
+              fontStyle: 'normal',
+            },
+            'blockquote p': {
+              color: 'hsl(var(--foreground) / 0.85)',
+            },
+            code: {
+              color: 'hsl(var(--foreground))',
+            },
+            'pre code': {
+              color: 'hsl(var(--foreground))',
+            },
+            pre: {
+              color: 'hsl(var(--foreground))',
+              backgroundColor: 'hsl(var(--muted))',
+            },
+            hr: {
+              borderColor: 'hsl(var(--border))',
+            },
+            'ol > li::marker': {
+              color: 'hsl(var(--muted-foreground))',
+            },
+            'ul > li::marker': {
+              color: 'hsl(var(--muted-foreground))',
+            },
+            th: {
+              color: 'hsl(var(--foreground))',
+            },
+            td: {
+              color: 'hsl(var(--foreground) / 0.85)',
+            },
           },
         },
       },
