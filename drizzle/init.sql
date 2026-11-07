@@ -5,6 +5,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
+  password_hash TEXT,
   email_verified INTEGER DEFAULT 0,
   name TEXT,
   image TEXT,

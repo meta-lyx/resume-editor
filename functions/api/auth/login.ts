@@ -1,8 +1,10 @@
+import { verifyPassword } from './password-utils';
+
 // Login endpoint as direct Pages Function
 export async function onRequest(context: any) {
   try {
     const { request, env } = context;
-    
+
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
@@ -15,54 +17,68 @@ export async function onRequest(context: any) {
         },
       });
     }
-    
+
     if (request.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
         },
       });
     }
-    
+
     const body = await request.json();
     const { email, password } = body;
-    
+
     if (!email || !password) {
       return new Response(JSON.stringify({ error: 'Email and password are required' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    
+
     // Find user
     const users = await env.DB.prepare(
       'SELECT * FROM users WHERE email = ?'
     ).bind(email).all();
-    
+
     if (users.results.length === 0) {
       return new Response(JSON.stringify({ error: 'Invalid email or password' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    
+
     const user = users.results[0] as any;
-    
-    // Hash password for comparison (for now, skip actual verification)
-    // TODO: Add proper password hashing and verification
-    
+
+    // Google-only accounts have no password — they must sign in via Google
+    if (!user.password_hash) {
+      return new Response(JSON.stringify({ error: 'This account uses Google sign-in. Please log in with Google.' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Verify password against stored PBKDF2 hash
+    const valid = await verifyPassword(password, user.password_hash);
+    if (!valid) {
+      return new Response(JSON.stringify({ error: 'Invalid email or password' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Create new session
     const sessionId = crypto.randomUUID();
     const token = crypto.randomUUID();
     const now = Math.floor(Date.now() / 1000);
     const expiresAt = now + (60 * 60 * 24 * 7); // 7 days
-    
+
     await env.DB.prepare(
       'INSERT INTO sessions (id, user_id, token, expires_at, created_at) VALUES (?, ?, ?, ?, ?)'
     ).bind(sessionId, user.id, token, expiresAt, now).run();
-    
+
     return new Response(JSON.stringify({
       user: {
         id: user.id,
@@ -76,7 +92,7 @@ export async function onRequest(context: any) {
       },
     }), {
       status: 200,
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
       },
