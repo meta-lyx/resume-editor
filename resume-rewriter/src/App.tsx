@@ -30,6 +30,8 @@ import { TermsPage } from '@/pages/legal/terms-page';
 import { NotFoundPage } from '@/pages/not-found-page';
 import { BlogIndexPage } from '@/pages/blog/blog-index-page';
 import { BlogPostPage } from '@/pages/blog/blog-post-page';
+import { AtsCheckerPage } from '@/pages/tools/ats-checker-page';
+import { KeywordMatcherPage } from '@/pages/tools/keyword-matcher-page';
 
 // 保护路由组件
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -57,6 +59,8 @@ export default function App({ Router = BrowserRouter }: AppProps) {
                 <Route path="/templates" element={<TemplatesPage />} />
                 <Route path="/blog" element={<BlogIndexPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
+                <Route path="/tools/ats-resume-checker" element={<AtsCheckerPage />} />
+                <Route path="/tools/resume-keyword-matcher" element={<KeywordMatcherPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/login" element={<LoginPage />} />

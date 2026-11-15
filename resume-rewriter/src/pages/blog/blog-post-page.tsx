@@ -71,6 +71,11 @@ export function BlogPostPage() {
           <Button asChild className="mt-5">
             <Link to="/">Optimize my resume</Link>
           </Button>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Or try our free tools first: the{' '}
+            <Link to="/tools/ats-resume-checker" className="text-primary hover:underline">ATS resume checker</Link> and the{' '}
+            <Link to="/tools/resume-keyword-matcher" className="text-primary hover:underline">resume keyword matcher</Link>.
+          </p>
         </aside>
 
         {morePosts.length > 0 && (
