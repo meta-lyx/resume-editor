@@ -19,6 +19,11 @@ function Logo() {
   );
 }
 
+const TOOLS = [
+  { to: '/tools/ats-resume-checker', label: 'ATS Resume Checker', blurb: 'Can an ATS read your resume?' },
+  { to: '/tools/resume-keyword-matcher', label: 'Resume Keyword Matcher', blurb: 'Compare your resume to a job posting' },
+];
+
 export function NavBar() {
   const { user, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -62,12 +67,32 @@ export function NavBar() {
           >
             Blog
           </Link>
-          <Link 
-            to="/tools/ats-resume-checker" 
-            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
-          >
-            Free ATS Checker
-          </Link>
+          {/* Tools: opens on hover or keyboard focus */}
+          <div className="relative group">
+            <button
+              type="button"
+              aria-haspopup="true"
+              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground group-hover:text-foreground group-focus-within:text-foreground transition-colors rounded-lg hover:bg-muted inline-flex items-center gap-1"
+            >
+              Tools
+              <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
+            </button>
+            <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity absolute left-0 top-full pt-2 z-50">
+              <div className="w-72 rounded-xl border border-border bg-card p-2 shadow-xl">
+                {TOOLS.map((tool) => (
+                  <Link
+                    key={tool.to}
+                    to={tool.to}
+                    onClick={(e) => e.currentTarget.blur()}
+                    className="block rounded-lg px-3 py-2.5 hover:bg-muted focus:bg-muted focus:outline-none transition-colors"
+                  >
+                    <span className="block text-sm font-medium text-foreground">{tool.label}</span>
+                    <span className="block text-xs text-muted-foreground mt-0.5">{tool.blurb}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
           <Link 
             to="/history" 
             className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted inline-flex items-center gap-1.5"
@@ -199,13 +224,17 @@ export function NavBar() {
               >
                 Blog
               </Link>
-              <Link
-                to="/tools/ats-resume-checker"
-                className="px-4 py-3 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                onClick={() => setMenuOpen(false)}
-              >
-                Free ATS Checker
-              </Link>
+              <p className="px-4 pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70">Tools</p>
+              {TOOLS.map((tool) => (
+                <Link
+                  key={tool.to}
+                  to={tool.to}
+                  className="pl-8 pr-4 py-3 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {tool.label}
+                </Link>
+              ))}
               <Link
                 to="/history"
                 className="px-4 py-3 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors inline-flex items-center gap-2"
