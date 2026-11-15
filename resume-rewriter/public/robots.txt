@@ -9,6 +9,7 @@ Disallow: /my-resumes
 Disallow: /optimize/
 Disallow: /profile
 Disallow: /register
+Disallow: /forgot-password
 Disallow: /subscription
 
 Sitemap: https://pixelpear.io/sitemap.xml

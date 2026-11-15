@@ -29,7 +29,9 @@ export async function onRequest(context: any) {
     }
 
     const body = await request.json();
-    const { email, password, name } = body;
+    const { password, name } = body;
+    // Store emails lower-cased so "Foo@x.com" and "foo@x.com" are one account.
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
 
     // Validation
     if (!email || !password) {
@@ -48,7 +50,7 @@ export async function onRequest(context: any) {
 
     // Check if user already exists
     const existingUsers = await env.DB.prepare(
-      'SELECT id FROM users WHERE email = ?'
+      'SELECT id FROM users WHERE LOWER(email) = ?'
     ).bind(email).all();
 
     if (existingUsers.results.length > 0) {

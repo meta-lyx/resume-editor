@@ -16,6 +16,7 @@ import { OnboardingPage } from '@/pages/onboarding-page';
 import { FeaturesPage } from '@/pages/features-page';
 import { LoginPage } from '@/pages/auth/login-page';
 import { RegisterPage } from '@/pages/auth/register-page';
+import { ForgotPasswordPage } from '@/pages/auth/forgot-password-page';
 import { GoogleCallbackPage } from '@/pages/auth/google-callback-page';
 import { DashboardPage } from '@/pages/dashboard/dashboard-page';
 import { OptimizeResumePage } from '@/pages/resume/optimize-resume-page';
@@ -65,6 +66,7 @@ export default function App({ Router = BrowserRouter }: AppProps) {
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
                 
                 {/* Dashboard is accessible without login (users can upload and process, but need login to download) */}

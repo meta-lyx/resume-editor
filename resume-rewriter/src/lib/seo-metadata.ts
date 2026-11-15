@@ -77,6 +77,11 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
     description: 'Create your PixelPear account and start optimizing your resume.',
     index: false,
   },
+  '/forgot-password': {
+    title: 'Reset Password | PixelPear',
+    description: 'Reset your PixelPear account password.',
+    index: false,
+  },
   '/history': {
     title: 'Resume History | PixelPear',
     description: 'Review the resume optimizations saved on your device.',
