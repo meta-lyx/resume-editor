@@ -29,7 +29,8 @@ export async function onRequest(context: any) {
     }
 
     const body = await request.json();
-    const { email, password } = body;
+    const { password } = body;
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
 
     if (!email || !password) {
       return new Response(JSON.stringify({ error: 'Email and password are required' }), {
@@ -40,7 +41,7 @@ export async function onRequest(context: any) {
 
     // Find user
     const users = await env.DB.prepare(
-      'SELECT * FROM users WHERE email = ?'
+      'SELECT * FROM users WHERE LOWER(email) = ?'
     ).bind(email).all();
 
     if (users.results.length === 0) {
@@ -52,9 +53,10 @@ export async function onRequest(context: any) {
 
     const user = users.results[0] as any;
 
-    // Google-only accounts have no password — they must sign in via Google
+    // No password on file: a Google sign-in account, or an account created before
+    // passwords were stored. Either can set one through "Forgot password".
     if (!user.password_hash) {
-      return new Response(JSON.stringify({ error: 'This account uses Google sign-in. Please log in with Google.' }), {
+      return new Response(JSON.stringify({ error: 'No password is set for this account. Sign in with Google, or use "Forgot password?" to set one.' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
