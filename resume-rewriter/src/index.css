@@ -143,6 +143,8 @@
       linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
     background-size: 60px 60px;
+    /* Decorative layer: never block clicks on the content above it. */
+    pointer-events: none;
   }
   
   /* Upload zone */
