@@ -20,9 +20,9 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-background">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-10 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-10 mb-10">
           {/* Brand column */}
-          <div className="md:col-span-2">
+          <div className="col-span-2">
             <Logo />
             <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-relaxed">
               AI-powered resume optimization with job description-specific editing, 
@@ -62,14 +62,21 @@ export function Footer() {
                   Templates
                 </Link>
               </li>
+            </ul>
+          </div>
+
+          {/* Tools */}
+          <div>
+            <h3 className="text-sm font-medium mb-4">Tools</h3>
+            <ul className="space-y-2.5">
               <li>
                 <Link to="/tools/ats-resume-checker" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                  Free ATS Checker
+                  ATS Resume Checker
                 </Link>
               </li>
               <li>
                 <Link to="/tools/resume-keyword-matcher" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                  Free Keyword Matcher
+                  Resume Keyword Matcher
                 </Link>
               </li>
             </ul>
