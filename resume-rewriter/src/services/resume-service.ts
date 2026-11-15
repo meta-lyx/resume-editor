@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client';
+import { extractPdfText } from '@/lib/file-text';
 
 export async function uploadResumeFile(file: File) {
   const { data, error } = await apiClient.uploadResume(file);
@@ -70,24 +71,6 @@ export async function deleteResume(resumeId: string) {
   if (error) {
     throw new Error(error.message);
   }
-}
-
-// Client-side PDF text extraction (only works for PDFs with a selectable text layer)
-async function extractPdfText(file: File): Promise<string> {
-  const pdfjsLib = await import('pdfjs-dist');
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/build/pdf.worker.min.mjs';
-
-  const arrayBuffer = await file.arrayBuffer();
-  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-  const pdf = await loadingTask.promise;
-  let fullText = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const pageText = content.items.map((item: any) => 'str' in item ? item.str : '').join(' ');
-    fullText += pageText + '\n';
-  }
-  return fullText.trim();
 }
 
 async function extractViaBackend(file: File) {

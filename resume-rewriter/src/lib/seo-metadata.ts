@@ -47,6 +47,16 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
     description:
       'Practical guides to tailoring your resume to a job description, passing applicant tracking systems, and using the right keywords.',
   },
+  '/tools/ats-resume-checker': {
+    title: 'Free ATS Resume Checker for International Students | PixelPear',
+    description:
+      'Free ATS resume checker. Find formatting, keyword and content problems, plus US resume conventions international students often miss. No sign-up.',
+  },
+  '/tools/resume-keyword-matcher': {
+    title: 'Free Resume Keyword Matcher: Compare Resume to Job Description | PixelPear',
+    description:
+      'Paste a job description and your resume to see which required skills and keywords are missing. Free, private, runs in your browser.',
+  },
   '/privacy': {
     title: 'Privacy Policy | PixelPear',
     description:

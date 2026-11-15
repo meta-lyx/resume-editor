@@ -62,6 +62,16 @@ export function Footer() {
                   Templates
                 </Link>
               </li>
+              <li>
+                <Link to="/tools/ats-resume-checker" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Free ATS Checker
+                </Link>
+              </li>
+              <li>
+                <Link to="/tools/resume-keyword-matcher" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Free Keyword Matcher
+                </Link>
+              </li>
             </ul>
           </div>
           
