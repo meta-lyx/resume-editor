@@ -158,6 +158,28 @@ CREATE INDEX IF NOT EXISTS idx_optimization_history_user_id ON optimization_hist
 CREATE INDEX IF NOT EXISTS idx_file_uploads_user_id ON file_uploads(user_id);
 
 -- Insert default subscription plans
+-- Application tracker: one row per job a user saves or applies to,
+-- with the tailored resume version used for it.
+CREATE TABLE IF NOT EXISTS job_applications (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  company TEXT NOT NULL,
+  role TEXT NOT NULL,
+  job_url TEXT,
+  location TEXT,
+  status TEXT NOT NULL DEFAULT 'saved',
+  job_description TEXT,
+  resume_text TEXT,
+  structured_resume TEXT,
+  ats_score INTEGER,
+  keyword_score INTEGER,
+  notes TEXT,
+  applied_at INTEGER,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS idx_job_applications_user ON job_applications(user_id, updated_at DESC);
+
 INSERT OR IGNORE INTO subscription_plans (id, name, description, plan_type, price, currency, interval, monthly_limit, features, active)
 VALUES 
   ('trial-plan', 'Free Trial', '3-day free trial with 3 credits', 'trial', 0.00, 'USD', 'trial', 3, '["3 Free Credits","3-Day Trial Period","ATS Optimization","Job Matching"]', 1),

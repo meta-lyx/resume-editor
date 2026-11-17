@@ -136,6 +136,13 @@ export function NavBar() {
                       Profile
                     </Link>
                     <Link
+                      to="/applications"
+                      className="flex items-center px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Application Tracker
+                    </Link>
+                    <Link
                       to="/my-resumes"
                       className="flex items-center px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                       onClick={() => setMenuOpen(false)}
@@ -261,6 +268,13 @@ export function NavBar() {
                     onClick={() => setMenuOpen(false)}
                   >
                     Profile
+                  </Link>
+                  <Link
+                    to="/applications"
+                    className="px-4 py-3 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Application Tracker
                   </Link>
                   <Link
                     to="/my-resumes"

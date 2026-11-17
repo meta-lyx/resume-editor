@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { X, Check, Download, Crown, Sparkles, Code, Palette } from 'lucide-react';
+import { X, Check, Download, Crown, Sparkles, Code, Palette, FileCheck } from 'lucide-react';
 import { Button } from './button';
 import { resumeTemplates, type ResumeTemplate } from '@/lib/resume-templates';
 import type { ResumeData } from '@/components/pdf/resume-pdf-template';
@@ -14,6 +14,8 @@ interface TemplateSelectorModalProps {
 
 const getTemplateIcon = (id: string) => {
   switch (id) {
+    case 'us-ats':
+      return <FileCheck className="h-4 w-4" />;
     case 'classic-executive':
       return <Crown className="h-4 w-4" />;
     case 'modern-minimal':
@@ -395,7 +397,7 @@ export function TemplateSelectorModal({
   resumeData,
   isDownloading = false,
 }: TemplateSelectorModalProps) {
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('modern-minimal');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('us-ats');
 
   const selectedTemplate = useMemo(
     () => resumeTemplates.find(t => t.id === selectedTemplateId),

@@ -6,6 +6,7 @@ Disallow: /dashboard
 Disallow: /history
 Disallow: /login
 Disallow: /my-resumes
+Disallow: /applications
 Disallow: /optimize/
 Disallow: /profile
 Disallow: /register
