@@ -16,6 +16,22 @@ export interface ResumeTemplate {
 
 export const resumeTemplates: ResumeTemplate[] = [
   {
+    id: 'us-ats',
+    name: 'US ATS Standard',
+    description: 'The plain, single-column US format that applicant tracking systems and US recruiters read most reliably. US Letter size, ready to send.',
+    category: 'Professional',
+    primaryColor: '#111111',
+    accentColor: '#111111',
+    fontStyle: 'sans-serif',
+    layout: 'single-column',
+    features: [
+      'US Letter size (8.5 x 11 in)',
+      'US date format (Jun 2023)',
+      'Standard section headings',
+      'No branding, graphics or columns',
+    ],
+  },
+  {
     id: 'classic-executive',
     name: 'Classic Executive',
     description: 'Traditional and authoritative design perfect for senior positions and corporate roles',

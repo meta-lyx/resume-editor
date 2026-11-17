@@ -22,13 +22,9 @@ import {
 import { ResumeHistorySection } from '@/components/dashboard/resume-history-section';
 import { pdf } from '@react-pdf/renderer';
 import { preparePdfFonts } from '@/components/pdf/pdf-fonts';
-import { ResumePDF, type ResumeData as PDFResumeData } from '@/components/pdf/resume-pdf-template';
-import {
-  ClassicExecutivePDF,
-  ModernMinimalPDF,
-  CreativeSidebarPDF,
-  TechModernPDF,
-} from '@/components/pdf/template-pdf-renderers';
+import { type ResumeData as PDFResumeData } from '@/components/pdf/resume-pdf-template';
+import { renderTemplateDocument } from '@/components/pdf/render-template';
+import { SaveToTrackerButton } from '@/components/tracker/save-to-tracker';
 
 // Helper to extract personal info from raw resume text as fallback
 function extractPersonalInfoFromText(text: string): { name?: string; email?: string; phone?: string; location?: string; github?: string; linkedin?: string } {
@@ -927,24 +923,7 @@ export function DashboardPage() {
       );
       
       // Create the PDF document element based on selected template
-      let pdfDocument;
-      switch (templateId) {
-        case 'classic-executive':
-          pdfDocument = <ClassicExecutivePDF data={resumeDataForPDF} showBranding={true} />;
-          break;
-        case 'modern-minimal':
-          pdfDocument = <ModernMinimalPDF data={resumeDataForPDF} showBranding={true} />;
-          break;
-        case 'creative-sidebar':
-          pdfDocument = <CreativeSidebarPDF data={resumeDataForPDF} showBranding={true} />;
-          break;
-        case 'tech-modern':
-          pdfDocument = <TechModernPDF data={resumeDataForPDF} showBranding={true} />;
-          break;
-        default:
-          // Fallback to the original template
-          pdfDocument = <ResumePDF data={resumeDataForPDF} showBranding={true} />;
-      }
+      const pdfDocument = renderTemplateDocument(templateId, resumeDataForPDF);
         
       // Generate blob with timeout to prevent hanging
       const pdfBlob = await Promise.race([
@@ -1259,6 +1238,14 @@ export function DashboardPage() {
 
                   {/* Action buttons */}
                   <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
+                    <SaveToTrackerButton
+                      key={activeHistoryId ?? 'current'}
+                      jobDescription={jobDescription}
+                      resumeText={customizedResume}
+                      structuredResume={structuredResume}
+                      atsScore={aiAtsScore}
+                      includeResume={hasSubscription || paymentSuccess}
+                    />
                     <Button
                       onClick={handleStartOver}
                       variant="outline"

@@ -354,3 +354,19 @@ function generateId(now: Date): string {
   }
   return `${now.getTime()}-${Math.random().toString(36).slice(2, 10)}`;
 }
+
+/** Best guess at role and company from a job description, for prefilling the tracker. */
+export function guessJobFromDescription(jobDescription: string): { role: string; company: string } {
+  const text = (jobDescription ?? '').trim();
+  if (!text) return { role: '', company: '' };
+  const titleAtCompany = extractTitleAtCompany(text);
+  if (titleAtCompany) {
+    const i = titleAtCompany.lastIndexOf(' at ');
+    return { role: titleAtCompany.slice(0, i), company: titleAtCompany.slice(i + 4) };
+  }
+  const company = text.match(/(?:^|\n)\s*(?:Company|Employer|Organization)\s*[:\-–—]\s*([^\n]+)/i)?.[1];
+  return {
+    role: extractLabelledTitle(text) || extractBareTitle(text) || extractFirstMeaningfulLine(text) || '',
+    company: company ? sanitizePhrase(company) : '',
+  };
+}

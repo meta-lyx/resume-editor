@@ -104,6 +104,7 @@ export const PRIVATE_PATH_PREFIXES = [
   '/subscription',
   '/optimize/',
   '/my-resumes',
+  '/applications',
 ];
 
 const FALLBACK_METADATA: PageMetadata = {

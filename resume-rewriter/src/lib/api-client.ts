@@ -1,4 +1,6 @@
 // API Client for Cloudflare Backend
+import type { JobApplication, JobApplicationInput } from '@/lib/applications';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Debug: Log API URL on load
@@ -186,6 +188,33 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ token, newPassword }),
     });
+  }
+
+  // Application tracker
+  async listApplications() {
+    return this.request<{ applications: JobApplication[] }>('/applications');
+  }
+
+  async getApplication(id: string) {
+    return this.request<{ application: JobApplication }>(`/applications/${encodeURIComponent(id)}`);
+  }
+
+  async createApplication(input: JobApplicationInput) {
+    return this.request<{ application: JobApplication }>('/applications', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateApplication(id: string, input: JobApplicationInput) {
+    return this.request<{ application: JobApplication }>(`/applications/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteApplication(id: string) {
+    return this.request<{ ok: boolean }>(`/applications/${encodeURIComponent(id)}`, { method: 'DELETE' });
   }
 
   // Resume endpoints

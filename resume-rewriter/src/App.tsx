@@ -24,6 +24,7 @@ import { MyResumesPage } from '@/pages/resume/my-resumes-page';
 import { PricingPage } from '@/pages/subscription/pricing-page';
 import { TemplatesPage } from '@/pages/templates-page';
 import { ProfilePage } from '@/pages/profile-page';
+import { ApplicationsPage } from '@/pages/applications-page';
 import { SubscriptionPage } from '@/pages/subscription/subscription-page';
 import { ResumeHistoryPage } from '@/pages/history-page';
 import { PrivacyPage } from '@/pages/legal/privacy-page';
@@ -87,6 +88,11 @@ export default function App({ Router = BrowserRouter }: AppProps) {
                 <Route path="/optimize/:id" element={
                   <ProtectedRoute>
                     <OptimizeResumePage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/applications" element={
+                  <ProtectedRoute>
+                    <ApplicationsPage />
                   </ProtectedRoute>
                 } />
                 <Route path="/my-resumes" element={
